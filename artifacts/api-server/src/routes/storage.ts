@@ -20,10 +20,32 @@ const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 export async function canReadPrivateObject(userId: string, objectPath: string): Promise<boolean> {
-  const exchangeReference = await pool.query(`SELECT 1 FROM exchange_media m WHERE m.object_path=$2 AND
-   (m.owner_id=$1 OR EXISTS(SELECT 1 FROM exchange_listings l WHERE l.image_key=m.object_path AND
-     (l.status='published' OR EXISTS(SELECT 1 FROM exchange_proposals p WHERE $1 IN(p.proposer_id,p.recipient_id) AND l.id IN(p.offer_id,p.requested_id)))
-     AND NOT EXISTS(SELECT 1 FROM blocked_users b WHERE (b.blocker_user_id=$1 AND b.blocked_user_id=l.owner_id) OR (b.blocked_user_id=$1 AND b.blocker_user_id=l.owner_id))))) LIMIT 1`,[userId,objectPath]);
+  const exchangeReference = await pool.query(`
+    SELECT 1
+    FROM exchange_media m
+    WHERE m.object_path = $2
+      AND (
+        m.owner_id = $1
+        OR EXISTS (
+          SELECT 1 FROM exchange_listings l
+          WHERE l.image_key = m.object_path
+            AND (
+              l.status = 'published'
+              OR EXISTS (
+                SELECT 1 FROM exchange_proposals p
+                WHERE $1 IN (p.proposer_id, p.recipient_id)
+                  AND l.id IN (p.offer_id, p.requested_id)
+              )
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM blocked_users b
+              WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = l.owner_id)
+                 OR (b.blocked_user_id = $1 AND b.blocker_user_id = l.owner_id)
+            )
+        )
+      )
+    LIMIT 1
+  `, [userId, objectPath]);
   if(exchangeReference.rows[0]) return true;
   const [profileReference] = await db
     .select({ id: usersTable.id })
