@@ -3,7 +3,9 @@
 서비스: https://davaq.anothermeai.app/app/
 랜딩: https://davaq.anothermeai.app/
 소스: 별도 비공개 저장소 SmileonLabs/davaq, 브랜치 codex/davaq-exchange-mvp.
-정확한 배포 커밋·이미지 digest·정적 파일 경로·백업 파일은 서버 /opt/davaq-release-20260912/mvp-release-<커밋 앞 12자>.json에 기록한다.
+운영 커밋: c2e9953ad7997728dfe0087d33d90ce89c34b586. API 이미지: localhost:5000/davaq-api@sha256:bbab791be80b7ac5dbfce3587c990e21cbf162ae61265cba11c4a5fb8853bd7d. PWA 캐시: davaq-mvp-20260912-v3.
+정확한 정적 파일 경로·백업 파일은 서버 /opt/davaq-release-20260912/mvp-release-c2e9953ad799.json에 기록했다. 이 릴리스 기록을 갱신하는 문서 커밋은 운영 앱 커밋과 구분한다.
+[Quality 전체 통과](https://github.com/SmileonLabs/davaq/actions/runs/34689326629) · [OpenAPI 통과](https://github.com/SmileonLabs/davaq/actions/runs/34689326407).
 
 ## 이번 구현
 
@@ -27,7 +29,7 @@ Clerk 로그인 계정과 승인된 OpenAI·LiveKit·검색 API 자격증명만 
 
 ## 검증 결과와 범위
 
-- API 회귀 테스트 100 통과, 기존 별도 조건 테스트 2개 건너뜀. 새 교환 규칙 테스트 포함.
+- 최초 로컬 API 검사 100 통과, 인프라 조건 2개 건너뜀. 최종 CI에서는 PostgreSQL·Redis 인프라 검사와 교환 사진 권한 검사를 포함해 API 테스트 113개가 전부 통과했다. 사진은 미공개 업로드·초안·공개·차단·교환 당사자 상태별로 접근을 검증했다.
 - 메신저·통화·PWA 관련 회귀 테스트 63 통과. 아이콘 경로 변경 후 PWA 캐시·알림 소유자 테스트 7개 추가 재실행 통과(63개에 포함되는 항목).
 - 실제 PostgreSQL의 임시 격리 스키마에서 API 통합 검사 30 통과. 임시 계정·데이터는 종료 시 해당 스키마와 함께 삭제했다. 로그인 경계는 테스트용 인증 주입이며 실제 Clerk 로그인 테스트와 구분한다. 외부 푸시·실시간 전송 경계도 테스트 대역을 썼다.
 - 통합 검사는 중복 요청, 익명·타인 접근, 비공개 초안, 상호 매칭, 동시 수락, 양쪽 일정 충돌, 불완전 이행, 버전 변경, 관리자 읽기 권한, 학습 범위·동의 버전·기억 삭제를 확인했다. 이 중 2개는 실제 OpenAI 호출로 초안과 한국어 답변을 확인했다.
