@@ -4,7 +4,7 @@ Archives must be staged in /tmp: davaq-api-<revision>.tar.gz and davaq-web-<revi
 No AnotherMe container, proxy configuration, volume or database is modified.
 """
 import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, tarfile, time, tempfile, atexit
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qsl, urlencode
 p=argparse.ArgumentParser()
 p.add_argument("--revision",required=True)
 args=p.parse_args()
@@ -23,6 +23,8 @@ if url.path!="/davaq" or unquote(url.username or "")!="davaq": raise RuntimeErro
 base_image=env.get("API_IMAGE","")
 if not re.fullmatch(r"localhost:5000/davaq-api@sha256:[0-9a-f]{64}",base_image): raise RuntimeError("Unexpected base image")
 compose=["docker","compose","-f",str(root/"docker-compose.server.yml")]
+# node-postgres uses an option that libpq does not accept; retain the original API URL.
+env["DAVAQ_BACKUP_DATABASE_URL"]=url._replace(query=urlencode([(k,v) for k,v in parse_qsl(url.query) if k!="uselibpqcompat"])).geturl()
 # Compose removes outer quotes; docker run --env-file does not. Normalize on the server only.
 with tempfile.NamedTemporaryFile(mode="w",prefix=".davaq-runtime-",dir=root,delete=False) as runtime:
  for key,value in env.items():
@@ -79,7 +81,7 @@ shutil.copyfile(env_path,env_backup);os.chmod(env_backup,0o600)
 # PostgreSQL 16 is already installed as an official Docker image on this host.
 run(["docker","run","--rm","--network","davaq-prod_default","--env-file",str(runtime_env),
  "-v",str(backup_root)+":/backup","postgres:16","sh","-c",
- 'exec pg_dump "$DATABASE_URL" --format=custom --file=/backup/'+backup.name])
+ 'exec pg_dump "$DAVAQ_BACKUP_DATABASE_URL" --format=custom --file=/backup/'+backup.name])
 os.chmod(backup,0o600)
 if backup.stat().st_size<1000: raise RuntimeError("Database backup is unexpectedly small")
 run(["docker","run","--rm","-v",str(backup_root)+":/backup:ro","postgres:16","pg_restore","--list","/backup/"+backup.name],True)
