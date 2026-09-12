@@ -130,7 +130,7 @@ export function AgentChatScreen() {
               안녕하세요, 저는 큐예요.
             </Txt>
             <Txt color={C.muted} style={{ textAlign: "center" }}>
-              내가 줄 수 있는 것과 받고 싶은 것을 말해주세요.\n함께 교환을
+              내가 줄 수 있는 것과 받고 싶은 것을 말해주세요. 함께 교환을
               준비해볼게요.
             </Txt>
             {[
