@@ -4,12 +4,12 @@
     "slug": "davaq",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/davaq/brand-icon.png",
     "scheme": "davaq",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/davaq/brand-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F7F6FB"
     },
@@ -30,7 +30,7 @@
       "package": "app.davaq.mobile",
       "versionCode": 7,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/davaq/brand-foreground.png",
         "backgroundColor": "#F7F6FB"
       },
       "permissions": [
@@ -50,7 +50,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/images/davaq/brand-icon.png",
       "name": "DavaQ",
       "shortName": "DavaQ",
       "description": "DavaQ (다바꿔)",

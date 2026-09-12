@@ -93,8 +93,8 @@ function patchExportedHtml(indexHtmlPath, basePath) {
 
     const assetBase = basePath || "";
     const headLinks = [
-      `<link rel="manifest" href="${assetBase}/manifest.webmanifest?v=20260726">`,
-      `<link rel="apple-touch-icon" sizes="180x180" href="${assetBase}/apple-touch-icon.png?v=20260726">`,
+      `<link rel="manifest" href="${assetBase}/manifest.webmanifest?v=20260912-davaq">`,
+      `<link rel="apple-touch-icon" sizes="180x180" href="${assetBase}/davaq-apple-touch-icon.png?v=20260912-davaq">`,
     ];
     for (const link of headLinks) {
       const rel = link.match(/rel="([^"]+)"/)?.[1];
@@ -116,7 +116,7 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     // while the JavaScript bundle and authentication provider initialize.
     const SPLASH_MARKER = "anotherme-boot-splash";
     if (!html.includes(`id="${SPLASH_MARKER}"`) && /<body[^>]*>/i.test(html)) {
-      const splash = `<div id="${SPLASH_MARKER}" aria-hidden="true"><img src="${assetBase}/icon-512.png" alt=""></div>
+      const splash = `<div id="${SPLASH_MARKER}" aria-hidden="true"><img src="${assetBase}/davaq-icon-512.png" alt=""></div>
     <style>
       #${SPLASH_MARKER} { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; background: #F7F6FB; }
       #${SPLASH_MARKER} img { width: min(44vw, 224px); height: auto; display: block; }
@@ -151,9 +151,9 @@ function copyPwaShellAssets(outPath) {
     "sw.js",
     "sw-cache-policy.js",
     "manifest.webmanifest",
-    "icon-192.png",
-    "icon-512.png",
-    "apple-touch-icon.png",
+    "davaq-icon-192.png",
+    "davaq-icon-512.png",
+    "davaq-apple-touch-icon.png",
   ];
 
   for (const file of files) {
@@ -249,9 +249,9 @@ function patchServiceWorker(outPath, basePath, version) {
     scopePath,
     `${basePath}/sw-cache-policy.js`,
     `${basePath}/manifest.webmanifest`,
-    `${basePath}/icon-192.png`,
-    `${basePath}/icon-512.png`,
-    `${basePath}/apple-touch-icon.png`,
+    `${basePath}/davaq-icon-192.png`,
+    `${basePath}/davaq-icon-512.png`,
+    `${basePath}/davaq-apple-touch-icon.png`,
   ]);
   for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
     const value = match[1];
