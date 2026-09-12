@@ -1,14 +1,29 @@
-import express, { Router, type IRouter, type Request, type Response } from "express";
+import express, {
+  Router,
+  type IRouter,
+  type Request,
+  type Response,
+} from "express";
 import { Readable } from "stream";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
-import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
+import {
+  ObjectStorageService,
+  ObjectNotFoundError,
+} from "../lib/objectStorage";
 import { requireAuth } from "../lib/auth";
 import { pool } from "@workspace/db";
 import { and, eq, isNull, like, or } from "drizzle-orm";
-import { chatRoomMembersTable, db, messagesTable, nftEvolutionStagesTable, starProfilesTable, usersTable } from "@workspace/db";
+import {
+  chatRoomMembersTable,
+  db,
+  messagesTable,
+  nftEvolutionStagesTable,
+  starProfilesTable,
+  usersTable,
+} from "@workspace/db";
 import { rateLimit } from "../lib/rateLimit";
 import { hasReadableObjectReference } from "../lib/objectAccessPolicy";
 import { issueMediaTicket, validateMediaTicket } from "../lib/mediaTicket";
@@ -19,8 +34,17 @@ const objectStorageService = new ObjectStorageService();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
-export async function canReadPrivateObject(userId: string, objectPath: string): Promise<boolean> {
-  const exchangeReference = await pool.query(`
+export async function canReadPrivateObject(
+  userId: string,
+  objectPath: string,
+): Promise<boolean> {
+  const brandReference = await pool.query(
+    `SELECT 1 FROM brand_media m WHERE m.object_path=$2 AND (m.owner_id=$1 OR EXISTS(SELECT 1 FROM brand_participations p JOIN brand_versions v ON v.id=p.version_id WHERE p.user_id=$1 AND (v.config->>'videoA'=$2 OR v.config->>'videoB'=$2))) LIMIT 1`,
+    [userId, objectPath],
+  );
+  if (brandReference.rows[0]) return true;
+  const exchangeReference = await pool.query(
+    `
     SELECT 1
     FROM exchange_media m
     WHERE m.object_path = $2
@@ -45,8 +69,10 @@ export async function canReadPrivateObject(userId: string, objectPath: string): 
         )
       )
     LIMIT 1
-  `, [userId, objectPath]);
-  if(exchangeReference.rows[0]) return true;
+  `,
+    [userId, objectPath],
+  );
+  if (exchangeReference.rows[0]) return true;
   const [profileReference] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -65,7 +91,11 @@ export async function canReadPrivateObject(userId: string, objectPath: string): 
   if (nftStageReference || starProfileReference) return true;
   if (await canReadStarFeedMedia(userId, objectPath)) return true;
   const candidates = await db
-    .select({ roomId: messagesTable.roomId, type: messagesTable.type, content: messagesTable.content })
+    .select({
+      roomId: messagesTable.roomId,
+      type: messagesTable.type,
+      content: messagesTable.content,
+    })
     .from(messagesTable)
     .innerJoin(
       chatRoomMembersTable,
@@ -78,14 +108,24 @@ export async function canReadPrivateObject(userId: string, objectPath: string): 
       and(
         isNull(messagesTable.deletedAt),
         or(
-          and(eq(messagesTable.type, "image"), eq(messagesTable.content, objectPath)),
-          and(eq(messagesTable.type, "file"), like(messagesTable.content, `%${objectPath}%`)),
+          and(
+            eq(messagesTable.type, "image"),
+            eq(messagesTable.content, objectPath),
+          ),
+          and(
+            eq(messagesTable.type, "file"),
+            like(messagesTable.content, `%${objectPath}%`),
+          ),
         ),
       ),
     )
     .limit(20);
 
-  return hasReadableObjectReference(objectPath, Boolean(profileReference), candidates);
+  return hasReadableObjectReference(
+    objectPath,
+    Boolean(profileReference),
+    candidates,
+  );
 }
 
 function maxUploadBytes(contentType: string): number {
@@ -99,44 +139,50 @@ function maxUploadBytes(contentType: string): number {
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
  * Then uploads the file directly to the returned presigned URL.
  */
-router.post("/storage/uploads/request-url", requireAuth, rateLimit({ name: "upload-url", limit: 30, windowSeconds: 60 }), async (req: Request, res: Response) => {
-  const parsed = RequestUploadUrlBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Missing or invalid required fields" });
-    return;
-  }
+router.post(
+  "/storage/uploads/request-url",
+  requireAuth,
+  rateLimit({ name: "upload-url", limit: 30, windowSeconds: 60 }),
+  async (req: Request, res: Response) => {
+    const parsed = RequestUploadUrlBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Missing or invalid required fields" });
+      return;
+    }
 
-  const { name, size, contentType } = parsed.data;
+    const { name, size, contentType } = parsed.data;
 
-  // Images stay capped at 10MB; other files (documents, archives, …) may be
-  // larger so the chat file-transfer flow allows up to 25MB.
-  const isImage = contentType.startsWith("image/");
-  const max = isImage ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
-  if (size > max) {
-    res.status(400).json({
-      error: isImage
-        ? "이미지 크기는 10MB를 초과할 수 없습니다."
-        : "파일 크기는 25MB를 초과할 수 없습니다.",
-    });
-    return;
-  }
+    // Images stay capped at 10MB; other files (documents, archives, …) may be
+    // larger so the chat file-transfer flow allows up to 25MB.
+    const isImage = contentType.startsWith("image/");
+    const max = isImage ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
+    if (size > max) {
+      res.status(400).json({
+        error: isImage
+          ? "이미지 크기는 10MB를 초과할 수 없습니다."
+          : "파일 크기는 25MB를 초과할 수 없습니다.",
+      });
+      return;
+    }
 
-  try {
-    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-    const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+    try {
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath =
+        objectStorageService.normalizeObjectEntityPath(uploadURL);
 
-    res.json(
-      RequestUploadUrlResponse.parse({
-        uploadURL,
-        objectPath,
-        metadata: { name, size, contentType },
-      }),
-    );
-  } catch (error) {
-    req.log.error({ err: error }, "Error generating upload URL");
-    res.status(500).json({ error: "Failed to generate upload URL" });
-  }
-});
+      res.json(
+        RequestUploadUrlResponse.parse({
+          uploadURL,
+          objectPath,
+          metadata: { name, size, contentType },
+        }),
+      );
+    } catch (error) {
+      req.log.error({ err: error }, "Error generating upload URL");
+      res.status(500).json({ error: "Failed to generate upload URL" });
+    }
+  },
+);
 
 /**
  * POST /storage/uploads/object
@@ -183,8 +229,14 @@ router.post(
     }
 
     try {
-      const objectPath = await objectStorageService.uploadObjectEntity(body, contentType);
-      res.json({ objectPath, metadata: { name, size: body.length, contentType } });
+      const objectPath = await objectStorageService.uploadObjectEntity(
+        body,
+        contentType,
+      );
+      res.json({
+        objectPath,
+        metadata: { name, size: body.length, contentType },
+      });
     } catch (error) {
       req.log.error({ err: error }, "Error uploading object via API");
       res.status(500).json({ error: "Failed to upload object" });
@@ -199,32 +251,37 @@ router.post(
  * These are unconditionally public — no authentication or ACL checks.
  * IMPORTANT: Always provide this endpoint when object storage is set up.
  */
-router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
-  try {
-    const raw = req.params.filePath;
-    const filePath = Array.isArray(raw) ? raw.join("/") : raw;
-    const file = await objectStorageService.searchPublicObject(filePath);
-    if (!file) {
-      res.status(404).json({ error: "File not found" });
-      return;
+router.get(
+  "/storage/public-objects/*filePath",
+  async (req: Request, res: Response) => {
+    try {
+      const raw = req.params.filePath;
+      const filePath = Array.isArray(raw) ? raw.join("/") : raw;
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        res.status(404).json({ error: "File not found" });
+        return;
+      }
+
+      const response = await objectStorageService.downloadObject(file);
+
+      res.status(response.status);
+      response.headers.forEach((value, key) => res.setHeader(key, value));
+
+      if (response.body) {
+        const nodeStream = Readable.fromWeb(
+          response.body as ReadableStream<Uint8Array>,
+        );
+        nodeStream.pipe(res);
+      } else {
+        res.end();
+      }
+    } catch (error) {
+      req.log.error({ err: error }, "Error serving public object");
+      res.status(500).json({ error: "Failed to serve public object" });
     }
-
-    const response = await objectStorageService.downloadObject(file);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
-    }
-  } catch (error) {
-    req.log.error({ err: error }, "Error serving public object");
-    res.status(500).json({ error: "Failed to serve public object" });
-  }
-});
+  },
+);
 
 /**
  * GET /storage/objects/*
@@ -233,22 +290,50 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
  * These are served from a separate path from /public-objects and can optionally
  * be protected with authentication or ACL checks based on the use case.
  */
-router.post("/storage/media-url", requireAuth, rateLimit({ name: "media-url", limit: 120, windowSeconds: 60 }), async (req: Request, res: Response) => {
-  const objectPath = typeof req.body?.objectPath === "string" ? req.body.objectPath : "";
-  if (objectPath.length > 1_024 || !objectPath.startsWith("/objects/") || !(await canReadPrivateObject(req.dbUser!.id, objectPath))) {
-    res.status(404).json({ error: "Object not found" });
-    return;
-  }
-  try {
-    const ticket = await issueMediaTicket(req.dbUser!.id, objectPath);
-    const suffix = objectPath.slice("/objects/".length);
-    res.set("Cache-Control", "no-store");
-    res.json({ url: `/api/storage/objects/${suffix}?ticket=${encodeURIComponent(ticket)}` });
-  } catch (error) {
-    req.log.error({ err: error }, "Failed to issue media ticket");
-    res.status(503).json({ error: "Media access is temporarily unavailable" });
-  }
-});
+router.post(
+  "/storage/media-url",
+  requireAuth,
+  rateLimit({ name: "media-url", limit: 120, windowSeconds: 60 }),
+  async (req: Request, res: Response) => {
+    const objectPath =
+      typeof req.body?.objectPath === "string" ? req.body.objectPath : "";
+    if (
+      objectPath.length > 1_024 ||
+      !objectPath.startsWith("/objects/") ||
+      !(await canReadPrivateObject(req.dbUser!.id, objectPath))
+    ) {
+      res.status(404).json({ error: "Object not found" });
+      return;
+    }
+    try {
+      if (
+        (
+          await pool.query("SELECT 1 FROM brand_media WHERE object_path=$1", [
+            objectPath,
+          ])
+        ).rows[0]
+      ) {
+        const url = await objectStorageService.brandVideoReadUrl(objectPath);
+        if (url) {
+          res.set("Cache-Control", "no-store");
+          res.json({ url });
+          return;
+        }
+      }
+      const ticket = await issueMediaTicket(req.dbUser!.id, objectPath);
+      const suffix = objectPath.slice("/objects/".length);
+      res.set("Cache-Control", "no-store");
+      res.json({
+        url: `/api/storage/objects/${suffix}?ticket=${encodeURIComponent(ticket)}`,
+      });
+    } catch (error) {
+      req.log.error({ err: error }, "Failed to issue media ticket");
+      res
+        .status(503)
+        .json({ error: "Media access is temporarily unavailable" });
+    }
+  },
+);
 
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
@@ -260,7 +345,8 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
       res.status(404).json({ error: "Object not found" });
       return;
     }
-    const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+    const objectFile =
+      await objectStorageService.getObjectEntityFile(objectPath);
 
     const response = await objectStorageService.downloadObject(objectFile);
 
@@ -279,7 +365,9 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     }
 
     if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
+      const nodeStream = Readable.fromWeb(
+        response.body as ReadableStream<Uint8Array>,
+      );
       nodeStream.pipe(res);
     } else {
       res.end();

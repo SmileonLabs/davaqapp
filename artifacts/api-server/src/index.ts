@@ -5,6 +5,7 @@ import { attachRealtimeServer } from "./lib/realtime";
 import { startOntologySyncWorker } from "./lib/ontologySync";
 import { startCallLifecycleWorker } from "./routes/calls";
 import { startDavaqAgentWorker } from "./lib/davaqAgent";
+import { startBrandWorker } from "./lib/brandExchange";
 
 const rawPort = process.env["PORT"] ?? "8080";
 
@@ -27,6 +28,7 @@ server.once("error", (err) => {
 startOntologySyncWorker(logger);
 startCallLifecycleWorker(logger);
 startDavaqAgentWorker();
+startBrandWorker();
 
 server.listen(port, () => {
   logger.info({ port }, "Server listening");

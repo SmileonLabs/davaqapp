@@ -35,6 +35,731 @@ tags:
   - name: davaq-agent
     description: Personal agent and consent-scoped memory
 paths:
+  /brand-exchanges:
+    get:
+      operationId: listBrandExchanges
+      tags:
+        - brandExchange
+      summary: listBrandExchanges
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandCampaignPage"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: recommended
+          in: query
+          schema:
+            type: boolean
+  /brand-exchanges/{id}:
+    get:
+      operationId: getBrandExchange
+      tags:
+        - brandExchange
+      summary: getBrandExchange
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandCampaign"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /brand-exchanges/{id}/start:
+    post:
+      operationId: startBrandExchange
+      tags:
+        - brandExchange
+      summary: startBrandExchange
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandParticipation"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandRequestKey"
+  /brand-exchanges/participations:
+    get:
+      operationId: listBrandParticipations
+      tags:
+        - brandExchange
+      summary: listBrandParticipations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandParticipationPage"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+  /brand-exchanges/participations/{id}:
+    get:
+      operationId: getBrandParticipation
+      tags:
+        - brandExchange
+      summary: getBrandParticipation
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandParticipation"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /brand-exchanges/participations/{id}/lease:
+    post:
+      operationId: leaseBrandParticipation
+      tags:
+        - brandExchange
+      summary: leaseBrandParticipation
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandLease"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /brand-exchanges/participations/{id}/events:
+    post:
+      operationId: submitBrandEvent
+      tags:
+        - brandExchange
+      summary: submitBrandEvent
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandParticipation"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandEvent"
+  /brand-preferences:
+    get:
+      operationId: getBrandPreferences
+      tags:
+        - brandExchange
+      summary: getBrandPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandPreferences"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+    patch:
+      operationId: updateBrandPreferences
+      tags:
+        - brandExchange
+      summary: updateBrandPreferences
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandPreferences"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandPreferences"
+  /brand-rewards:
+    get:
+      operationId: listBrandRewards
+      tags:
+        - brandExchange
+      summary: listBrandRewards
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandRewardPage"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+  /brand-rewards/{id}:
+    get:
+      operationId: getBrandReward
+      tags:
+        - brandExchange
+      summary: getBrandReward
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandReward"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /brand-rewards/{id}/reveal:
+    post:
+      operationId: revealBrandReward
+      tags:
+        - brandExchange
+      summary: revealBrandReward
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandCode"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+  /brand-rewards/{id}/actions:
+    post:
+      operationId: actOnBrandReward
+      tags:
+        - brandExchange
+      summary: actOnBrandReward
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandOk"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandRewardAction"
+  /brand-admin:
+    get:
+      operationId: getBrandAdmin
+      tags:
+        - brandExchange
+      summary: getBrandAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandAdmin"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+  /brand-admin/uploads:
+    post:
+      operationId: uploadBrandVideo
+      tags:
+        - brandExchange
+      summary: uploadBrandVideo
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandUpload"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      requestBody:
+        required: true
+        content:
+          video/mp4:
+            schema:
+              type: string
+              format: binary
+  /brand-admin/campaigns:
+    post:
+      operationId: createBrandCampaign
+      tags:
+        - brandExchange
+      summary: createBrandCampaign
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandId"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandCampaignCreate"
+  /brand-admin/campaigns/{id}/inventory:
+    post:
+      operationId: importBrandInventory
+      tags:
+        - brandExchange
+      summary: importBrandInventory
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandAdded"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandInventoryInput"
+  /brand-admin/campaigns/{id}/actions:
+    post:
+      operationId: actOnBrandCampaign
+      tags:
+        - brandExchange
+      summary: actOnBrandCampaign
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandOk"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandCampaignAction"
+  /brand-admin/rewards/{id}/resolve:
+    post:
+      operationId: resolveBrandReward
+      tags:
+        - brandExchange
+      summary: resolveBrandReward
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandOk"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+        "409":
+          description: State conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandError"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandRewardResolve"
   /exchange/listings:
     get:
       operationId: davaqListListings
@@ -11005,3 +11730,589 @@ components:
         followerCount: { type: integer }
         followingCount: { type: integer }
         followedStarIds: { type: array, items: { type: string, format: uuid } }
+
+    BrandConfig:
+      type: object
+      properties:
+        title:
+          type: string
+        brand:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+            - food
+            - culture
+            - learning
+            - life
+        rewardType:
+          type: string
+          enum:
+            - coupon
+            - product
+            - experience
+        rewardTitle:
+          type: string
+        terms:
+          type: string
+        extraCost:
+          type: string
+        support:
+          type: string
+        region:
+          type: string
+        online:
+          type: boolean
+        endsAt:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          enum:
+            - 30
+        cost:
+          type: integer
+        videoA:
+          type: string
+        videoB:
+          type: string
+        rightsConfirmed:
+          type: boolean
+          enum:
+            - true
+        fundingConfirmed:
+          type: boolean
+          enum:
+            - true
+      required:
+        - title
+        - brand
+        - description
+        - category
+        - rewardType
+        - rewardTitle
+        - terms
+        - extraCost
+        - support
+        - region
+        - online
+        - endsAt
+        - duration
+        - cost
+        - videoA
+        - videoB
+        - rightsConfirmed
+        - fundingConfirmed
+    BrandDifference:
+      type: object
+      properties:
+        start:
+          type: number
+        end:
+          type: number
+        x:
+          type: number
+        y:
+          type: number
+        w:
+          type: number
+        h:
+          type: number
+      required:
+        - start
+        - end
+        - x
+        - y
+        - w
+        - h
+    BrandCampaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        versionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        title:
+          type: string
+        brand:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+            - food
+            - culture
+            - learning
+            - life
+        rewardType:
+          type: string
+          enum:
+            - coupon
+            - product
+            - experience
+        rewardTitle:
+          type: string
+        terms:
+          type: string
+        extraCost:
+          type: string
+        support:
+          type: string
+        region:
+          type: string
+        online:
+          type: boolean
+        endsAt:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          enum:
+            - 30
+        differences:
+          type: integer
+        available:
+          type: integer
+        participationId:
+          type: string
+          nullable: true
+        participationStatus:
+          type: string
+          nullable: true
+        reason:
+          type: string
+        canStart:
+          type: boolean
+      required:
+        - id
+        - title
+        - brand
+        - rewardTitle
+        - duration
+        - differences
+        - available
+        - status
+    BrandCampaignPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandCampaign"
+        enabled:
+          type: boolean
+      required:
+        - items
+        - enabled
+    BrandParticipation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        campaignId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - held
+            - playing
+            - paused
+            - succeeded
+            - failed
+            - abandoned
+            - expired
+        attempt:
+          type: integer
+        sequence:
+          type: integer
+        progress:
+          type: number
+        found:
+          type: integer
+        clicks:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
+        claimId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        rewardTitle:
+          type: string
+        videoA:
+          type: string
+        videoB:
+          type: string
+        duration:
+          type: number
+        differences:
+          type: integer
+        notice:
+          type: string
+      required:
+        - id
+        - campaignId
+        - status
+        - attempt
+        - sequence
+        - progress
+        - found
+        - clicks
+        - expiresAt
+    BrandParticipationPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandParticipation"
+      required:
+        - items
+    BrandLease:
+      type: object
+      properties:
+        participation:
+          $ref: "#/components/schemas/BrandParticipation"
+        lease:
+          type: string
+          nullable: true
+      required:
+        - participation
+        - lease
+    BrandEvent:
+      type: object
+      properties:
+        requestKey:
+          type: string
+          format: uuid
+        lease:
+          type: string
+        sequence:
+          type: integer
+        action:
+          type: string
+          enum:
+            - play
+            - tick
+            - pause
+            - answer
+            - finish
+            - retry
+            - abandon
+            - keepalive
+        position:
+          type: number
+        positionB:
+          type: number
+        x:
+          type: number
+        y:
+          type: number
+      required:
+        - requestKey
+        - lease
+        - sequence
+        - action
+        - position
+        - positionB
+    BrandReward:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - issued
+            - needs_reconciliation
+        participationId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        brand:
+          type: string
+        terms:
+          type: string
+        extraCost:
+          type: string
+        support:
+          type: string
+        validUntil:
+          type: string
+          format: date-time
+        issuedAt:
+          type: string
+          nullable: true
+        selfUsedAt:
+          type: string
+          nullable: true
+        issue:
+          type: string
+        resolution:
+          type: string
+      required:
+        - id
+        - status
+        - participationId
+        - title
+        - brand
+        - terms
+        - extraCost
+        - support
+        - validUntil
+        - issuedAt
+        - selfUsedAt
+        - issue
+        - resolution
+    BrandRewardPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandReward"
+      required:
+        - items
+    BrandPreferences:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+        region:
+          type: string
+        personalized:
+          type: boolean
+        version:
+          type: integer
+        discoveries:
+          type: integer
+      required:
+        - categories
+        - region
+        - personalized
+        - version
+    BrandCampaignCreate:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/BrandConfig"
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandDifference"
+        budget:
+          type: integer
+        requestKey:
+          type: string
+          format: uuid
+      required:
+        - config
+        - answers
+        - budget
+        - requestKey
+    BrandInventoryInput:
+      type: object
+      properties:
+        codes:
+          type: array
+          items:
+            type: string
+        validUntil:
+          type: string
+          format: date-time
+      required:
+        - codes
+        - validUntil
+    BrandCampaignAction:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - published
+            - paused
+            - ended
+        reason:
+          type: string
+        budget:
+          type: integer
+      required:
+        - status
+        - reason
+    BrandRewardAction:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - used
+            - unused
+            - issue
+        note:
+          type: string
+      required:
+        - action
+    BrandRewardResolve:
+      type: object
+      properties:
+        reason:
+          type: string
+        retry:
+          type: boolean
+      required:
+        - reason
+    BrandAdminCampaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        title:
+          type: string
+        brand:
+          type: string
+        budget:
+          type: integer
+        held:
+          type: integer
+        spent:
+          type: integer
+        available:
+          type: integer
+        starts:
+          type: integer
+        completed_playbacks:
+          type: integer
+        retries:
+          type: integer
+        successes:
+          type: integer
+        issued:
+          type: integer
+        self_reported_used:
+          type: integer
+      required:
+        - id
+        - status
+        - title
+        - brand
+        - budget
+        - held
+        - spent
+        - available
+        - starts
+        - completed_playbacks
+        - retries
+        - successes
+        - issued
+        - self_reported_used
+    BrandAdminIssue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        issue:
+          type: string
+        resolution:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        title:
+          type: string
+      required:
+        - id
+        - status
+        - issue
+        - resolution
+        - created_at
+        - title
+    BrandAdmin:
+      type: object
+      properties:
+        canManage:
+          type: boolean
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandAdminCampaign"
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrandAdminIssue"
+      required:
+        - canManage
+        - campaigns
+        - issues
+    BrandRequestKey:
+      type: object
+      properties:
+        requestKey:
+          type: string
+          format: uuid
+      required:
+        - requestKey
+    BrandId:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+    BrandAdded:
+      type: object
+      properties:
+        added:
+          type: integer
+      required:
+        - added
+    BrandCode:
+      type: object
+      properties:
+        code:
+          type: string
+      required:
+        - code
+    BrandOk:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+    BrandError:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    BrandUpload:
+      type: object
+      properties:
+        objectPath:
+          type: string
+      required:
+        - objectPath

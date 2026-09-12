@@ -3,6 +3,7 @@ import { getOpenAI } from "./aiClient";
 import { z } from "zod/v4";
 import { findMatches, transaction, proposalMessage } from "./exchangeService";
 import { logger } from "./logger";
+import { listBrandExchanges } from "./brandExchange";
 export async function settingsFor(userId: string) {
   await pool.query(
     "INSERT INTO agent_settings(user_id) VALUES($1) ON CONFLICT DO NOTHING",
@@ -29,6 +30,25 @@ export async function agentReply(
   text: string,
   useHistory = true,
 ) {
+  if (/쿠폰|브랜드.*교환|1분.*바꾸|광고.*혜택|리워드/.test(text)) {
+    const settings = await settingsFor(userId),
+      result = await listBrandExchanges(userId, true);
+    const reply = result.items.length
+      ? "지금 참여 가능한 브랜드 교환을 찾았어요.\n" +
+        result.items
+          .map(
+            (c: any) =>
+              "• " + c.brand + " — " + c.rewardTitle + " · " + c.reason,
+          )
+          .join("\n") +
+        "\n‘내 1분 바꾸기’에서 사용 조건을 확인하고 직접 참여해 주세요. 두 영상을 동시에 30초 동안 보고 차이를 모두 찾는 방식이에요."
+      : "아직 추천할 수 있는 브랜드 혜택이 없어요. 실제 보상이 확보된 교환만 소개할게요. ‘큐의 혜택 취향’에서 관심 분야를 골라둘 수 있어요.";
+    return {
+      data: { reply, memory: null },
+      consentVersion: settings.consent_version,
+      chatLearning: false,
+    };
+  }
   const settings = await settingsFor(userId),
     memories = await confirmedMemories(userId),
     matches = await findMatches(userId);

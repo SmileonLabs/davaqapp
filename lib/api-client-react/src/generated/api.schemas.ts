@@ -3445,6 +3445,328 @@ export interface PublicProfile {
   followedStarIds?: string[];
 }
 
+export type BrandConfigCategory = typeof BrandConfigCategory[keyof typeof BrandConfigCategory];
+
+
+export const BrandConfigCategory = {
+  food: 'food',
+  culture: 'culture',
+  learning: 'learning',
+  life: 'life',
+} as const;
+
+export type BrandConfigRewardType = typeof BrandConfigRewardType[keyof typeof BrandConfigRewardType];
+
+
+export const BrandConfigRewardType = {
+  coupon: 'coupon',
+  product: 'product',
+  experience: 'experience',
+} as const;
+
+export type BrandConfigDuration = typeof BrandConfigDuration[keyof typeof BrandConfigDuration];
+
+
+export const BrandConfigDuration = {
+  NUMBER_30: 30,
+} as const;
+
+export interface BrandConfig {
+  title: string;
+  brand: string;
+  description: string;
+  category: BrandConfigCategory;
+  rewardType: BrandConfigRewardType;
+  rewardTitle: string;
+  terms: string;
+  extraCost: string;
+  support: string;
+  region: string;
+  online: boolean;
+  endsAt: string;
+  duration: BrandConfigDuration;
+  cost: number;
+  videoA: string;
+  videoB: string;
+  rightsConfirmed: true;
+  fundingConfirmed: true;
+}
+
+export interface BrandDifference {
+  start: number;
+  end: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export type BrandCampaignCategory = typeof BrandCampaignCategory[keyof typeof BrandCampaignCategory];
+
+
+export const BrandCampaignCategory = {
+  food: 'food',
+  culture: 'culture',
+  learning: 'learning',
+  life: 'life',
+} as const;
+
+export type BrandCampaignRewardType = typeof BrandCampaignRewardType[keyof typeof BrandCampaignRewardType];
+
+
+export const BrandCampaignRewardType = {
+  coupon: 'coupon',
+  product: 'product',
+  experience: 'experience',
+} as const;
+
+export type BrandCampaignDuration = typeof BrandCampaignDuration[keyof typeof BrandCampaignDuration];
+
+
+export const BrandCampaignDuration = {
+  NUMBER_30: 30,
+} as const;
+
+export interface BrandCampaign {
+  id: string;
+  versionId?: string;
+  status: string;
+  title: string;
+  brand: string;
+  description?: string;
+  category?: BrandCampaignCategory;
+  rewardType?: BrandCampaignRewardType;
+  rewardTitle: string;
+  terms?: string;
+  extraCost?: string;
+  support?: string;
+  region?: string;
+  online?: boolean;
+  endsAt?: string;
+  duration: BrandCampaignDuration;
+  differences: number;
+  available: number;
+  participationId?: string | null;
+  participationStatus?: string | null;
+  reason?: string;
+  canStart?: boolean;
+}
+
+export interface BrandCampaignPage {
+  items: BrandCampaign[];
+  enabled: boolean;
+}
+
+export type BrandParticipationStatus = typeof BrandParticipationStatus[keyof typeof BrandParticipationStatus];
+
+
+export const BrandParticipationStatus = {
+  held: 'held',
+  playing: 'playing',
+  paused: 'paused',
+  succeeded: 'succeeded',
+  failed: 'failed',
+  abandoned: 'abandoned',
+  expired: 'expired',
+} as const;
+
+export interface BrandParticipation {
+  id: string;
+  campaignId: string;
+  status: BrandParticipationStatus;
+  attempt: number;
+  sequence: number;
+  progress: number;
+  found: number;
+  clicks: number;
+  expiresAt: string;
+  claimId?: string | null;
+  title?: string;
+  rewardTitle?: string;
+  videoA?: string;
+  videoB?: string;
+  duration?: number;
+  differences?: number;
+  notice?: string;
+}
+
+export interface BrandParticipationPage {
+  items: BrandParticipation[];
+}
+
+export interface BrandLease {
+  participation: BrandParticipation;
+  lease: string | null;
+}
+
+export type BrandEventAction = typeof BrandEventAction[keyof typeof BrandEventAction];
+
+
+export const BrandEventAction = {
+  play: 'play',
+  tick: 'tick',
+  pause: 'pause',
+  answer: 'answer',
+  finish: 'finish',
+  retry: 'retry',
+  abandon: 'abandon',
+  keepalive: 'keepalive',
+} as const;
+
+export interface BrandEvent {
+  requestKey: string;
+  lease: string;
+  sequence: number;
+  action: BrandEventAction;
+  position: number;
+  positionB: number;
+  x?: number;
+  y?: number;
+}
+
+export type BrandRewardStatus = typeof BrandRewardStatus[keyof typeof BrandRewardStatus];
+
+
+export const BrandRewardStatus = {
+  pending: 'pending',
+  issued: 'issued',
+  needs_reconciliation: 'needs_reconciliation',
+} as const;
+
+export interface BrandReward {
+  id: string;
+  status: BrandRewardStatus;
+  participationId: string;
+  title: string;
+  brand: string;
+  terms: string;
+  extraCost: string;
+  support: string;
+  validUntil: string;
+  issuedAt: string | null;
+  selfUsedAt: string | null;
+  issue: string;
+  resolution: string;
+}
+
+export interface BrandRewardPage {
+  items: BrandReward[];
+}
+
+export interface BrandPreferences {
+  categories: string[];
+  region: string;
+  personalized: boolean;
+  version: number;
+  discoveries?: number;
+}
+
+export interface BrandCampaignCreate {
+  config: BrandConfig;
+  answers: BrandDifference[];
+  budget: number;
+  requestKey: string;
+}
+
+export interface BrandInventoryInput {
+  codes: string[];
+  validUntil: string;
+}
+
+export type BrandCampaignActionStatus = typeof BrandCampaignActionStatus[keyof typeof BrandCampaignActionStatus];
+
+
+export const BrandCampaignActionStatus = {
+  published: 'published',
+  paused: 'paused',
+  ended: 'ended',
+} as const;
+
+export interface BrandCampaignAction {
+  status: BrandCampaignActionStatus;
+  reason: string;
+  budget?: number;
+}
+
+export type BrandRewardActionAction = typeof BrandRewardActionAction[keyof typeof BrandRewardActionAction];
+
+
+export const BrandRewardActionAction = {
+  used: 'used',
+  unused: 'unused',
+  issue: 'issue',
+} as const;
+
+export interface BrandRewardAction {
+  action: BrandRewardActionAction;
+  note?: string;
+}
+
+export interface BrandRewardResolve {
+  reason: string;
+  retry?: boolean;
+}
+
+export interface BrandAdminCampaign {
+  id: string;
+  status: string;
+  title: string;
+  brand: string;
+  budget: number;
+  held: number;
+  spent: number;
+  available: number;
+  starts: number;
+  completed_playbacks: number;
+  retries: number;
+  successes: number;
+  issued: number;
+  self_reported_used: number;
+}
+
+export interface BrandAdminIssue {
+  id: string;
+  status: string;
+  issue: string;
+  resolution: string;
+  created_at: string;
+  title: string;
+}
+
+export interface BrandAdmin {
+  canManage: boolean;
+  campaigns: BrandAdminCampaign[];
+  issues: BrandAdminIssue[];
+}
+
+export interface BrandRequestKey {
+  requestKey: string;
+}
+
+export interface BrandId {
+  id: string;
+}
+
+export interface BrandAdded {
+  added: number;
+}
+
+export interface BrandCode {
+  code: string;
+}
+
+export interface BrandOk {
+  ok: boolean;
+}
+
+export interface BrandError {
+  message: string;
+}
+
+export interface BrandUpload {
+  objectPath: string;
+}
+
 /**
  * UUID shared by every stage of one client call attempt.
  */
@@ -3454,6 +3776,10 @@ export type CallAttemptIdParameter = string;
  * UUID that makes a terminal call-control operation replay-safe.
  */
 export type CallOperationIdParameter = string;
+
+export type ListBrandExchangesParams = {
+recommended?: boolean;
+};
 
 export type DavaqListListingsParams = {
 q?: string;

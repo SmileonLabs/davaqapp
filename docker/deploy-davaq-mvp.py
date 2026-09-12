@@ -3,7 +3,7 @@
 Archives must be staged in /tmp: davaq-api-<revision>.tar.gz and davaq-web-<revision>.tar.gz.
 No AnotherMe container, proxy configuration, volume or database is modified.
 """
-import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, tarfile, time, tempfile, atexit
+import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, tarfile, time, tempfile, atexit, secrets
 from urllib.parse import urlparse, unquote, parse_qsl, urlencode
 p=argparse.ArgumentParser()
 p.add_argument("--revision",required=True)
@@ -22,6 +22,16 @@ url=urlparse(env.get("DATABASE_URL",""))
 if url.path!="/davaq" or unquote(url.username or "")!="davaq": raise RuntimeError("Refusing a non-DavaQ database")
 base_image=env.get("API_IMAGE","")
 if not re.fullmatch(r"localhost:5000/davaq-api@sha256:[0-9a-f]{64}",base_image): raise RuntimeError("Unexpected base image")
+# Provision the dedicated reward key before capturing rollback/backups; never print it.
+# Existing operator flags are preserved on subsequent releases.
+brand_defaults={"BRAND_REWARD_ENCRYPTION_KEY":secrets.token_hex(32),"BRAND_EXCHANGE_ENABLED":"true","BRAND_EXCHANGE_STARTS_ENABLED":"true","BRAND_EXCHANGE_Q_ENABLED":"true"}
+added=[]
+for key,value in brand_defaults.items():
+ if key not in env:env[key]=value;added.append(key+"="+json.dumps(value))
+if not re.fullmatch(r"[0-9a-fA-F]{64}",env["BRAND_REWARD_ENCRYPTION_KEY"]):raise RuntimeError("Invalid dedicated brand encryption key")
+if added:
+ original=original.rstrip()+"\n"+"\n".join(added)+"\n"
+ env_path.write_text(original);os.chmod(env_path,0o600)
 compose=["docker","compose","-f",str(root/"docker-compose.server.yml")]
 # node-postgres uses an option that libpq does not accept; retain the original API URL.
 env["DAVAQ_BACKUP_DATABASE_URL"]=url._replace(query=urlencode([(k,v) for k,v in parse_qsl(url.query) if k!="uselibpqcompat"])).geturl()

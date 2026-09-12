@@ -9,6 +9,459 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary listBrandExchanges
+ */
+export const ListBrandExchangesQueryParams = zod.object({
+  "recommended": zod.coerce.boolean().optional()
+})
+
+export const ListBrandExchangesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "versionId": zod.string().uuid().optional(),
+  "status": zod.string(),
+  "title": zod.string(),
+  "brand": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.enum(['food', 'culture', 'learning', 'life']).optional(),
+  "rewardType": zod.enum(['coupon', 'product', 'experience']).optional(),
+  "rewardTitle": zod.string(),
+  "terms": zod.string().optional(),
+  "extraCost": zod.string().optional(),
+  "support": zod.string().optional(),
+  "region": zod.string().optional(),
+  "online": zod.boolean().optional(),
+  "endsAt": zod.coerce.date().optional(),
+  "duration": zod.literal(30),
+  "differences": zod.number(),
+  "available": zod.number(),
+  "participationId": zod.string().nullish(),
+  "participationStatus": zod.string().nullish(),
+  "reason": zod.string().optional(),
+  "canStart": zod.boolean().optional()
+})),
+  "enabled": zod.boolean()
+})
+
+
+/**
+ * @summary getBrandExchange
+ */
+export const GetBrandExchangeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetBrandExchangeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "versionId": zod.string().uuid().optional(),
+  "status": zod.string(),
+  "title": zod.string(),
+  "brand": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.enum(['food', 'culture', 'learning', 'life']).optional(),
+  "rewardType": zod.enum(['coupon', 'product', 'experience']).optional(),
+  "rewardTitle": zod.string(),
+  "terms": zod.string().optional(),
+  "extraCost": zod.string().optional(),
+  "support": zod.string().optional(),
+  "region": zod.string().optional(),
+  "online": zod.boolean().optional(),
+  "endsAt": zod.coerce.date().optional(),
+  "duration": zod.literal(30),
+  "differences": zod.number(),
+  "available": zod.number(),
+  "participationId": zod.string().nullish(),
+  "participationStatus": zod.string().nullish(),
+  "reason": zod.string().optional(),
+  "canStart": zod.boolean().optional()
+})
+
+
+/**
+ * @summary startBrandExchange
+ */
+export const StartBrandExchangeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const StartBrandExchangeBody = zod.object({
+  "requestKey": zod.string().uuid()
+})
+
+export const StartBrandExchangeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "campaignId": zod.string().uuid(),
+  "status": zod.enum(['held', 'playing', 'paused', 'succeeded', 'failed', 'abandoned', 'expired']),
+  "attempt": zod.number(),
+  "sequence": zod.number(),
+  "progress": zod.number(),
+  "found": zod.number(),
+  "clicks": zod.number(),
+  "expiresAt": zod.coerce.date(),
+  "claimId": zod.string().nullish(),
+  "title": zod.string().optional(),
+  "rewardTitle": zod.string().optional(),
+  "videoA": zod.string().optional(),
+  "videoB": zod.string().optional(),
+  "duration": zod.number().optional(),
+  "differences": zod.number().optional(),
+  "notice": zod.string().optional()
+})
+
+
+/**
+ * @summary listBrandParticipations
+ */
+export const ListBrandParticipationsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "campaignId": zod.string().uuid(),
+  "status": zod.enum(['held', 'playing', 'paused', 'succeeded', 'failed', 'abandoned', 'expired']),
+  "attempt": zod.number(),
+  "sequence": zod.number(),
+  "progress": zod.number(),
+  "found": zod.number(),
+  "clicks": zod.number(),
+  "expiresAt": zod.coerce.date(),
+  "claimId": zod.string().nullish(),
+  "title": zod.string().optional(),
+  "rewardTitle": zod.string().optional(),
+  "videoA": zod.string().optional(),
+  "videoB": zod.string().optional(),
+  "duration": zod.number().optional(),
+  "differences": zod.number().optional(),
+  "notice": zod.string().optional()
+}))
+})
+
+
+/**
+ * @summary getBrandParticipation
+ */
+export const GetBrandParticipationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetBrandParticipationResponse = zod.object({
+  "id": zod.string().uuid(),
+  "campaignId": zod.string().uuid(),
+  "status": zod.enum(['held', 'playing', 'paused', 'succeeded', 'failed', 'abandoned', 'expired']),
+  "attempt": zod.number(),
+  "sequence": zod.number(),
+  "progress": zod.number(),
+  "found": zod.number(),
+  "clicks": zod.number(),
+  "expiresAt": zod.coerce.date(),
+  "claimId": zod.string().nullish(),
+  "title": zod.string().optional(),
+  "rewardTitle": zod.string().optional(),
+  "videoA": zod.string().optional(),
+  "videoB": zod.string().optional(),
+  "duration": zod.number().optional(),
+  "differences": zod.number().optional(),
+  "notice": zod.string().optional()
+})
+
+
+/**
+ * @summary leaseBrandParticipation
+ */
+export const LeaseBrandParticipationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const LeaseBrandParticipationResponse = zod.object({
+  "participation": zod.object({
+  "id": zod.string().uuid(),
+  "campaignId": zod.string().uuid(),
+  "status": zod.enum(['held', 'playing', 'paused', 'succeeded', 'failed', 'abandoned', 'expired']),
+  "attempt": zod.number(),
+  "sequence": zod.number(),
+  "progress": zod.number(),
+  "found": zod.number(),
+  "clicks": zod.number(),
+  "expiresAt": zod.coerce.date(),
+  "claimId": zod.string().nullish(),
+  "title": zod.string().optional(),
+  "rewardTitle": zod.string().optional(),
+  "videoA": zod.string().optional(),
+  "videoB": zod.string().optional(),
+  "duration": zod.number().optional(),
+  "differences": zod.number().optional(),
+  "notice": zod.string().optional()
+}),
+  "lease": zod.string().nullable()
+})
+
+
+/**
+ * @summary submitBrandEvent
+ */
+export const SubmitBrandEventParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const SubmitBrandEventBody = zod.object({
+  "requestKey": zod.string().uuid(),
+  "lease": zod.string(),
+  "sequence": zod.number(),
+  "action": zod.enum(['play', 'tick', 'pause', 'answer', 'finish', 'retry', 'abandon', 'keepalive']),
+  "position": zod.number(),
+  "positionB": zod.number(),
+  "x": zod.number().optional(),
+  "y": zod.number().optional()
+})
+
+export const SubmitBrandEventResponse = zod.object({
+  "id": zod.string().uuid(),
+  "campaignId": zod.string().uuid(),
+  "status": zod.enum(['held', 'playing', 'paused', 'succeeded', 'failed', 'abandoned', 'expired']),
+  "attempt": zod.number(),
+  "sequence": zod.number(),
+  "progress": zod.number(),
+  "found": zod.number(),
+  "clicks": zod.number(),
+  "expiresAt": zod.coerce.date(),
+  "claimId": zod.string().nullish(),
+  "title": zod.string().optional(),
+  "rewardTitle": zod.string().optional(),
+  "videoA": zod.string().optional(),
+  "videoB": zod.string().optional(),
+  "duration": zod.number().optional(),
+  "differences": zod.number().optional(),
+  "notice": zod.string().optional()
+})
+
+
+/**
+ * @summary getBrandPreferences
+ */
+export const GetBrandPreferencesResponse = zod.object({
+  "categories": zod.array(zod.string()),
+  "region": zod.string(),
+  "personalized": zod.boolean(),
+  "version": zod.number(),
+  "discoveries": zod.number().optional()
+})
+
+
+/**
+ * @summary updateBrandPreferences
+ */
+export const UpdateBrandPreferencesBody = zod.object({
+  "categories": zod.array(zod.string()),
+  "region": zod.string(),
+  "personalized": zod.boolean(),
+  "version": zod.number(),
+  "discoveries": zod.number().optional()
+})
+
+export const UpdateBrandPreferencesResponse = zod.object({
+  "categories": zod.array(zod.string()),
+  "region": zod.string(),
+  "personalized": zod.boolean(),
+  "version": zod.number(),
+  "discoveries": zod.number().optional()
+})
+
+
+/**
+ * @summary listBrandRewards
+ */
+export const ListBrandRewardsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['pending', 'issued', 'needs_reconciliation']),
+  "participationId": zod.string().uuid(),
+  "title": zod.string(),
+  "brand": zod.string(),
+  "terms": zod.string(),
+  "extraCost": zod.string(),
+  "support": zod.string(),
+  "validUntil": zod.coerce.date(),
+  "issuedAt": zod.string().nullable(),
+  "selfUsedAt": zod.string().nullable(),
+  "issue": zod.string(),
+  "resolution": zod.string()
+}))
+})
+
+
+/**
+ * @summary getBrandReward
+ */
+export const GetBrandRewardParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetBrandRewardResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['pending', 'issued', 'needs_reconciliation']),
+  "participationId": zod.string().uuid(),
+  "title": zod.string(),
+  "brand": zod.string(),
+  "terms": zod.string(),
+  "extraCost": zod.string(),
+  "support": zod.string(),
+  "validUntil": zod.coerce.date(),
+  "issuedAt": zod.string().nullable(),
+  "selfUsedAt": zod.string().nullable(),
+  "issue": zod.string(),
+  "resolution": zod.string()
+})
+
+
+/**
+ * @summary revealBrandReward
+ */
+export const RevealBrandRewardParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RevealBrandRewardResponse = zod.object({
+  "code": zod.string()
+})
+
+
+/**
+ * @summary actOnBrandReward
+ */
+export const ActOnBrandRewardParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ActOnBrandRewardBody = zod.object({
+  "action": zod.enum(['used', 'unused', 'issue']),
+  "note": zod.string().optional()
+})
+
+export const ActOnBrandRewardResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary getBrandAdmin
+ */
+export const GetBrandAdminResponse = zod.object({
+  "canManage": zod.boolean(),
+  "campaigns": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.string(),
+  "title": zod.string(),
+  "brand": zod.string(),
+  "budget": zod.number(),
+  "held": zod.number(),
+  "spent": zod.number(),
+  "available": zod.number(),
+  "starts": zod.number(),
+  "completed_playbacks": zod.number(),
+  "retries": zod.number(),
+  "successes": zod.number(),
+  "issued": zod.number(),
+  "self_reported_used": zod.number()
+})),
+  "issues": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.string(),
+  "issue": zod.string(),
+  "resolution": zod.string(),
+  "created_at": zod.coerce.date(),
+  "title": zod.string()
+}))
+})
+
+
+/**
+ * @summary createBrandCampaign
+ */
+export const CreateBrandCampaignBody = zod.object({
+  "config": zod.object({
+  "title": zod.string(),
+  "brand": zod.string(),
+  "description": zod.string(),
+  "category": zod.enum(['food', 'culture', 'learning', 'life']),
+  "rewardType": zod.enum(['coupon', 'product', 'experience']),
+  "rewardTitle": zod.string(),
+  "terms": zod.string(),
+  "extraCost": zod.string(),
+  "support": zod.string(),
+  "region": zod.string(),
+  "online": zod.boolean(),
+  "endsAt": zod.coerce.date(),
+  "duration": zod.literal(30),
+  "cost": zod.number(),
+  "videoA": zod.string(),
+  "videoB": zod.string(),
+  "rightsConfirmed": zod.literal(true),
+  "fundingConfirmed": zod.literal(true)
+}),
+  "answers": zod.array(zod.object({
+  "start": zod.number(),
+  "end": zod.number(),
+  "x": zod.number(),
+  "y": zod.number(),
+  "w": zod.number(),
+  "h": zod.number()
+})),
+  "budget": zod.number(),
+  "requestKey": zod.string().uuid()
+})
+
+
+/**
+ * @summary importBrandInventory
+ */
+export const ImportBrandInventoryParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ImportBrandInventoryBody = zod.object({
+  "codes": zod.array(zod.string()),
+  "validUntil": zod.coerce.date()
+})
+
+export const ImportBrandInventoryResponse = zod.object({
+  "added": zod.number()
+})
+
+
+/**
+ * @summary actOnBrandCampaign
+ */
+export const ActOnBrandCampaignParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ActOnBrandCampaignBody = zod.object({
+  "status": zod.enum(['published', 'paused', 'ended']),
+  "reason": zod.string(),
+  "budget": zod.number().optional()
+})
+
+export const ActOnBrandCampaignResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary resolveBrandReward
+ */
+export const ResolveBrandRewardParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const ResolveBrandRewardBody = zod.object({
+  "reason": zod.string(),
+  "retry": zod.boolean().optional()
+})
+
+export const ResolveBrandRewardResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary ListListings
  */
 export const davaqListListingsQueryOffsetMin = 0;

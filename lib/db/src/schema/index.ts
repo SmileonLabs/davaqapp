@@ -34,3 +34,4 @@ export * from "./adminAudit";
 export * from "./adminRoles";
 export * from "./characterProfiles";
 export * from "./exchange";
+export * from "./brandExchange";

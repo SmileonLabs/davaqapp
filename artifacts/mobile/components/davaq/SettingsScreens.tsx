@@ -82,6 +82,13 @@ export function SettingsScreen() {
       {admin.data?.isAdmin && (
         <Button
           secondary
+          label="브랜드 교환 운영"
+          onPress={() => router.push("/brand-admin" as any)}
+        />
+      )}
+      {admin.data?.isAdmin && (
+        <Button
+          secondary
           label="DavaQ 운영 검토"
           onPress={() => router.push("/exchange/admin")}
         />

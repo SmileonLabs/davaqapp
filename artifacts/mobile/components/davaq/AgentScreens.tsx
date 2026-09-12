@@ -122,6 +122,13 @@ export function AgentChatScreen() {
           flexGrow: 1,
         }}
       >
+        <Button
+          small
+          secondary
+          icon="gift"
+          label="큐가 찾은 브랜드 혜택 보기"
+          onPress={() => router.push("/brand-exchanges" as any)}
+        />
         <QueryState query={query} />
         {query.isSuccess && !query.data?.items.length && (
           <View style={{ alignItems: "center", paddingVertical: 25, gap: 15 }}>

@@ -33,6 +33,8 @@ import {
   Icon,
 } from "./UI";
 
+import { BrandHomeSection } from "./BrandExchangeScreens";
+
 export function HomeScreen() {
   const router = useRouter(),
     matches = useDavaq<Page<Match>>("/exchange/matches"),
@@ -117,6 +119,7 @@ export function HomeScreen() {
           onPress={() => router.push("/exchange/new?mode=want")}
         />
       </View>
+      <BrandHomeSection />
       <Section
         title="나에게 맞는 교환"
         action="더보기"
@@ -206,6 +209,12 @@ export function DiscoverScreen() {
         />
       }
     >
+      <Button
+        secondary
+        icon="gift"
+        label="내 1분으로 브랜드 혜택 바꾸기"
+        onPress={() => router.push("/brand-exchanges" as any)}
+      />
       <View style={S.row}>
         <View style={{ flex: 1 }}>
           <Field
@@ -435,6 +444,12 @@ export function AgentScreen() {
         label="큐와 이야기하기"
         icon="message-circle"
         onPress={() => router.push("/agent/chat")}
+      />
+      <Button
+        secondary
+        icon="gift"
+        label="큐의 혜택 취향·발견 기록"
+        onPress={() => router.push("/brand-preferences" as any)}
       />
       <Section
         title="새로 알게 된 취향"
@@ -686,6 +701,12 @@ export function MyExchangesScreen() {
           />
         ))}
       </View>
+      <Button
+        secondary
+        icon="gift"
+        label="받은 혜택 · 브랜드 교환 기록"
+        onPress={() => router.push("/brand-rewards" as any)}
+      />
       {tab === "listings" ? (
         <>
           <Button

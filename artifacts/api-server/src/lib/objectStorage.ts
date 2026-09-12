@@ -58,7 +58,9 @@ export class ObjectStorageService {
   private getS3Bucket(): string {
     const bucket = process.env.S3_BUCKET;
     if (!bucket) {
-      throw new Error("S3_BUCKET must be set when using S3-compatible object storage");
+      throw new Error(
+        "S3_BUCKET must be set when using S3-compatible object storage",
+      );
     }
     return bucket;
   }
@@ -68,7 +70,10 @@ export class ObjectStorageService {
   }
 
   private getS3PublicPrefixes(): string[] {
-    const raw = process.env.S3_PUBLIC_PREFIXES ?? process.env.PUBLIC_OBJECT_SEARCH_PATHS ?? "";
+    const raw =
+      process.env.S3_PUBLIC_PREFIXES ??
+      process.env.PUBLIC_OBJECT_SEARCH_PATHS ??
+      "";
     return raw
       .split(",")
       .map((x) => x.trim().replace(/^\/+|\/+$/g, ""))
@@ -126,7 +131,9 @@ export class ObjectStorageService {
 
   async searchPublicObject(filePath: string): Promise<StoredObject | null> {
     if (this.useS3()) {
-      const keyCandidates = this.getS3PublicPrefixes().map((prefix) => `${prefix}/${filePath}`);
+      const keyCandidates = this.getS3PublicPrefixes().map(
+        (prefix) => `${prefix}/${filePath}`,
+      );
       for (const key of keyCandidates) {
         try {
           await this.createS3Client().send(
@@ -156,7 +163,10 @@ export class ObjectStorageService {
     return null;
   }
 
-  async downloadObject(object: StoredObject, cacheTtlSec: number = 3600): Promise<Response> {
+  async downloadObject(
+    object: StoredObject,
+    cacheTtlSec: number = 3600,
+  ): Promise<Response> {
     if (object.backend === "s3") {
       const result = await this.createS3Client().send(
         new GetObjectCommand({ Bucket: this.getS3Bucket(), Key: object.key }),
@@ -181,7 +191,8 @@ export class ObjectStorageService {
     const webStream = Readable.toWeb(nodeStream) as ReadableStream;
 
     const headers: Record<string, string> = {
-      "Content-Type": (metadata.contentType as string) || "application/octet-stream",
+      "Content-Type":
+        (metadata.contentType as string) || "application/octet-stream",
       "Cache-Control": `${isPublic ? "public" : "private"}, max-age=${cacheTtlSec}`,
     };
     if (metadata.size) {
@@ -191,11 +202,31 @@ export class ObjectStorageService {
     return new Response(webStream, { headers });
   }
 
+  async brandVideoReadUrl(objectPath: string): Promise<string | null> {
+    if (!this.useS3()) return null;
+    const object = await this.getObjectEntityFile(objectPath);
+    if (object.backend !== "s3") return null;
+    return getSignedUrl(
+      this.createS3Client(),
+      new GetObjectCommand({
+        Bucket: this.getS3Bucket(),
+        Key: object.key,
+        ResponseContentType: "video/mp4",
+        ResponseContentDisposition: "inline",
+        ResponseCacheControl: "private, max-age=300",
+      }),
+      { expiresIn: 900 },
+    );
+  }
+
   async getObjectEntityUploadURL(): Promise<string> {
     if (this.useS3()) {
       const prefix = this.getS3Prefix();
-      const objectKey = [prefix, "uploads", randomUUID()].filter(Boolean).join("/");
-      const publicEndpoint = process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT;
+      const objectKey = [prefix, "uploads", randomUUID()]
+        .filter(Boolean)
+        .join("/");
+      const publicEndpoint =
+        process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT;
       const signed = await getSignedUrl(
         this.createS3Client(publicEndpoint),
         new PutObjectCommand({ Bucket: this.getS3Bucket(), Key: objectKey }),
@@ -228,7 +259,9 @@ export class ObjectStorageService {
   async uploadObjectEntity(data: Buffer, contentType: string): Promise<string> {
     if (this.useS3()) {
       const prefix = this.getS3Prefix();
-      const objectKey = [prefix, "uploads", randomUUID()].filter(Boolean).join("/");
+      const objectKey = [prefix, "uploads", randomUUID()]
+        .filter(Boolean)
+        .join("/");
       await this.createS3Client().send(
         new PutObjectCommand({
           Bucket: this.getS3Bucket(),
@@ -247,7 +280,9 @@ export class ObjectStorageService {
     const { bucketName, objectName } = parseObjectPath(fullPath);
     const file = objectStorageClient.bucket(bucketName).file(objectName);
     await file.save(data, { metadata: { contentType } });
-    return this.normalizeObjectEntityPath(`https://storage.googleapis.com/${bucketName}/${objectName}`);
+    return this.normalizeObjectEntityPath(
+      `https://storage.googleapis.com/${bucketName}/${objectName}`,
+    );
   }
 
   async getObjectEntityFile(objectPath: string): Promise<StoredObject> {
@@ -294,7 +329,10 @@ export class ObjectStorageService {
         const url = new URL(rawPath);
         const bucket = this.getS3Bucket();
         const pathParts = url.pathname.split("/").filter(Boolean);
-        const objectKey = pathParts[0] === bucket ? pathParts.slice(1).join("/") : pathParts.join("/");
+        const objectKey =
+          pathParts[0] === bucket
+            ? pathParts.slice(1).join("/")
+            : pathParts.join("/");
         return objectKey ? `/objects/${objectKey}` : rawPath;
       } catch {
         return rawPath;
@@ -354,14 +392,18 @@ export class ObjectStorageService {
 }
 
 function toWebStream(body: unknown): ReadableStream<Uint8Array> {
-  const maybeTransform = body as { transformToWebStream?: () => ReadableStream<Uint8Array> };
+  const maybeTransform = body as {
+    transformToWebStream?: () => ReadableStream<Uint8Array>;
+  };
   if (typeof maybeTransform?.transformToWebStream === "function") {
     return maybeTransform.transformToWebStream();
   }
   if (body instanceof Readable) {
     return Readable.toWeb(body) as ReadableStream<Uint8Array>;
   }
-  return Readable.toWeb(Readable.from(body ? [body] : [])) as ReadableStream<Uint8Array>;
+  return Readable.toWeb(
+    Readable.from(body ? [body] : []),
+  ) as ReadableStream<Uint8Array>;
 }
 
 function parseObjectPath(path: string): {

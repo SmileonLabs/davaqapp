@@ -38,10 +38,12 @@ import characterProfilesRouter from "./characterProfiles";
 
 import exchangeRouter from "./exchange";
 import agentsRouter from "./agents";
+import brandExchangeRouter from "./brandExchange";
 
 const router: IRouter = Router();
 router.use(exchangeRouter);
 router.use(agentsRouter);
+router.use(brandExchangeRouter);
 
 router.use(usersRouter);
 router.use(friendsRouter);

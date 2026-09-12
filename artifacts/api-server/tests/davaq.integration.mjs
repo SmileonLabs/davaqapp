@@ -23,12 +23,13 @@ try{
  process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_POOL_MAX="5";process.env.KNOWLEDGE_ADMIN_USER_IDS="";
  // The build aliases the stable workspace package, preserving the real pool and schema.
  const workspace=await import("@workspace/db");pool=workspace.pool;
- for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql"]){
+ for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql"]){
   await pool.query(await readFile(new URL("./"+file,import.meta.url),"utf8"));
  }
  const exchange=(await import("../src/routes/exchange.ts")).default;
  const agents=(await import("../src/routes/agents.ts")).default;
- const app=express();app.use(express.json());app.use("/api",exchange,agents);
+ const brand=(await import("../src/routes/brandExchange.ts")).default;
+ const app=express();app.use(express.json());app.use("/api",exchange,agents,brand);
  server=await new Promise(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
  const origin="http://127.0.0.1:"+server.address().port;
  const users=[];
@@ -97,6 +98,149 @@ try{
  ok((await request(a,"/agents/me/settings","PATCH",consent)).status===200,"learning requires explicit room-scoped consent");
  ok((await request(c,"/agents/me/settings","PATCH",{...consent,consentVersion:1})).status===403,"learning cannot select someone else's conversation");
  ok((await request(a,"/agents/me/settings","PATCH",consent)).status===409,"stale consent settings cannot overwrite current consent");
+
+ // Brand fixtures live only inside this disposable schema.
+ process.env.BRAND_EXCHANGE_ENABLED="true";process.env.BRAND_EXCHANGE_Q_ENABLED="true";process.env.BRAND_EXCHANGE_STARTS_ENABLED="true";process.env.BRAND_REWARD_ENCRYPTION_KEY="e".repeat(64);
+ const brandService=await import("../src/lib/brandExchange.ts");
+ const cryptoRules=await import("../src/lib/brandRules.ts");
+ await pool.query("INSERT INTO admin_roles(user_id,role) VALUES($1,'operations') ON CONFLICT DO NOTHING",[a]);
+ const videoA="/objects/uploads/"+randomUUID(),videoB="/objects/uploads/"+randomUUID();
+ await pool.query("INSERT INTO brand_media(object_path,owner_id,width,height,duration) VALUES($1,$3,640,360,30),($2,$3,640,360,30)",[videoA,videoB,a]);
+ const cfg={title:"격리 검증 브랜드 교환",brand:"테스트 전용 브랜드",description:"실서비스에 게시하지 않는 격리 테스트 소재입니다.",category:"food",rewardType:"coupon",rewardTitle:"격리 검증 쿠폰",terms:"테스트 전용이며 실사용할 수 없습니다.",extraCost:"없음",support:"test@example.invalid",region:"서울",online:true,endsAt:new Date(Date.now()+86400000).toISOString(),duration:30,cost:10,videoA,videoB,rightsConfirmed:true,fundingConfirmed:true};
+ const differences=[{start:0,end:30,x:0.1,y:0.1,w:0.2,h:0.2},{start:0,end:30,x:0.6,y:0.6,w:0.2,h:0.2}];
+ const validUntil=new Date(Date.now()+30*86400000).toISOString();
+ async function campaign(suffix,units=1,budget=10){
+  const body={config:{...cfg,title:cfg.title+suffix},answers:differences,budget,requestKey:randomUUID()};
+  const created=await request(a,"/brand-admin/campaigns","POST",body);assert.equal(created.status,201,JSON.stringify(created));
+  const id=created.data.id;
+  ok((await request(a,"/brand-admin/campaigns","POST",body)).data.id===id,"brand campaign creation retry is idempotent "+suffix);
+  const imported=await request(a,"/brand-admin/campaigns/"+id+"/inventory","POST",{codes:Array.from({length:units},(_,n)=>"TEST-ONLY-"+id+"-"+n),validUntil});assert.equal(imported.status,200,JSON.stringify(imported));
+  const publish=await request(a,"/brand-admin/campaigns/"+id+"/actions","POST",{status:"published",reason:"격리 검증에서만 공개",budget});assert.equal(publish.status,200,JSON.stringify(publish));
+  return id;
+ }
+ ok((await request(null,"/brand-exchanges")).status===401,"brand browsing requires authentication");
+ ok((await request(analyst,"/brand-admin")).data.canManage===false,"brand analyst has reports only");
+ ok((await request(analyst,"/brand-admin/campaigns","POST",{})).status===403,"brand analyst cannot mutate campaigns or answers");
+ ok((await request(a,"/brand-preferences")).data.personalized===false,"brand memory targeting is off by default");
+ const cid=await campaign("1");
+ const duplicateInventory=await request(a,"/brand-admin/campaigns/"+cid+"/inventory","POST",{codes:["TEST-ONLY-"+cid+"-0"],validUntil});
+ ok(duplicateInventory.data.added===0,"duplicate coupon import adds no second code");
+ const stored=(await pool.query("SELECT encrypted_code FROM brand_units WHERE campaign_id=$1",[cid])).rows[0].encrypted_code;
+ ok(!stored.includes("TEST-ONLY")&&cryptoRules.decryptCode(stored)==="TEST-ONLY-"+cid+"-0","coupon codes are authenticated encrypted at rest");
+ const publicCampaign=await request(b,"/brand-exchanges/"+cid);
+ ok(!JSON.stringify(publicCampaign).includes("videoA")&&!JSON.stringify(publicCampaign).includes('"answers"'),"public campaign details contain no answer map or protected video");
+ const started=await Promise.all([request(a,"/brand-exchanges/"+cid+"/start","POST",{requestKey:randomUUID()}),request(b,"/brand-exchanges/"+cid+"/start","POST",{requestKey:randomUUID()})]);
+ ok(started.filter(x=>x.status===200).length===1&&started.filter(x=>x.status===409).length===1,"last available coupon has exactly one winner under concurrency");
+ const winner=started[0].status===200?a:b,loser=winner===a?b:a;
+ let bp=started.find(x=>x.status===200).data;
+ ok((await request(winner,"/brand-exchanges/"+cid+"/start","POST",{requestKey:randomUUID()})).data.id===bp.id,"same user cannot reserve a second campaign reward");
+ ok((await request(loser,"/brand-exchanges/participations/"+bp.id)).status===404,"another user cannot inspect play sessions");
+ let lease=(await request(winner,"/brand-exchanges/participations/"+bp.id+"/lease","POST")).data.lease;
+ ok(Boolean(lease)&&(await request(winner,"/brand-exchanges/participations/"+bp.id+"/lease","POST")).status===409,"only one live browser lease is granted");
+ let seq=0,lastEvent;
+ async function event(action,position=bp.progress,extra={}){
+  const body={action,lease,sequence:seq+1,requestKey:randomUUID(),position,positionB:position,...extra};
+  const result=await request(winner,"/brand-exchanges/participations/"+bp.id+"/events","POST",body);
+  if(result.status===200){seq=result.data.sequence;bp=result.data;lastEvent=body;}
+  return result;
+ }
+ assert.equal((await event("play",0)).status,200);
+ ok((await event("tick",30)).status===409,"instant end-event playback spoof is rejected");
+ ok((await event("tick",1,{positionB:6})).status===409,"unsynchronized videos cannot advance progress");
+ assert.equal((await event("answer",0,{x:0.2,y:0.2})).status,200);
+ const repeat=await request(winner,"/brand-exchanges/participations/"+bp.id+"/events","POST",lastEvent);
+ ok(repeat.data.found===1&&repeat.data.clicks===1,"answer event retry does not consume another click");
+ assert.equal((await event("answer",0,{x:0.7,y:0.7})).status,200);
+ ok(bp.found===2&&bp.status==="playing","correct answers alone cannot earn the reward before full playback");
+ await request(a,"/brand-admin/campaigns/"+cid+"/actions","POST",{status:"paused",reason:"진행 중 보상 보존 검증"});
+ for(let position=2;position<=30;position+=2){await pool.query("UPDATE brand_participations SET last_tick=now()-interval '2 seconds' WHERE id=$1",[bp.id]);const tick=await event("tick",position);assert.equal(tick.status,200,JSON.stringify(tick));}
+ assert.equal((await event("finish",30)).status,200);
+ ok(bp.status==="succeeded"&&bp.claimId,"a campaign pause preserves the held participation and earned claim");
+ await pool.query("UPDATE brand_participations SET expires_at=now()-interval '1 minute' WHERE id=$1",[bp.id]);
+ await Promise.all([brandService.settleBrandRewards(),brandService.settleBrandRewards()]);
+ let reward=(await request(winner,"/brand-rewards/"+bp.claimId)).data;
+ ok(reward.status==="issued","earned reward survives reservation timeout and concurrent fulfillment workers");
+ ok((await pool.query("SELECT count(*)::int n FROM brand_budget_ledger WHERE participation_id=$1 AND kind='spend'",[bp.id])).rows[0].n===1,"reward budget is charged exactly once");
+ ok((await request(loser,"/brand-rewards/"+bp.claimId+"/reveal","POST")).status===404,"coupon secret is owner-only");
+ ok((await request(winner,"/brand-rewards/"+bp.claimId+"/reveal","POST")).data.code==="TEST-ONLY-"+cid+"-0","issued owner can reveal the secured coupon");
+ ok(!JSON.stringify(await request(winner,"/brand-rewards")).includes("TEST-ONLY"),"reward lists never contain coupon secrets");
+ await request(winner,"/brand-rewards/"+bp.claimId+"/actions","POST",{action:"used"});
+ ok(Boolean((await request(winner,"/brand-rewards/"+bp.claimId)).data.selfUsedAt),"manual usage is recorded separately from provider redemption");
+ await request(winner,"/brand-rewards/"+bp.claimId+"/actions","POST",{action:"issue",note:"격리 검증용 문의입니다."});
+ ok((await request(analyst,"/brand-admin")).data.issues.some(i=>i.id===bp.claimId),"support requests appear in the operator queue without the code");
+ const cid2=await campaign("2",2,10);
+ const held=(await request(c,"/brand-exchanges/"+cid2+"/start","POST",{requestKey:randomUUID()})).data;
+ ok((await request(loser,"/brand-exchanges/"+cid2+"/start","POST",{requestKey:randomUUID()})).status===409,"available stock cannot exceed campaign financial budget");
+ await pool.query("UPDATE brand_participations SET expires_at=now()-interval '1 second' WHERE id=$1",[held.id]);await brandService.settleBrandRewards();
+ const stats=(await pool.query("SELECT held,spent FROM brand_campaigns WHERE id=$1",[cid2])).rows[0];
+ ok(stats.held===0&&stats.spent===0,"unfinished expired participation releases only its held budget");
+ const renewed=await request(loser,"/brand-exchanges/"+cid2+"/start","POST",{requestKey:randomUUID()});
+ ok(renewed.status===200,"released inventory can serve another participant");
+ let oldLease=(await request(loser,"/brand-exchanges/participations/"+renewed.data.id+"/lease","POST")).data.lease;
+ await pool.query("UPDATE brand_participations SET lease_until=now()-interval '1 second' WHERE id=$1",[renewed.data.id]);
+ const newLease=(await request(loser,"/brand-exchanges/participations/"+renewed.data.id+"/lease","POST")).data.lease;
+ ok(newLease!==oldLease,"expired browser lease can recover with a fresh token");
+ ok((await request(loser,"/brand-exchanges/participations/"+renewed.data.id+"/events","POST",{action:"play",lease:oldLease,requestKey:randomUUID(),sequence:1,position:0,positionB:0})).status===409,"superseded browser cannot submit progress");
+ process.env.BRAND_EXCHANGE_STARTS_ENABLED="false";
+ ok((await request(a,"/brand-exchanges/"+cid2+"/start","POST",{requestKey:randomUUID()})).status===409,"participation kill switch blocks new starts");
+ ok((await request(winner,"/brand-rewards/"+bp.claimId+"/reveal","POST")).status===200,"kill switch preserves previously earned rewards");
+ process.env.BRAND_EXCHANGE_STARTS_ENABLED="true";
+ const settings=(await request(c,"/brand-preferences")).data;
+ const preferences={categories:["food"],region:"서울",personalized:true,version:settings.version};
+ await request(c,"/brand-preferences","PATCH",preferences);
+ ok((await request(c,"/brand-preferences","PATCH",preferences)).status===409,"stale brand consent updates cannot overwrite current preference");
+ await request(c,"/brand-preferences","PATCH",{...preferences,personalized:false,version:settings.version+1});
+ ok((await request(c,"/brand-preferences")).data.personalized===false,"brand memory use can be revoked independently");
+
+
+ // Exhaustion, resumption and reconciliation exercise failure paths as well as success.
+ const failedCampaign=await campaign("3");
+ let failP=(await request(c,"/brand-exchanges/"+failedCampaign+"/start","POST",{requestKey:randomUUID()})).data;
+ const failLease=(await request(c,"/brand-exchanges/participations/"+failP.id+"/lease","POST")).data.lease;
+ let failSeq=0;
+ async function failEvent(action,position=failP.progress,extra={}){const r=await request(c,"/brand-exchanges/participations/"+failP.id+"/events","POST",{action,position,positionB:position,requestKey:randomUUID(),lease:failLease,sequence:failSeq+1,...extra});if(r.status===200){failSeq=r.data.sequence;failP=r.data;}return r;}
+ await failEvent("play",0);
+ for(let n=0;n<8;n++)assert.equal((await failEvent("answer",0,{x:0.99,y:0.99})).status,200);
+ ok((await failEvent("answer",0,{x:0.2,y:0.2})).status===409,"a ninth guess cannot brute-force the answer map");
+ ok((await failEvent("retry",0)).status===409,"retry cannot skip the first full viewing");
+ for(let i=2;i<=30;i+=2){await pool.query("UPDATE brand_participations SET last_tick=now()-interval '2 seconds' WHERE id=$1",[failP.id]);assert.equal((await failEvent("tick",i)).status,200);}
+ await failEvent("finish",30);
+ ok(failP.status==="paused"&&!failP.claimId,"missing differences produce a retry opportunity instead of a reward");
+ await failEvent("retry",30);ok(failP.attempt===2&&failP.progress===0&&failP.clicks===0,"the second attempt resets progress and guesses together");
+ await failEvent("play",0);
+ for(let i=2;i<=30;i+=2){await pool.query("UPDATE brand_participations SET last_tick=now()-interval '2 seconds' WHERE id=$1",[failP.id]);assert.equal((await failEvent("tick",i)).status,200);}
+ await failEvent("finish",30);
+ ok(failP.status==="failed"&&(await pool.query("SELECT held FROM brand_campaigns WHERE id=$1",[failedCampaign])).rows[0].held===0,"final failed attempt releases the held reward without a claim");
+ const reconcileCampaign=await campaign("4");
+ let rp=(await request(c,"/brand-exchanges/"+reconcileCampaign+"/start","POST",{requestKey:randomUUID()})).data;
+ // Inject a post-verification state solely inside this isolated schema to test the payout boundary.
+ await pool.query("UPDATE brand_participations SET status='succeeded',progress=30,found='[0,1]' WHERE id=$1",[rp.id]);
+ const unit=(await pool.query("SELECT unit_id FROM brand_participations WHERE id=$1",[rp.id])).rows[0].unit_id;
+ const rc=(await pool.query("INSERT INTO brand_claims(participation_id,user_id,unit_id) VALUES($1,$2,$3) RETURNING id",[rp.id,c,unit])).rows[0];
+ await pool.query("INSERT INTO brand_outbox(claim_id) VALUES($1)",[rc.id]);
+ const good=(await pool.query("SELECT encrypted_code FROM brand_units WHERE id=$1",[unit])).rows[0].encrypted_code;
+ await pool.query("UPDATE brand_units SET encrypted_code='broken' WHERE id=$1",[unit]);
+ await brandService.settleBrandRewards();
+ ok((await request(c,"/brand-rewards/"+rc.id)).data.status==="needs_reconciliation","unreadable secured reward enters reconciliation without pretending it was issued");
+ await pool.query("UPDATE brand_units SET encrypted_code=$2 WHERE id=$1",[unit,good]);
+ const fix=await request(a,"/brand-admin/rewards/"+rc.id+"/resolve","POST",{reason:"격리 테스트 암호문 복구 확인",retry:true});
+ assert.equal(fix.status,200);await brandService.settleBrandRewards();
+ ok((await request(c,"/brand-rewards/"+rc.id)).data.status==="issued","operator repair retries the same claim and secured reward");
+ const learningCampaign=await campaign("5");
+ await request(c,"/agents/me/memories","POST",{label:"커피와 카페 체험을 좋아해요"});
+ let pref=(await request(c,"/brand-preferences")).data;
+ await request(c,"/brand-preferences","PATCH",{categories:[],region:"",personalized:false,version:pref.version});
+ ok(!(await request(c,"/brand-exchanges?recommended=true")).data.items.find(i=>i.id===learningCampaign).reason.includes("기억"),"saved memories are not used without brand-specific consent");
+ pref=(await request(c,"/brand-preferences")).data;
+ await request(c,"/brand-preferences","PATCH",{categories:[],region:"",personalized:true,version:pref.version});
+ ok((await request(c,"/brand-exchanges?recommended=true")).data.items.find(i=>i.id===learningCampaign).reason.includes("기억"),"explicit consent permits a grounded category recommendation");
+ await pool.query("UPDATE agent_memories SET status='deleted',label='' WHERE user_id=$1",[c]);
+ ok(!(await request(c,"/brand-exchanges?recommended=true")).data.items.find(i=>i.id===learningCampaign).reason.includes("기억"),"deleting memories removes their recommendation reason");
+ process.env.BRAND_EXCHANGE_ENABLED="false";
+ ok((await request(c,"/brand-exchanges")).data.items.length===0,"discovery flag suppresses campaign recommendations");
+ ok((await request(c,"/brand-rewards/"+rc.id+"/reveal","POST")).status===200,"discovery shutdown preserves coupon access");
+ process.env.BRAND_EXCHANGE_ENABLED="true";
+
  if(process.env.DAVAQ_INTEGRATION_AI==="1"){
   const ai=await import("../src/lib/davaqAgent.ts");
   const draftResult=await ai.registerDraft("영어 회화를 온라인으로 30분 도와줄 수 있어요. 대신 프로필 사진 촬영을 받고 싶어요.");
