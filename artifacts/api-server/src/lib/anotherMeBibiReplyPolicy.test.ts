@@ -14,7 +14,7 @@ function reply(replyMessages: string[]) {
 
 describe("BIBI official reply policy", () => {
   it("uses the public persona introduction instead of AI-proxy wording", () => {
-    const normalized = normalizeBibiOfficialReply(reply(["나는 Another Me라서 대신 응대해"]), "너 누구야?");
+    const normalized = normalizeBibiOfficialReply(reply(["나는 DavaQ라서 대신 응대해"]), "너 누구야?");
     expect(normalized.replyText).toContain("나는 BIBI");
     expect(normalized.replyText).not.toMatch(/Another\s*Me|대신\s*응대/i);
   });

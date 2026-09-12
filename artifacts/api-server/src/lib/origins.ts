@@ -1,4 +1,4 @@
-const DEFAULT_PRODUCTION_ORIGINS = ["https://anothermeai.app"];
+const DEFAULT_PRODUCTION_ORIGINS = ["https://davaq.anothermeai.app"];
 const LOCAL_DEVELOPMENT_ORIGINS = [
   "http://localhost:8081",
   "http://localhost:19006",

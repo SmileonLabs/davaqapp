@@ -17,7 +17,7 @@ const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_CHAIN_ID = 56;
 
 function getSignInContext() {
-  const configuredUri = process.env.WALLET_SIGN_IN_URI ?? "https://anothermeai.app";
+  const configuredUri = process.env.WALLET_SIGN_IN_URI ?? "https://davaq.anothermeai.app";
   try {
     const uri = new URL(configuredUri);
     if (uri.protocol !== "https:") throw new Error("wallet sign-in URI must use HTTPS");
@@ -26,7 +26,7 @@ function getSignInContext() {
       uri: uri.origin,
     };
   } catch {
-    return { domain: "anothermeai.app", uri: "https://anothermeai.app" };
+    return { domain: "davaq.anothermeai.app", uri: "https://davaq.anothermeai.app" };
   }
 }
 

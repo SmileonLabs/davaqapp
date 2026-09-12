@@ -1,7 +1,6 @@
 import { useState } from "react";
 import appIcon from "../../../mobile/assets/images/icon.png";
 import appServicePreview from "../assets/fan-home.png";
-import { APK_URL } from "@/config";
 import { type PwaPlatform, usePwa } from "@/hooks/use-pwa";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,17 +36,17 @@ const installGuides: Record<PwaPlatform, { title: string; description: string; s
   ios: {
     title: "iPhone/iPad에 설치하기",
     description: "Safari의 공유 메뉴에서 홈 화면에 추가하면 앱처럼 실행할 수 있어요.",
-    steps: ["Safari에서 공유 아이콘을 누르세요.", "‘홈 화면에 추가’를 선택하세요.", "홈 화면의 Another Me 아이콘으로 바로 시작하세요."],
+    steps: ["Safari에서 공유 아이콘을 누르세요.", "‘홈 화면에 추가’를 선택하세요.", "홈 화면의 DavaQ 아이콘으로 바로 시작하세요."],
   },
   android: {
     title: "Android에 설치하기",
     description: "Chrome 메뉴에서 설치하거나 홈 화면에 추가할 수 있어요.",
-    steps: ["Chrome 오른쪽 상단 메뉴를 여세요.", "‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택하세요.", "설치 후 Another Me 아이콘으로 바로 시작하세요."],
+    steps: ["Chrome 오른쪽 상단 메뉴를 여세요.", "‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택하세요.", "설치 후 DavaQ 아이콘으로 바로 시작하세요."],
   },
   desktop: {
     title: "PC에 설치하기",
-    description: "Chrome 또는 Edge에서 Another Me를 데스크톱 앱처럼 사용할 수 있어요.",
-    steps: ["주소창 오른쪽의 설치 아이콘 또는 브라우저 메뉴를 여세요.", "‘설치’ 또는 ‘페이지를 앱으로 설치’를 선택하세요.", "시작 메뉴나 바탕화면의 Another Me를 실행하세요."],
+    description: "Chrome 또는 Edge에서 DavaQ를 데스크톱 앱처럼 사용할 수 있어요.",
+    steps: ["주소창 오른쪽의 설치 아이콘 또는 브라우저 메뉴를 여세요.", "‘설치’ 또는 ‘페이지를 앱으로 설치’를 선택하세요.", "시작 메뉴나 바탕화면의 DavaQ를 실행하세요."],
   },
 };
 
@@ -109,12 +108,7 @@ export default function Home() {
     <div className={`flex flex-col gap-3 sm:flex-row ${className}`}>
       <a href={appUrl}>
         <Button size="lg" className="h-14 w-full gap-2 px-7 text-base font-black text-white shadow-[0_0_38px_rgba(153,76,255,.35)] transition hover:-translate-y-0.5 hover:shadow-[0_0_50px_rgba(153,76,255,.55)] sm:w-auto">
-          Another Me 시작하기 <ArrowRight className="h-5 w-5" />
-        </Button>
-      </a>
-      <a href={APK_URL} download>
-        <Button size="lg" variant="outline" className="glass h-14 w-full gap-2 border-white/15 px-7 text-base font-bold text-white hover:bg-white/10 sm:w-auto">
-          <Smartphone className="h-5 w-5" /> Android APK
+          DavaQ 시작하기 <ArrowRight className="h-5 w-5" />
         </Button>
       </a>
       {!isInstalled ? (
@@ -128,9 +122,9 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#030208] text-foreground selection:bg-violet-500/40">
       <nav className="glass-panel fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-white/[.07] px-5 py-3.5 md:px-10">
-        <a href="#top" className="flex items-center gap-2.5" aria-label="Another Me 홈">
-          <img src={appIcon} alt="Another Me 앱 아이콘" className="h-10 w-10 rounded-[0.78rem] shadow-[0_0_20px_rgba(160,86,255,.42)]" />
-          <span className="hidden text-base font-black tracking-[-.03em] text-white sm:block">Another Me</span>
+        <a href="#top" className="flex items-center gap-2.5" aria-label="DavaQ 홈">
+          <img src={appIcon} alt="DavaQ 앱 아이콘" className="h-10 w-10 rounded-[0.78rem] shadow-[0_0_20px_rgba(160,86,255,.42)]" />
+          <span className="hidden text-base font-black tracking-[-.03em] text-white sm:block">DavaQ</span>
         </a>
         <div className="flex items-center gap-2 text-sm font-semibold">
           <a href="#experience" className="hidden rounded-lg px-3 py-2 text-white/60 hover:text-white md:block">서비스</a>
@@ -158,7 +152,7 @@ export default function Home() {
                 <span className="text-gradient text-glow-purple">또 다른 나</span>로 성장하세요.
               </h1>
               <p className="max-w-xl text-lg leading-8 text-white/65 md:text-xl">
-                Another Me는 캐릭터 프로필, 피드, 채팅, 일일 미션과 토크배틀을 하나의 성장 경험으로 연결합니다. FAN의 응원이 STAR의 이야기로 이어지는 세계를 만나보세요.
+                DavaQ는 캐릭터 프로필, 피드, 채팅, 일일 미션과 토크배틀을 하나의 성장 경험으로 연결합니다. FAN의 응원이 STAR의 이야기로 이어지는 세계를 만나보세요.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -171,7 +165,7 @@ export default function Home() {
             <div className="absolute inset-x-[8%] bottom-[-2.5rem] h-24 rounded-full bg-violet-600/30 blur-3xl" />
             <div className="relative overflow-hidden rounded-[2.35rem] border border-violet-300/35 bg-[#07050f] p-2.5 shadow-[0_28px_90px_rgba(0,0,0,.65),0_0_55px_rgba(130,63,255,.18)]">
               <div className="absolute inset-x-[33%] top-2 z-10 h-1.5 rounded-full bg-black/80" />
-              <img src={appServicePreview} alt="Another Me 현재 서비스 화면" className="block w-full rounded-[1.8rem]" />
+              <img src={appServicePreview} alt="DavaQ 현재 서비스 화면" className="block w-full rounded-[1.8rem]" />
             </div>
             <div className="absolute -bottom-4 -left-9 rounded-2xl border border-violet-200/20 bg-[#160c31]/95 px-4 py-3 shadow-xl backdrop-blur-xl">
               <p className="text-xs font-black text-violet-200">ANOTHER ME APP</p>
@@ -196,9 +190,9 @@ export default function Home() {
         </div>
       </div></section>
 
-      <section className="px-5 py-24 md:px-8"><div className="container mx-auto max-w-6xl overflow-hidden rounded-[2.4rem] border border-violet-300/20 bg-[radial-gradient(circle_at_72%_20%,rgba(170,83,255,.3),transparent_35%),linear-gradient(120deg,rgba(38,16,79,.9),rgba(9,5,24,.94))] p-8 text-center md:p-16"><ShieldCheck className="mx-auto h-11 w-11 text-violet-200" /><h2 className="mx-auto mt-6 max-w-3xl text-4xl font-black leading-tight text-white md:text-6xl">오늘의 대화가<br /><span className="text-gradient">내일의 Another Me</span>가 됩니다.</h2><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/60">지금 FAN 캐릭터를 만들고, 새로운 STAR와 이야기를 시작해 보세요.</p><Actions className="mt-10 justify-center" /></div></section>
+      <section className="px-5 py-24 md:px-8"><div className="container mx-auto max-w-6xl overflow-hidden rounded-[2.4rem] border border-violet-300/20 bg-[radial-gradient(circle_at_72%_20%,rgba(170,83,255,.3),transparent_35%),linear-gradient(120deg,rgba(38,16,79,.9),rgba(9,5,24,.94))] p-8 text-center md:p-16"><ShieldCheck className="mx-auto h-11 w-11 text-violet-200" /><h2 className="mx-auto mt-6 max-w-3xl text-4xl font-black leading-tight text-white md:text-6xl">오늘의 대화가<br /><span className="text-gradient">내일의 DavaQ</span>가 됩니다.</h2><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/60">지금 FAN 캐릭터를 만들고, 새로운 STAR와 이야기를 시작해 보세요.</p><Actions className="mt-10 justify-center" /></div></section>
 
-      <footer className="border-t border-white/[.07] px-6 py-9 text-white/45"><div className="container mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row"><img src={asset("logo_black.svg")} alt="Another Me" className="h-6 opacity-70" /><p className="text-sm">© 2026 Another Me. Grow your story.</p><a href={asset("anotherme.pdf")} download className="inline-flex items-center gap-2 text-sm font-semibold hover:text-white"><Download className="h-4 w-4" /> 서비스 소개서</a></div></footer>
+      <footer className="border-t border-white/[.07] px-6 py-9 text-white/45"><div className="container mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row"><span className="text-xl font-black tracking-tight">DavaQ</span><p className="text-sm">© 2026 DavaQ. Grow your story.</p></div></footer>
 
       <Dialog open={showManualInstall} onOpenChange={setShowManualInstall}><DialogContent className="glass-panel border-white/20 bg-[#0b0719]/95 text-white shadow-2xl backdrop-blur-3xl sm:max-w-md"><DialogHeader><DialogTitle className="text-2xl font-black">{installGuide.title}</DialogTitle><DialogDescription className="text-base text-white/60">{installGuide.description}</DialogDescription></DialogHeader><div className="mt-3 space-y-3 rounded-2xl border border-white/10 bg-white/[.04] p-5">{installGuide.steps.map((step, index) => <p key={step} className="flex items-start gap-3 text-sm leading-6 text-white/75"><span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/25 text-xs font-black text-violet-100">{index + 1}</span>{step}</p>)}</div><DialogFooter><Button onClick={() => setShowManualInstall(false)} className="h-11 w-full font-bold text-white"><Check className="mr-2 h-4 w-4" />확인</Button></DialogFooter></DialogContent></Dialog>
     </main>

@@ -294,7 +294,7 @@ export const RevokePushTokenBody = zod.object({
 
 
 /**
- * @summary Get my Another Me persona
+ * @summary Get my DavaQ persona
  */
 export const GetMyPersonaResponse = zod.object({
   "id": zod.string(),
@@ -332,9 +332,9 @@ export const GetMyPersonaResponse = zod.object({
 
 
 /**
- * Ontology-only Another Me identity/sync view. Returns 404 until an ontology snapshot exists. No legacy stats fallback, AI call, or XP/stat mutation.
+ * Ontology-only DavaQ identity/sync view. Returns 404 until an ontology snapshot exists. No legacy stats fallback, AI call, or XP/stat mutation.
 
- * @summary Get my Another Me identity card
+ * @summary Get my DavaQ identity card
  */
 export const GetMyPersonaCardResponse = zod.object({
   "source": zod.enum(['ontology']),
@@ -362,7 +362,7 @@ export const GetMyPersonaCardResponse = zod.object({
 /**
  * Triggered only by the user. Analyzes recent app activity and enqueues ontology evidence without storing legacy AI detail fields. Rate-limited to once per 10 minutes per user.
 
- * @summary Run an on-demand AI analysis of my Another Me persona
+ * @summary Run an on-demand AI analysis of my DavaQ persona
  */
 export const AnalyzeMyPersonaResponse = zod.object({
   "id": zod.string(),
@@ -2862,7 +2862,7 @@ export const ArchiveKnowledgeMemoryResponse = zod.object({
 
 
 /**
- * @summary Get my Another Me settings
+ * @summary Get my DavaQ settings
  */
 export const GetAnotherMeSettingsResponse = zod.object({
   "summonEnabled": zod.boolean(),
@@ -2879,7 +2879,7 @@ export const GetAnotherMeSettingsResponse = zod.object({
 
 
 /**
- * @summary Update my Another Me settings
+ * @summary Update my DavaQ settings
  */
 export const updateAnotherMeSettingsBodyDefaultWaitMinutesMax = 60;
 
@@ -2913,7 +2913,7 @@ export const UpdateAnotherMeSettingsResponse = zod.object({
 
 
 /**
- * @summary Get my Another Me settings for a room
+ * @summary Get my DavaQ settings for a room
  */
 export const GetAnotherMeRoomSettingsParams = zod.object({
   "roomId": zod.coerce.string().uuid()
@@ -2930,7 +2930,7 @@ export const GetAnotherMeRoomSettingsResponse = zod.object({
 
 
 /**
- * @summary Update my Another Me settings for a room
+ * @summary Update my DavaQ settings for a room
  */
 export const UpdateAnotherMeRoomSettingsParams = zod.object({
   "roomId": zod.coerce.string().uuid()
@@ -2961,7 +2961,7 @@ export const UpdateAnotherMeRoomSettingsResponse = zod.object({
 
 
 /**
- * @summary Check whether an Another Me can be summoned into a direct room
+ * @summary Check whether an DavaQ can be summoned into a direct room
  */
 export const GetAnotherMeSummonStatusQueryParams = zod.object({
   "roomId": zod.coerce.string().uuid(),
@@ -2997,7 +2997,7 @@ export const GetAnotherMeSummonStatusResponse = zod.object({
 
 
 /**
- * @summary Summon another participant's Another Me into a direct room
+ * @summary Summon another participant's DavaQ into a direct room
  */
 export const SummonAnotherMeBody = zod.object({
   "roomId": zod.string().uuid(),
@@ -3006,7 +3006,7 @@ export const SummonAnotherMeBody = zod.object({
 
 
 /**
- * @summary Dismiss an Another Me session
+ * @summary Dismiss an DavaQ session
  */
 export const DismissAnotherMeSessionParams = zod.object({
   "sessionId": zod.coerce.string()
@@ -3033,7 +3033,7 @@ export const DismissAnotherMeSessionResponse = zod.object({
 
 
 /**
- * @summary Generate my Another Me tone profile from my messages
+ * @summary Generate my DavaQ tone profile from my messages
  */
 export const generateAnotherMeToneProfileBodyRelationshipTypeDefault = `FRIEND`;
 

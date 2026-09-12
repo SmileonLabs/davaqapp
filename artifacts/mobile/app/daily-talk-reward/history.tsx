@@ -33,7 +33,7 @@ export default function DailyTalkRewardHistoryScreen() {
         <View style={styles.headerBlock}>
           <Text style={[styles.kicker, { color: colors.primary }]}>Talk to Earn</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>톡 리워드 히스토리</Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>AI가 정리한 하루 대화 일기, STAR Point 지급 기록, Another Me 동기화 기록입니다.</Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>AI가 정리한 하루 대화 일기, STAR Point 지급 기록, DavaQ 동기화 기록입니다.</Text>
         </View>
 
         {isLoading ? (

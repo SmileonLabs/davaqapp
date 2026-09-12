@@ -492,7 +492,7 @@ export default function ChatScreen() {
         await updateRoomAnotherMeSettings.mutateAsync({ summonEnabled: value });
         await refreshAnotherMeRoomState();
       } catch {
-        crossAlert("오류", "이 방의 Another Me 설정을 변경하지 못했습니다.");
+        crossAlert("오류", "이 방의 DavaQ 설정을 변경하지 못했습니다.");
       }
     },
     [isDirect, refreshAnotherMeRoomState, updateRoomAnotherMeSettings],
@@ -504,7 +504,7 @@ export default function ChatScreen() {
       await updateRoomAnotherMeSettings.mutateAsync({ summonEnabled: null });
       await refreshAnotherMeRoomState();
     } catch {
-      crossAlert("오류", "이 방의 Another Me 설정을 변경하지 못했습니다.");
+      crossAlert("오류", "이 방의 DavaQ 설정을 변경하지 못했습니다.");
     }
   }, [isDirect, refreshAnotherMeRoomState, updateRoomAnotherMeSettings]);
 
@@ -694,7 +694,7 @@ export default function ChatScreen() {
       await summonAnotherMe.mutateAsync({ roomId: id, targetUserId: otherMember.id });
       await Promise.all([refetch(), refetchTargetAnotherMeStatus(), refetchMyAnotherMeStatus()]);
     } catch {
-      crossAlert("소환 실패", "아직 Another Me를 소환할 수 없거나 상대가 허용하지 않았어요.");
+      crossAlert("소환 실패", "아직 DavaQ를 소환할 수 없거나 상대가 허용하지 않았어요.");
     }
   }, [id, otherMember?.id, refetch, refetchMyAnotherMeStatus, refetchTargetAnotherMeStatus, summonAnotherMe]);
 
@@ -704,7 +704,7 @@ export default function ChatScreen() {
       await dismissAnotherMe.mutateAsync(activeAnotherMeSession.id);
       await Promise.all([refetch(), refetchTargetAnotherMeStatus(), refetchMyAnotherMeStatus()]);
     } catch {
-      crossAlert("오류", "Another Me를 퇴장시키지 못했습니다.");
+      crossAlert("오류", "DavaQ를 퇴장시키지 못했습니다.");
     }
   }, [activeAnotherMeSession, dismissAnotherMe, refetch, refetchMyAnotherMeStatus, refetchTargetAnotherMeStatus]);
 

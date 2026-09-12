@@ -215,7 +215,7 @@ export default function SettingsScreen() {
         </Text>
         <ThemeSelector />
 
-        {/* Another Me section */}
+        {/* DavaQ section */}
         <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
           어나더 미
         </Text>
@@ -228,14 +228,14 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             icon="message-circle"
-            label="Another Me 소환 설정"
+            label="DavaQ 소환 설정"
             sublabel="답장이 늦을 때 AI 분신 소환 허용 범위"
             onPress={() => router.push("/settings/another-me" as never)}
           />
           <SettingsRow
             icon="database"
             label="내 AI 기억"
-            sublabel="Another Me가 참고할 기억 관리"
+            sublabel="DavaQ가 참고할 기억 관리"
             onPress={() => router.push("/settings/ai-memories" as never)}
             last
           />

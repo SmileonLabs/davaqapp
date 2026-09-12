@@ -335,7 +335,7 @@ export function PersonaScreen({
             { color: colors.foreground },
           ]}
         >
-          {showOntologyDetails ? "Another Me 분석" : "마이페이지"}
+          {showOntologyDetails ? "DavaQ 분석" : "마이페이지"}
         </Text>
       </View>
       <CustomScrollView
@@ -451,7 +451,7 @@ export function PersonaScreen({
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    FAN/STAR 성장 관리 · Another Me는 신뢰도로 동기화
+                    FAN/STAR 성장 관리 · DavaQ는 신뢰도로 동기화
                   </Text>
 
                   <View style={styles.heroBtnRow}>
@@ -508,14 +508,14 @@ export function PersonaScreen({
                   </View>
                 </LinearGradient>
 
-                {/* Another Me ontology profile */}
+                {/* DavaQ ontology profile */}
                 <Text
                   style={[
                     styles.sectionTitle,
                     { color: colors.mutedForeground },
                   ]}
                 >
-                  Another Me 프로필
+                  DavaQ 프로필
                 </Text>
                 <Text
                   style={[
@@ -572,7 +572,7 @@ export function PersonaScreen({
                               { color: colors.mutedForeground },
                             ]}
                           >
-                            Another Me는 원문 채팅이 아니라 사용자가 선택한
+                            DavaQ는 원문 채팅이 아니라 사용자가 선택한
                             요약/평가/기억 근거만 참고해요.
                           </Text>
                           <View style={styles.tagRow}>
@@ -895,7 +895,7 @@ export function PersonaScreen({
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    Another Me 동기화 분석
+                    DavaQ 동기화 분석
                   </Text>
                   <Pressable
                     onPress={() => analyze()}
@@ -985,7 +985,7 @@ export function PersonaScreen({
                         ]}
                       >
                         이전 AI 분석 상세값은 더 이상 표시하거나 저장하지
-                        않아요. "AI 분석 업데이트"는 결과를 Another Me 최근 반영
+                        않아요. "AI 분석 업데이트"는 결과를 DavaQ 최근 반영
                         내역에만 비동기로 보냅니다.
                         {persona?.lastAnalyzedAt
                           ? `\n마지막 요청: ${formatEventTime(persona.lastAnalyzedAt)}`
@@ -1012,12 +1012,12 @@ export function PersonaScreen({
                 >
                   <TipRow
                     icon="message-circle"
-                    text="Talk to Earn 보상 수령 시 요약/키워드/평가 점수만 Another Me에 동기화돼요"
+                    text="Talk to Earn 보상 수령 시 요약/키워드/평가 점수만 DavaQ에 동기화돼요"
                     colors={colors}
                   />
                   <TipRow
                     icon="mic"
-                    text="토크배틀 발언 평가는 TP 경쟁과 Another Me 표현 패턴에 반영돼요"
+                    text="토크배틀 발언 평가는 TP 경쟁과 DavaQ 표현 패턴에 반영돼요"
                     colors={colors}
                   />
                   <TipRow
@@ -1713,7 +1713,7 @@ function OntologyProfileCard({
             ]}
           >
             톡 리워드 보상 수령, 토크배틀 발언, 직접 저장한 AI 기억이 쌓이면
-            Another Me가 참고할 말투와 표현 방식이 정리됩니다.
+            DavaQ가 참고할 말투와 표현 방식이 정리됩니다.
           </Text>
         </View>
       </View>

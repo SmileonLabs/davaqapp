@@ -146,7 +146,7 @@ export default function PostDetailScreen() {
     if (!post) return;
     const url = Platform.OS === "web" && typeof window !== "undefined"
       ? `${window.location.origin}/app/post/${post.id}`
-      : `https://anothermeai.app/app/post/${post.id}`;
+      : `https://davaq.anothermeai.app/app/post/${post.id}`;
     try {
       await Share.share({ title: `${displayName(post)}님의 게시물`, message: `${post.body}\n${url}`, url });
     } catch {

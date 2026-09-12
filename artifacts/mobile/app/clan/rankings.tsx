@@ -93,7 +93,7 @@ export default function ClanRankingScreen() {
         >
           <Text style={[styles.heroTitle, { color: colors.foreground }]}>팬클럽 랭킹</Text>
           <Text style={[styles.heroSubtitle, { color: colors.mutedForeground }]}>
-            함께 성장한 Another Me들의 힘을 확인해보세요.
+            함께 성장한 DavaQ들의 힘을 확인해보세요.
           </Text>
         </LinearGradient>
 

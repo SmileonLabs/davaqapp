@@ -30,7 +30,7 @@ const SEARCH_FILTERS: Array<{ key: SearchType; label: string; icon: React.Compon
 ];
 
 const POST_TAGS: Record<StarFeedPostKind, string[]> = {
-  official: ["Another Me", "공식"],
+  official: ["DavaQ", "공식"],
   event: ["이벤트", "미션"],
   fan: ["비비", "팬아트"],
   star: ["STAR", "콘텐츠"],

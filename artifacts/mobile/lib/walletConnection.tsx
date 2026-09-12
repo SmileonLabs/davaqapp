@@ -62,13 +62,13 @@ const appKit = projectId
       defaultNetwork: BNB_CHAIN,
       storage: appKitStorage,
       metadata: {
-        name: "Another Me",
-        description: "Another Me STAR NFT wallet verification",
-        url: "https://anothermeai.app",
-        icons: ["https://anothermeai.app/favicon.ico"],
+        name: "DavaQ",
+        description: "DavaQ STAR NFT wallet verification",
+        url: "https://davaq.anothermeai.app",
+        icons: ["https://davaq.anothermeai.app/favicon.ico"],
         redirect: {
           native: "anotherme://wallet",
-          universal: "https://anothermeai.app/app",
+          universal: "https://davaq.anothermeai.app/app",
         },
       },
       enableAnalytics: false,

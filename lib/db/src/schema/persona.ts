@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 
 /**
- * The seven growth attributes of a user's "Another Me" persona. Each is a
+ * The seven growth attributes of a user's "DavaQ" persona. Each is a
  * non-negative cumulative counter raised by deterministic activity (chat,
  * talk-battle, dungeon). Ontology analysis never mutates these numbers.
  */
@@ -36,7 +36,7 @@ export const DEFAULT_PERSONA_STATS: PersonaStats = {
 };
 
 /**
- * One "Another Me" persona per user (1:1). Created lazily on first access (like
+ * One "DavaQ" persona per user (1:1). Created lazily on first access (like
  * users are auto-provisioned). `level`/`xp`/`stats` are legacy deterministic
  * growth counters kept for existing gameplay state. Persona interpretation is
  * stored in the ontology profile tables, not on this row.

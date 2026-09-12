@@ -155,7 +155,7 @@ const RESPONSE_JSON_SCHEMA = {
 } as const;
 
 const SYSTEM_PROMPT = [
-  "You are an AI diary and conversation quality evaluator for Another Me.",
+  "You are an AI diary and conversation quality evaluator for DavaQ.",
   "Analyze the user's daily conversations and create a short reflective diary in Korean.",
   "Do not reveal private information, real names, phone numbers, addresses, account numbers, exact locations, or sensitive secrets.",
   "Do not quote original messages directly.",
@@ -360,7 +360,7 @@ function buildUserPrompt(userId: string, messages: RawTalkMessage[], abuse: Dail
   });
 
   return [
-    "다음은 사용자가 오늘 Another Me 메신저에서 나눈 대화입니다.",
+    "다음은 사용자가 오늘 DavaQ 메신저에서 나눈 대화입니다.",
     "실명/전화번호/주소/계좌번호/상세 위치/민감정보/원문 직접 인용은 일기에 포함하지 마세요.",
     "상대 이름은 친구, 가까운 사람, 동료, 지인처럼 일반화하세요.",
     "대화의 양보다 공감력, 소통력, 신뢰도, 긍정성, 관계 기여도, 스팸/반복 위험도를 평가하세요.",

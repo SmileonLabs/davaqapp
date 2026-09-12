@@ -21,7 +21,7 @@ export function usePersonaAnalysis({
       onSuccess: () => {
         refetchPersona();
         refetchCard();
-        setAnalysisNotice("AI 분석 결과는 이전 상세값으로 저장하지 않고, Another Me 최근 반영 내역에 비동기로만 반영돼요. PVT는 Talk to Earn 보상에서만 지급됩니다.");
+        setAnalysisNotice("AI 분석 결과는 이전 상세값으로 저장하지 않고, DavaQ 최근 반영 내역에 비동기로만 반영돼요. PVT는 Talk to Earn 보상에서만 지급됩니다.");
         refreshTimer.current = setTimeout(() => {
           refetchPersona();
           refetchCard();

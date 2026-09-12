@@ -1,8 +1,8 @@
 {
-  "name": "Another Me — 어나더미",
-  "short_name": "Another Me",
-  "description": "AI 기반 디지털 자아 육성 소셜 RPG 플랫폼",
-  "id": "/app/?pwa=anotherme-20260629",
+  "name": "DavaQ (다바꿔)",
+  "short_name": "DavaQ",
+  "description": "DavaQ (다바꿔)",
+  "id": "/app/",
   "start_url": "/app/",
   "scope": "/",
   "display": "standalone",

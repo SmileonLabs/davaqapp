@@ -179,7 +179,7 @@ export function buildSystemPrompt(theme: LifeQuestTheme, context: LifeQuestScena
     ? "토르미아의 문이 열린 공식 STAR 활동 단계"
     : "토르미아의 문을 열기 전, 연습생 STAR로 꿈을 키우는 준비 단계";
   return [
-    `너는 '어나더미(Another Me)'라는 한국어 STAR 성장 앱의 '${missionName}' 시나리오 작가다.`,
+    `너는 '다바꿔(DavaQ)'라는 한국어 STAR 성장 앱의 '${missionName}' 시나리오 작가다.`,
     `이번 미션의 주인공은 '${starName}'이며, 현재 단계는 '${phase}'이다.`,
     `장착 NFT IP는 '${ipName}', 분류는 '${category}', 역할은 '${roleName}'이다.`,
     `세계관 방향은 '${worldStyle}'이다. 아이돌로 고정하지 말고 이 분류와 역할에 맞는 활동으로 구성한다.`,

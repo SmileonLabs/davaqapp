@@ -298,7 +298,7 @@ async function updatePersonaProfileSnapshot(args: {
   const confidence = Math.max(existing?.confidence ?? 0, avgConfidence);
   const evidenceSummary = uniqueMerge(existing?.evidenceSummary, [args.evidenceSummary]);
   const summary = evidenceSummary[0]
-    ? `Another Me가 참고할 ${evidenceSummary[0]}`
+    ? `DavaQ가 참고할 ${evidenceSummary[0]}`
     : existing?.summary ?? null;
 
   await db.insert(personaProfilesTable).values({
@@ -420,7 +420,7 @@ export async function recordDailyTalkRewardPersonaEvidence(args: {
     const topSignals = observations.slice(0, 3).map((item) => item.label).join(", ");
     const evidenceSummary = topSignals
       ? `톡 리워드에서 ${topSignals} 패턴이 관찰됨`
-      : "톡 리워드에서 대화 요약을 Another Me 동기화 데이터로 제공함";
+      : "톡 리워드에서 대화 요약을 DavaQ 동기화 데이터로 제공함";
     const keywordText = args.keywords.slice(0, 5).join(", ");
     const qualityText = `품질 ${args.scores.qualityScore}점, 스팸위험 ${args.scores.spamRisk}점, PVT ${args.pvtAmount}`;
     const { tenantId, personaId } = await ensureUserPersonaGraph(args.userId);
@@ -480,7 +480,7 @@ export async function recordUserAiMemoryPersonaEvidence(args: {
 
     const observation = memoryObservation(memory);
     const observations = [observation];
-    const evidenceSummary = `${observation.label} 기억을 Another Me 동기화 데이터로 제공함`;
+    const evidenceSummary = `${observation.label} 기억을 DavaQ 동기화 데이터로 제공함`;
     const { tenantId, personaId } = await ensureUserPersonaGraph(args.userId);
     const evidenceId = `${personaId}:user_ai_memory:${memory.id}`;
 
@@ -556,7 +556,7 @@ export async function recordPersonaAnalysisPersonaEvidence(args: {
     ].filter((item): item is PersonaSignalObservation => item !== null);
     if (observations.length === 0) return;
 
-    const evidenceSummary = `AI 분석에서 ${observations.slice(0, 3).map((item) => item.label).join(", ")} 정보를 Another Me 동기화 데이터로 제공함`;
+    const evidenceSummary = `AI 분석에서 ${observations.slice(0, 3).map((item) => item.label).join(", ")} 정보를 DavaQ 동기화 데이터로 제공함`;
     const countText = args.dataCounts
       ? `입력 수: 채팅 ${args.dataCounts.chat ?? 0}, 배틀 ${args.dataCounts.battle ?? 0}, 성장RPG ${args.dataCounts.dungeon ?? 0}, 활동 ${args.dataCounts.growth ?? 0}.`
       : "";

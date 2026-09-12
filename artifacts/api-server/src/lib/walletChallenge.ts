@@ -12,7 +12,7 @@ export function buildChallengeMessage(params: {
     `${params.domain} wants you to sign in with your Ethereum account:`,
     params.walletAddress,
     "",
-    "Verify wallet ownership to unlock eligible Another Me STAR NFTs.",
+    "Verify wallet ownership to unlock eligible DavaQ STAR NFTs.",
     "This request does not grant token transfer permission and costs no gas.",
     "",
     `URI: ${params.uri}`,

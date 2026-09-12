@@ -1,7 +1,7 @@
-name: anotherme-local
+name: davaq-local
 
 x-api-image: &api-image
-  image: anotherme-api:local
+  image: davaq-api:local
   build:
     context: .
     dockerfile: docker/api.Dockerfile
@@ -9,15 +9,15 @@ x-api-image: &api-image
 x-api-env: &api-env
   NODE_ENV: production
   PORT: "8080"
-  DATABASE_URL: postgres://anotherme:anotherme@postgres:5432/anotherme
+  DATABASE_URL: postgres://davaq:davaq@postgres:5432/davaq
   REDIS_URL: redis://redis:6379
-  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://anothermeai.app}
-  S3_BUCKET: anotherme-objects
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://davaqai.app}
+  S3_BUCKET: davaq-objects
   S3_REGION: us-east-1
   S3_ENDPOINT: http://minio:9000
   S3_PUBLIC_ENDPOINT: http://localhost:9000
-  S3_ACCESS_KEY_ID: anotherme
-  S3_SECRET_ACCESS_KEY: anotherme-password
+  S3_ACCESS_KEY_ID: davaq
+  S3_SECRET_ACCESS_KEY: davaq-password
   S3_FORCE_PATH_STYLE: "true"
   S3_PRIVATE_PREFIX: private
   S3_PUBLIC_PREFIXES: public
@@ -29,7 +29,7 @@ x-api-env: &api-env
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
   VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
   VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
-  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:support@anotherme.app}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:support@davaq.app}
   FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT:-}
 
 services:
@@ -88,7 +88,7 @@ services:
     <<: *api-image
     command: ["pnpm", "--filter", "@workspace/db", "run", "push:dev"]
     environment:
-      DATABASE_URL: postgres://anotherme:anotherme@postgres:5432/anotherme
+      DATABASE_URL: postgres://davaq:davaq@postgres:5432/davaq
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,15 +97,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: anotherme
-      POSTGRES_USER: anotherme
-      POSTGRES_PASSWORD: anotherme
+      POSTGRES_DB: davaq
+      POSTGRES_USER: davaq
+      POSTGRES_PASSWORD: davaq
     ports:
       - "55432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U anotherme -d anotherme"]
+      test: ["CMD-SHELL", "pg_isready -U davaq -d davaq"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -129,8 +129,8 @@ services:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      MINIO_ROOT_USER: anotherme
-      MINIO_ROOT_PASSWORD: anotherme-password
+      MINIO_ROOT_USER: davaq
+      MINIO_ROOT_PASSWORD: davaq-password
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -150,7 +150,7 @@ services:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - mc alias set local http://minio:9000 anotherme anotherme-password && mc mb --ignore-existing local/anotherme-objects && (mc anonymous set download local/anotherme-objects/public || true)
+      - mc alias set local http://minio:9000 davaq davaq-password && mc mb --ignore-existing local/davaq-objects && (mc anonymous set download local/davaq-objects/public || true)
     restart: "no"
 
 volumes:

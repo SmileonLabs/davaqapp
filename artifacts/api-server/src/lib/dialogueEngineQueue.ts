@@ -160,7 +160,7 @@ export async function processAnotherMeReplyJobBatch(engine: StatefulPersonaDialo
       await engine.processReplyJob(job);
       await markCompleted(job.id);
     } catch (err) {
-      log.warn({ err, jobId: job.id, roomId: job.roomId }, "Another Me dialogue job failed");
+      log.warn({ err, jobId: job.id, roomId: job.roomId }, "DavaQ dialogue job failed");
       await markFailed(job.id, err);
     }
   }
@@ -175,7 +175,7 @@ export function startAnotherMeReplyJobWorker(engine: StatefulPersonaDialogueEngi
     if (running) return;
     running = true;
     void processAnotherMeReplyJobBatch(engine, log)
-      .catch((err) => log.warn({ err }, "Another Me dialogue worker tick failed"))
+      .catch((err) => log.warn({ err }, "DavaQ dialogue worker tick failed"))
       .finally(() => {
         running = false;
       });

@@ -118,7 +118,7 @@ export function pinnedRequestOptions(
     headers: {
       Accept: "text/html,application/xhtml+xml",
       "Accept-Encoding": "identity",
-      "User-Agent": "AnotherMeBot/1.0 (+https://anothermeai.app)",
+      "User-Agent": "AnotherMeBot/1.0 (+https://davaq.anothermeai.app)",
       Host: target.url.host,
     },
     ...(target.url.protocol === "https:" ? { servername: originalHostname } : {}),

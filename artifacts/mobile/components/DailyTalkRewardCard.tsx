@@ -15,7 +15,7 @@ interface Props {
 
 function reasonText(reason: string | null | undefined): string {
   if (reason === "claimed") {
-    return "오늘의 톡 리워드를 이미 받았어요. 내일 다시 새로운 일기와 Another Me 동기화를 받을 수 있어요.";
+    return "오늘의 톡 리워드를 이미 받았어요. 내일 다시 새로운 일기와 DavaQ 동기화를 받을 수 있어요.";
   }
   if (reason === "analysis_disabled") {
     return "대화 분석이 꺼져 있어요. 설정에서 다시 켜면 톡 리워드를 받을 수 있어요.";
@@ -43,7 +43,7 @@ export function DailyTalkRewardCard({ onClaim, onOpenDraft, onOpenWallet, onOpen
       ? "오늘의 톡 리워드가 도착했어요"
       : "대화를 더 쌓아볼까요?";
   const description = status?.canClaim || hasDraft
-    ? "AI가 오늘의 대화를 요약하고, 보상 수령 시 Another Me 동기화 데이터로 반영해요."
+    ? "AI가 오늘의 대화를 요약하고, 보상 수령 시 DavaQ 동기화 데이터로 반영해요."
     : reasonText(status?.reason);
   const buttonLabel = hasDraft ? "일기 확인하기" : status?.claimedToday ? "내 STAR Point 보기" : "STAR Point 받고 동기화";
 
@@ -75,7 +75,7 @@ export function DailyTalkRewardCard({ onClaim, onOpenDraft, onOpenWallet, onOpen
         </Pressable>
       </View>
 
-      <Text style={styles.copy}>오늘 대화 요약을 제공하고 STAR Point와 Another Me 동기화를 받습니다.</Text>
+      <Text style={styles.copy}>오늘 대화 요약을 제공하고 STAR Point와 DavaQ 동기화를 받습니다.</Text>
 
       {canCollapseDetails ? (
         <Pressable onPress={() => setExpanded((value) => !value)} style={styles.expandButton}>

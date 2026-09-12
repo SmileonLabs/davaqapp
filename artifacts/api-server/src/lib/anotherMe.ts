@@ -228,7 +228,7 @@ function serializeRoomSettings(row: AnotherMeRoomSettings): AnotherMeRoomSetting
 async function ensureSettings(userId: string): Promise<AnotherMeSettings> {
   await db.insert(anotherMeSettingsTable).values({ userId }).onConflictDoNothing({ target: anotherMeSettingsTable.userId });
   const [row] = await db.select().from(anotherMeSettingsTable).where(eq(anotherMeSettingsTable.userId, userId));
-  if (!row) throw new AnotherMeError("invalid", "Another Me 설정을 불러오지 못했어요.");
+  if (!row) throw new AnotherMeError("invalid", "DavaQ 설정을 불러오지 못했어요.");
   return row;
 }
 
@@ -441,9 +441,9 @@ export async function expireInactiveAnotherMeSessions(roomId: string, log: Logge
 
   for (const session of expired) {
     try {
-      await postSystemMessage(session.roomId, session.ownerUserId, "Another Me 소환이 종료되었습니다.", session.id);
+      await postSystemMessage(session.roomId, session.ownerUserId, "DavaQ 소환이 종료되었습니다.", session.id);
     } catch (err) {
-      log.error({ err, sessionId: session.id }, "Failed to write Another Me expiration message");
+      log.error({ err, sessionId: session.id }, "Failed to write DavaQ expiration message");
     }
   }
 }
@@ -720,7 +720,7 @@ function buildPrompt(args: {
     `대화 상대: ${args.requesterName}`,
     isBibiOfficial
       ? `BIBI Official persona: UI가 AI 작성 라벨을 표시하므로 본문에서는 BIBI 공식 persona의 1인칭 관점으로 답하세요. '비비 너 소개', '소개해줘', '너 누구야' 같은 요청은 AI 정체성 설명이 아니라 BIBI 소개와 관계/태도 반응으로 처리하세요. 본문에서 AI 대리인처럼 자기소개하거나, 소유자/대리 응대/메시지 전달 제안 표현을 쓰지 마세요. 사생활/미확인 정보 조건은 내부 관계 조건입니다. 이번 selectedResponseFamily가 ${args.pragmaticPlan.selectedResponseFamily}이므로 ${boundaryFamilySelected ? "짧은 persona 경계 반응으로 실현할 수 있습니다." : "본문 주제로 꺼내지 말고 선택된 response family를 실현하세요."}`
-      : `${args.ownerName} persona: UI가 AI 작성 라벨을 표시하므로 본문에서는 ${args.ownerName}의 1인칭 관점으로 답하세요. AI, Another Me, 주인, 대신 응대 같은 자기소개/대리인 표현을 기본으로 쓰지 마세요. 실제 행동/일정/계약/전달/감정 약속은 내부 관계 조건으로만 판단하고, 이번 selectedResponseFamily가 ${args.pragmaticPlan.selectedResponseFamily}일 때 어울리는 반응만 실현하세요.`,
+      : `${args.ownerName} persona: UI가 AI 작성 라벨을 표시하므로 본문에서는 ${args.ownerName}의 1인칭 관점으로 답하세요. AI, DavaQ, 주인, 대신 응대 같은 자기소개/대리인 표현을 기본으로 쓰지 마세요. 실제 행동/일정/계약/전달/감정 약속은 내부 관계 조건으로만 판단하고, 이번 selectedResponseFamily가 ${args.pragmaticPlan.selectedResponseFamily}일 때 어울리는 반응만 실현하세요.`,
     `관계 유형: ${args.relationshipType}`,
     `말투 반영 수준: ${args.toneSyncLevel}`,
     isBibiOfficial
@@ -798,7 +798,7 @@ async function callReplyAI(args: {
           "Follow the social interaction ontology decision in the user prompt before choosing tone, register, emotion, and boundary.",
           "Respect Korean social norms: unclear or first-contact relationships default to polite distance; app friendship alone does not mean banmal is allowed.",
           "If the other person is overfamiliar, rude, or hostile, do not become a customer-service assistant. Set an appropriate boundary, then answer only what is safe.",
-          "Do not repeatedly introduce yourself as an AI or Another Me in the message body.",
+          "Do not repeatedly introduce yourself as an AI or DavaQ in the message body.",
           `This turn's selectedResponseFamily is ${args.pragmaticPlan.selectedResponseFamily}. Real-world presence, private feelings, message delivery, schedule confirmation, payments, contracts, and legal agreement are latent relationship constraints; they become reply content only when this response family calls for boundary/confirmation handling.`,
           "Before answering, infer the conversational need behind the latest message: emotional support, validation, practical advice, hidden favor/money probe, or casual sharing.",
           "If the user is sharing disappointment, lack of money/resources, sadness, or frustration, start with empathy and reflection. Do not jump into numbered advice unless the user explicitly asks for advice.",
@@ -845,12 +845,12 @@ async function callReplyAI(args: {
     const parsed = JSON.parse(raw);
     const validated = aiReplySchema.safeParse(parsed);
     if (!validated.success) {
-      args.log.error({ issues: validated.error.issues }, "Another Me AI response validation failed");
+      args.log.error({ issues: validated.error.issues }, "DavaQ AI response validation failed");
       return null;
     }
     const replyMessages = normalizeReplyMessages(validated.data.replyMessages);
     if (replyMessages.length === 0) {
-      args.log.error("Another Me AI response had no usable replyMessages");
+      args.log.error("DavaQ AI response had no usable replyMessages");
       return null;
     }
     return {
@@ -859,7 +859,7 @@ async function callReplyAI(args: {
       replyText: replyTextFromMessages(replyMessages),
     };
   } catch (err) {
-    args.log.error({ err }, "Another Me AI JSON parse failed");
+    args.log.error({ err }, "DavaQ AI JSON parse failed");
     return null;
   }
 }
@@ -966,7 +966,7 @@ export async function generateSummonedAnotherMeReply(args: {
     }
     return { ...rhythmAdjustedAi, pragmaticPlan };
   } catch (err) {
-    log.error({ err, roomId: args.roomId }, "Another Me AI reply failed");
+    log.error({ err, roomId: args.roomId }, "DavaQ AI reply failed");
     return { ...fallbackReply(ownerName, safety, socialDecision), pragmaticPlan };
   }
 }
@@ -1033,12 +1033,12 @@ async function postAnotherMeReply(session: AnotherMeSession, latestUserText: str
       await publishMessageCreated(session.roomId, session.ownerUserId, message);
     }
   } finally {
-    await clearTyping(session.roomId, session.ownerUserId).catch((err) => log.error({ err, sessionId: session.id }, "Failed to clear Another Me typing state"));
-    await publishTypingUpdated(session.roomId, session.ownerUserId).catch((err) => log.error({ err, sessionId: session.id }, "Failed to publish Another Me typing stop"));
+    await clearTyping(session.roomId, session.ownerUserId).catch((err) => log.error({ err, sessionId: session.id }, "Failed to clear DavaQ typing state"));
+    await publishTypingUpdated(session.roomId, session.ownerUserId).catch((err) => log.error({ err, sessionId: session.id }, "Failed to publish DavaQ typing stop"));
   }
 
   if (!lastMessage) {
-    throw new Error("Another Me reply had no message chunks to send");
+    throw new Error("DavaQ reply had no message chunks to send");
   }
 
   void getRoomDeliveryRecipients(session.roomId, session.ownerUserId)
@@ -1051,7 +1051,7 @@ async function postAnotherMeReply(session: AnotherMeSession, latestUserText: str
         tag: `another-me-${session.roomId}`,
       });
     })
-    .catch((err) => log.error({ err, sessionId: session.id }, "Failed to send Another Me reply push"));
+    .catch((err) => log.error({ err, sessionId: session.id }, "Failed to send DavaQ reply push"));
 
   if (reply.pragmaticPlan?.userAct === "summons" && reply.pragmaticPlan.sequenceState === "first_summons") {
     scheduleSummonsSilenceFollowup({ session, triggerMessage: lastMessage, latestUserText, log });
@@ -1162,9 +1162,9 @@ export async function summonAnotherMe(
 ): Promise<AnotherMeSessionView> {
   const status = await getAnotherMeSummonStatus(requesterUserId, input.roomId, input.targetUserId);
   if (!status.canSummon) {
-    if (status.reason === "waiting") throw new AnotherMeError("waiting", "아직 Another Me를 소환할 수 없어요.", { remainingSeconds: status.remainingSeconds });
-    if (status.reason === "already_active") throw new AnotherMeError("already_active", "이미 Another Me가 대화 중이에요.");
-    throw new AnotherMeError("not_allowed", "이 대화방에서는 Another Me를 소환할 수 없어요.", { reason: status.reason });
+    if (status.reason === "waiting") throw new AnotherMeError("waiting", "아직 DavaQ를 소환할 수 없어요.", { remainingSeconds: status.remainingSeconds });
+    if (status.reason === "already_active") throw new AnotherMeError("already_active", "이미 DavaQ가 대화 중이에요.");
+    throw new AnotherMeError("not_allowed", "이 대화방에서는 DavaQ를 소환할 수 없어요.", { reason: status.reason });
   }
 
   const [owner, requester] = await Promise.all([
@@ -1186,7 +1186,7 @@ export async function summonAnotherMe(
         ),
       )
       .limit(1);
-    if (existing) throw new AnotherMeError("already_active", "이미 Another Me가 대화 중이에요.");
+    if (existing) throw new AnotherMeError("already_active", "이미 DavaQ가 대화 중이에요.");
 
     const [created] = await tx
       .insert(anotherMeSessionsTable)
@@ -1228,12 +1228,12 @@ export async function summonAnotherMe(
       body: `${requester?.nickname ?? "상대"}님과의 대화에서 ${ownerName} persona 응답이 시작됐습니다.`,
       url: `/chat/${session.roomId}`,
       tag: `another-me-${session.roomId}`,
-    }).catch((err) => log.error({ err, sessionId: session.id }, "Failed to send Another Me summon push"));
+    }).catch((err) => log.error({ err, sessionId: session.id }, "Failed to send DavaQ summon push"));
   }
 
   const latestRequesterText = await latestHumanMessageContent(input.roomId, requesterUserId);
   void postAnotherMeReply(session, latestRequesterText ?? "안녕", log).catch((err) =>
-    log.error({ err, sessionId: session.id }, "Failed to post initial Another Me reply"),
+    log.error({ err, sessionId: session.id }, "Failed to post initial DavaQ reply"),
   );
   return serializeSession(session, requesterUserId, names);
 }
@@ -1245,9 +1245,9 @@ export async function dismissAnotherMeSession(
   options: { silent?: boolean; autoOwnerMessage?: boolean } = {},
 ): Promise<AnotherMeSessionView> {
   const [session] = await db.select().from(anotherMeSessionsTable).where(eq(anotherMeSessionsTable.id, sessionId));
-  if (!session) throw new AnotherMeError("not_found", "Another Me 세션을 찾을 수 없어요.");
+  if (!session) throw new AnotherMeError("not_found", "DavaQ 세션을 찾을 수 없어요.");
   if (session.ownerUserId !== userId && session.summonedByUserId !== userId) {
-    throw new AnotherMeError("forbidden", "Another Me를 종료할 권한이 없어요.");
+    throw new AnotherMeError("forbidden", "DavaQ를 종료할 권한이 없어요.");
   }
   if (session.status !== "ACTIVE") {
     const names = await sessionNames(session);
@@ -1287,12 +1287,12 @@ export async function dismissAnotherMeSession(
         finalSession.roomId,
         finalSession.ownerUserId,
         isOwner
-          ? `${ownerName}님이 직접 입장하여 Another Me가 퇴장했습니다.`
-          : "Another Me 소환이 종료되었습니다.",
+          ? `${ownerName}님이 직접 입장하여 DavaQ가 퇴장했습니다.`
+          : "DavaQ 소환이 종료되었습니다.",
         finalSession.id,
       );
     } catch (err) {
-      log.error({ err, sessionId }, "Failed to write Another Me dismiss message");
+      log.error({ err, sessionId }, "Failed to write DavaQ dismiss message");
     }
   }
 
@@ -1353,7 +1353,7 @@ async function maybeStartBibiOfficialAnotherMe(args: {
 
   if (result.systemMessage) {
     await publishMessageCreated(args.roomId, BIBI_OFFICIAL_USER_ID, result.systemMessage).catch((err) =>
-      args.log.error({ err, roomId: args.roomId }, "Failed to publish BIBI Official Another Me system message"),
+      args.log.error({ err, roomId: args.roomId }, "Failed to publish BIBI Official DavaQ system message"),
     );
   }
   return result.session;

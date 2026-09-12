@@ -16,8 +16,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useThemeMode } from "@/hooks/useThemeMode";
-import LogoBlack from "../../assets/images/logo_black.svg";
-import LogoWhite from "../../assets/images/logo_white.svg";
 
 export default function SignUpScreen() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -125,9 +123,9 @@ export default function SignUpScreen() {
       >
         <View style={styles.header}>
           {scheme === "dark" ? (
-            <LogoBlack width={240} height={30} accessibilityLabel="anotherme" />
+            <Text style={{ fontSize: 40, fontWeight: "900", color: colors.text, letterSpacing: -1.5 }}>DavaQ</Text>
           ) : (
-            <LogoWhite width={240} height={30} accessibilityLabel="anotherme" />
+            <Text style={{ fontSize: 40, fontWeight: "900", color: colors.text, letterSpacing: -1.5 }}>DavaQ</Text>
           )}
           <Text style={[styles.title, { color: colors.foreground }]}>회원가입</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>

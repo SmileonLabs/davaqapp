@@ -879,7 +879,7 @@ router.post("/calls", requireAuth, rateLimit({ name: "create-call", limit: 10, w
     }
   }
 
-  const roomName = `call_${crypto.randomUUID()}`;
+  const roomName = `davaq_call_${crypto.randomUUID()}`;
   let call: Call;
   try {
     call = await db.transaction(async (tx) => {

@@ -81,7 +81,7 @@ const BASE_DAILY_QUESTS: readonly Quest[] = [
     key: "daily_attendance",
     type: "daily",
     title: "출석 미션",
-    description: "오늘 Another Me에 접속하세요.",
+    description: "오늘 DavaQ에 접속하세요.",
     progress: 0,
     target: 1,
     completed: false,

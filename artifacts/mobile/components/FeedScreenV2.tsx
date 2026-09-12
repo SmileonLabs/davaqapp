@@ -171,7 +171,7 @@ function Composer({
       <View style={styles.composerIdentity}>
         <Avatar
           uri={activeProfile?.profileImageUrl}
-          name={activeProfile?.displayName || "Another Me"}
+          name={activeProfile?.displayName || "DavaQ"}
           size={48}
           crop="face"
           characterType={activeProfile?.type}
@@ -255,7 +255,7 @@ function FeedCard({
   const share = async () => {
     const url = Platform.OS === "web" && typeof window !== "undefined"
       ? `${window.location.origin}/app/feed?postId=${post.id}`
-      : `https://anothermeai.app/app/feed?postId=${post.id}`;
+      : `https://davaq.anothermeai.app/app/feed?postId=${post.id}`;
     try {
       await Share.share({ title: `${displayNameOf(post.author)}님의 게시물`, message: `${post.body}\n${url}`, url });
     } catch {

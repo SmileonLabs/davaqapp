@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "anotherMe",
-    "slug": "anotherme",
+    "name": "DavaQ",
+    "slug": "davaq",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "anotherme",
+    "scheme": "davaq",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.anotherme.app",
+      "bundleIdentifier": "app.davaq.mobile",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio",
@@ -27,13 +27,12 @@
       "bitcode": false
     },
     "android": {
-      "package": "com.anotherme.app",
+      "package": "app.davaq.mobile",
       "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#05040D"
       },
-      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -52,9 +51,9 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "name": "anotherme",
-      "shortName": "anotherme",
-      "description": "AI가 판정하는 말빨 배틀!",
+      "name": "DavaQ",
+      "shortName": "DavaQ",
+      "description": "DavaQ (다바꿔)",
       "backgroundColor": "#0A0A0A",
       "themeColor": "#000000",
       "lang": "ko",
@@ -65,7 +64,7 @@
       [
         "expo-router",
         {
-          "origin": "https://anothermeai.app/"
+          "origin": "https://davaq.anothermeai.app/"
         }
       ],
       "expo-font",
@@ -92,10 +91,6 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "e77d5bb1-663e-4cb9-8679-40be200c2249"
-      }
-    }
+    "extra": {}
   }
 }

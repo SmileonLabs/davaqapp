@@ -7,14 +7,14 @@ describe("wallet verification challenge", () => {
       walletAddress: "0x1111111111111111111111111111111111111111",
       requestId: "4d63e4d6-76ae-4d62-a075-5811f24df52d",
       nonce: "0123456789abcdef",
-      domain: "anothermeai.app",
-      uri: "https://anothermeai.app",
+      domain: "davaq.anothermeai.app",
+      uri: "https://davaq.anothermeai.app",
       chainId: 56,
       issuedAt: new Date("2026-07-18T00:00:00.000Z"),
       expiresAt: new Date("2026-07-18T00:10:00.000Z"),
     });
 
-    expect(message).toContain("anothermeai.app wants you to sign in");
+    expect(message).toContain("davaq.anothermeai.app wants you to sign in");
     expect(message).toContain("Chain ID: 56");
     expect(message).toContain("Nonce: 0123456789abcdef");
     expect(message).toContain("Expiration Time: 2026-07-18T00:10:00.000Z");

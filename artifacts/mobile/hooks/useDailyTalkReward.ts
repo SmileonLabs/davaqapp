@@ -12,7 +12,7 @@ export function dailyTalkRewardSyncLabel(status: DailyTalkRewardOntologySyncStat
     case "processing":
       return "분석 반영 중";
     case "processed":
-      return "Another Me 반영 완료";
+      return "DavaQ 반영 완료";
     case "retrying":
       return "다시 시도 예정";
     case "failed":
@@ -26,11 +26,11 @@ export function dailyTalkRewardSyncLabel(status: DailyTalkRewardOntologySyncStat
 export function dailyTalkRewardSyncDescription(status: DailyTalkRewardOntologySyncStatus | undefined | null): string {
   switch (status) {
     case "pending":
-      return "동기화 요청이 접수됐어요. 곧 Another Me에 반영돼요.";
+      return "동기화 요청이 접수됐어요. 곧 DavaQ에 반영돼요.";
     case "processing":
-      return "대화 요약과 평가 점수를 Another Me 프로필에 반영하는 중이에요.";
+      return "대화 요약과 평가 점수를 DavaQ 프로필에 반영하는 중이에요.";
     case "processed":
-      return "요약/키워드/평가 점수가 Another Me에 반영됐어요.";
+      return "요약/키워드/평가 점수가 DavaQ에 반영됐어요.";
     case "retrying":
       return "일시적인 문제로 잠시 후 자동으로 다시 시도해요.";
     case "failed":

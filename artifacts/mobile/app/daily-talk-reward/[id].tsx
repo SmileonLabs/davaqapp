@@ -127,7 +127,7 @@ export default function DailyTalkRewardPreviewScreen() {
         <View style={[styles.hero, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.kicker, { color: colors.primary }]}>오늘의 대화 일기</Text>
           <Text style={[styles.heroTitle, { color: colors.foreground }]}>대화 품질 점수는 {reward.qualityScore}점이에요.</Text>
-          <Text style={[styles.heroBody, { color: colors.mutedForeground }]}>예상 리워드는 {reward.pvtAmount} STAR Point이며, 수령 시 Another Me 동기화에 반영돼요.</Text>
+          <Text style={[styles.heroBody, { color: colors.mutedForeground }]}>예상 리워드는 {reward.pvtAmount} STAR Point이며, 수령 시 DavaQ 동기화에 반영돼요.</Text>
           <View style={styles.heroPills}>
             <View style={[styles.pill, { backgroundColor: colors.muted }]}>
               <Feather name="smile" size={14} color={colors.primary} />
@@ -170,7 +170,7 @@ export default function DailyTalkRewardPreviewScreen() {
         {rewardSyncTone ? (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.syncHeaderRow}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Another Me 동기화</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>DavaQ 동기화</Text>
               <View style={[styles.syncBadge, { backgroundColor: rewardSyncTone.backgroundColor, borderColor: rewardSyncTone.borderColor }]}>
                 <Feather name={reward.ontologySyncStatus === "processed" ? "check-circle" : "refresh-cw"} size={13} color={rewardSyncTone.color} />
                 <Text style={[styles.syncBadgeText, { color: rewardSyncTone.color }]}>{dailyTalkRewardSyncLabel(reward.ontologySyncStatus)}</Text>
@@ -201,7 +201,7 @@ export default function DailyTalkRewardPreviewScreen() {
 
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>공개 범위</Text>
-          <Text style={[styles.notice, { color: colors.mutedForeground }]}>기본값은 나만 보기입니다. 원문 채팅은 저장하지 않고, 요약/키워드/평가 점수만 Another Me 동기화 데이터로 반영돼요.</Text>
+          <Text style={[styles.notice, { color: colors.mutedForeground }]}>기본값은 나만 보기입니다. 원문 채팅은 저장하지 않고, 요약/키워드/평가 점수만 DavaQ 동기화 데이터로 반영돼요.</Text>
           <View style={styles.visibilityList}>
             {VISIBILITIES.map((item) => {
               const active = visibility === item.value;
@@ -234,7 +234,7 @@ export default function DailyTalkRewardPreviewScreen() {
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>오늘의 톡 리워드 완료!</Text>
             <Text style={[styles.modalBody, { color: colors.mutedForeground }]}>대화 품질 점수: {result?.qualityScore ?? 0}점</Text>
             <Text style={[styles.modalReward, { color: colors.primary }]}>{result?.pvtAmount ?? 0} STAR Point를 획득했습니다.</Text>
-            <Text style={[styles.modalBody, { color: colors.mutedForeground }]}>동기화 요청이 접수됐어요. 곧 Another Me에 반영돼요.</Text>
+            <Text style={[styles.modalBody, { color: colors.mutedForeground }]}>동기화 요청이 접수됐어요. 곧 DavaQ에 반영돼요.</Text>
             <View style={styles.modalActions}>
               <Pressable onPress={() => setResult(null)} style={[styles.modalButton, { backgroundColor: colors.muted }]}>
                 <Text style={[styles.modalButtonText, { color: colors.foreground }]}>확인</Text>

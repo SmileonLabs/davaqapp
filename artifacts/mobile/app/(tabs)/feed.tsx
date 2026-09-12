@@ -29,7 +29,7 @@ import FeedScreenV2 from "@/components/FeedScreenV2";
 type ColorTokens = ReturnType<typeof useColors>;
 
 const KIND_META: Record<StarFeedPostKind, { label: string; tags: string[] }> = {
-  official: { label: "STAR", tags: ["공식", "Another Me"] },
+  official: { label: "STAR", tags: ["공식", "DavaQ"] },
   event: { label: "STAR", tags: ["이벤트", "미션"] },
   fan: { label: "FAN", tags: ["응원해요", "비비"] },
   star: { label: "STAR", tags: ["STAR", "성장"] },
@@ -134,7 +134,7 @@ function FeedPostCard({
   const [commentsOpen, setCommentsOpen] = useState(false);
   // Older production rows may contain a feed kind added after this client was
   // built. Keep the card renderable instead of crashing the whole feed screen.
-  const meta = KIND_META[post.kind] ?? { label: "FAN", tags: ["Another Me", "새 소식"] };
+  const meta = KIND_META[post.kind] ?? { label: "FAN", tags: ["DavaQ", "새 소식"] };
   const keywordTags = metadataStringArray(post.metadata, "keywords").slice(0, 2);
   const tags = keywordTags.length ? keywordTags : meta.tags;
   const canComment = commentDraft.trim().length > 0 && !isCommenting;

@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 
 /**
- * A Clan ("가문") — a group of "Another Me" personas with a shared identity and
+ * A Clan ("가문") — a group of "DavaQ" personas with a shared identity and
  * growth direction. This phase implements creation/join/leave/lookup only; Clan
  * War / Clan Memory / Clan Ranking are intentionally out of scope. `level`/`exp`
  * exist for a later phase and are never mutated by the existing XP system — they

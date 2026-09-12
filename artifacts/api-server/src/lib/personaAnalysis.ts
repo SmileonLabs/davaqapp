@@ -136,7 +136,7 @@ export async function collectActivity(userId: string): Promise<CollectedActivity
 }
 
 const SYSTEM_PROMPT = [
-  "당신은 소셜 앱 'Another Me'의 인격 분석 도우미입니다.",
+  "당신은 소셜 앱 'DavaQ'의 인격 분석 도우미입니다.",
   "당신의 임무는 사용자가 앱 안에서 남긴 활동을 바탕으로, 그 사람의 '또 다른 자아(분신)'를 성장형 관점에서 부드럽게 묘사하는 것입니다.",
   "",
   "절대 규칙:",

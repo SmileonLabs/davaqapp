@@ -1,0 +1,7 @@
+
+# DavaQ is deployed independently. The shared edge only routes this hostname.
+davaq.anothermeai.app {
+  import access_observability
+  header Alt-Svc "clear"
+  reverse_proxy davaq-web:80
+}

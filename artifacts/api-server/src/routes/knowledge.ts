@@ -71,7 +71,7 @@ async function collectSourceBody(source: typeof knowledgeSourcesTable.$inferSele
   const response = await fetch(source.url, {
     redirect: "follow",
     headers: {
-      "user-agent": "Mozilla/5.0 (compatible; AnotherMeKnowledgeBot/1.0; +https://anothermeai.app)",
+      "user-agent": "Mozilla/5.0 (compatible; AnotherMeKnowledgeBot/1.0; +https://davaq.anothermeai.app)",
       accept: "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
       "accept-language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
     },

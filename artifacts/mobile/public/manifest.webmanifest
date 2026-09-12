@@ -1,7 +1,7 @@
 {
-  "name": "Another Me",
-  "short_name": "Another Me",
-  "description": "Another Me",
+  "name": "DavaQ (다바꿔)",
+  "short_name": "DavaQ",
+  "description": "DavaQ (다바꿔)",
   "start_url": "/app/",
   "scope": "/app/",
   "display": "standalone",
@@ -19,5 +19,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "id": "/app/"
 }

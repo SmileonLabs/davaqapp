@@ -322,7 +322,7 @@ function RootStackNav() {
       />
       <Stack.Screen
         name="settings/another-me"
-        options={{ title: "Another Me 소환", headerBackTitle: "Back" }}
+        options={{ title: "DavaQ 소환", headerBackTitle: "Back" }}
       />
       <Stack.Screen
         name="settings/ai-memories"

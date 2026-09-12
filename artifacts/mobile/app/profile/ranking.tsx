@@ -106,7 +106,7 @@ const MEDAL_COLORS: Record<number, string> = {
 
 const SCOPE_COPY: Record<RankingScope, { title: string; subtitle: string; empty: string; cta: string }> = {
   persona: {
-    title: "Another Me 랭킹",
+    title: "DavaQ 랭킹",
     subtitle: "자아 동기화, 말하기, 선택의 누적 기록을 확인해보세요.",
     empty: "토크배틀을 플레이하거나 활동 기록을 쌓아 랭킹에 도전해보세요.",
     cta: "토크배틀 하러가기",

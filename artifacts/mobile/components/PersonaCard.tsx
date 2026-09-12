@@ -114,7 +114,7 @@ export function PersonaCard({
 
       <View style={styles.divider} />
       <Text style={styles.motto}>“{card.motto}”</Text>
-      <Text style={styles.brand}>Another Me 동기화</Text>
+      <Text style={styles.brand}>DavaQ 동기화</Text>
     </LinearGradient>
   );
 }

@@ -67,14 +67,14 @@ router.get("/users/me/persona", requireAuth, async (req, res): Promise<void> => 
 
 /**
  * The Persona Card is ontology-only. If no ontology snapshot exists yet, return
- * 404 so stale legacy persona values cannot look like a valid Another Me state.
+ * 404 so stale legacy persona values cannot look like a valid DavaQ state.
  */
 router.get("/users/me/persona/card", requireAuth, async (req, res): Promise<void> => {
   const user = req.dbUser!;
   const displayName = user.nickname?.trim() || "나";
   const card = await getPersonaCard(user.id, displayName);
   if (!card) {
-    res.status(404).json({ error: "persona_ontology_not_found", message: "Another Me ontology profile has not been created yet." });
+    res.status(404).json({ error: "persona_ontology_not_found", message: "DavaQ ontology profile has not been created yet." });
     return;
   }
   res.json(card);

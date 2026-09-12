@@ -57,3 +57,7 @@ Thumbs.db
 .cache/
 .local/
 .deploy-history.log
+
+# DavaQ generated web releases
+**/web-build*
+/artifacts/landing/public/assets/

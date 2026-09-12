@@ -66,7 +66,7 @@ export default function AiMemoriesScreen() {
             내 AI 기억
           </Text>
           <Text style={[styles.heroBody, { color: colors.mutedForeground }]}>
-            Another Me가 참고해도 되는 취향, 선호, 말투 힌트를 직접 관리합니다.
+            DavaQ가 참고해도 되는 취향, 선호, 말투 힌트를 직접 관리합니다.
             삭제하면 더 이상 응답에 사용하지 않습니다.
           </Text>
         </View>

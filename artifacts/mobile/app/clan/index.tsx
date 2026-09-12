@@ -359,7 +359,7 @@ function EmptyState({
           아직 소속된 팬클럽이 없습니다.
         </Text>
         <Text style={[styles.emptySub, { color: colors.mutedForeground }]}>
-          비슷한 정체성을 가진 Another Me들과 함께 성장해보세요.
+          비슷한 정체성을 가진 DavaQ들과 함께 성장해보세요.
         </Text>
       </LinearGradient>
 

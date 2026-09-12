@@ -73,7 +73,7 @@ export default function AnotherMeSettingsScreen() {
         await refetch();
       } catch {
         await refetch();
-        crossAlert("오류", "Another Me 설정을 변경하지 못했습니다.");
+        crossAlert("오류", "DavaQ 설정을 변경하지 못했습니다.");
       }
     },
     [refetch, update],
@@ -100,7 +100,7 @@ export default function AnotherMeSettingsScreen() {
             <Feather name="message-circle" size={22} color={colors.primary} />
           </View>
           <Text style={[styles.heroTitle, { color: colors.foreground }]}>
-            Another Me 소환
+            DavaQ 소환
           </Text>
           <Text style={[styles.heroBody, { color: colors.mutedForeground }]}>
             답장이 늦어질 때, 내가 허용한 상대가 내 AI 분신을 잠시 소환해 대화를
@@ -110,7 +110,7 @@ export default function AnotherMeSettingsScreen() {
 
         <View style={[styles.section, { backgroundColor: colors.background }]}>
           <SettingSwitch
-            label="Another Me 소환 허용"
+            label="DavaQ 소환 허용"
             description="꺼져 있으면 어떤 채팅방에서도 소환되지 않습니다"
             value={settings.summonEnabled}
             onChange={(value) => void patch({ summonEnabled: value })}
@@ -166,7 +166,7 @@ export default function AnotherMeSettingsScreen() {
               소환 대기 시간은 30초입니다
             </Text>
             <Text style={[styles.waitSub, { color: colors.mutedForeground }]}>
-              상대가 마지막 메시지 이후 30초 동안 답장하지 않으면 Another Me
+              상대가 마지막 메시지 이후 30초 동안 답장하지 않으면 DavaQ
               소환 카드가 표시됩니다.
             </Text>
           </View>

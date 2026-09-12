@@ -7,7 +7,7 @@ import {
   replaceReplyMessages,
 } from "./anotherMeReplyPolicy";
 
-describe("Another Me reply policy", () => {
+describe("DavaQ reply policy", () => {
   it("redacts prompt-sensitive text before clipping", () => {
     const clipped = clip("mail@example.com 010-1234-5678 서울로 12", 200);
     expect(clipped).toContain("[이메일]");

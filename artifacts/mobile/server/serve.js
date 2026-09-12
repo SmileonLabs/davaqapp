@@ -23,7 +23,7 @@ const apiProxyTarget = parseApiProxyTarget(process.env.API_PROXY_TARGET);
 const apiProxyOrigin =
   process.env.API_PROXY_ORIGIN ||
   process.env.PWA_ORIGIN ||
-  "https://anothermeai.app";
+  "https://davaq.anothermeai.app";
 
 function parseApiProxyTarget(value) {
   if (!value) return null;

@@ -740,7 +740,7 @@ router.post(
       }).catch((err) =>
         req.log.error(
           { err, roomId: raw, messageId: message.id },
-          "Another Me message hook failed",
+          "DavaQ message hook failed",
         ),
       );
     }

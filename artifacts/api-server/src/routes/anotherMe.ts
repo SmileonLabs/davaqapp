@@ -51,7 +51,7 @@ const toneProfileSchema = z.object({
 
 function sendAnotherMeError(res: Response, err: unknown): void {
   if (!(err instanceof AnotherMeError)) {
-    res.status(500).json({ error: "internal", message: "Another Me 처리 중 오류가 발생했어요." });
+    res.status(500).json({ error: "internal", message: "DavaQ 처리 중 오류가 발생했어요." });
     return;
   }
   if (err.code === "not_member" || err.code === "not_found") {
@@ -131,7 +131,7 @@ router.post("/another-me/summon", requireAuth, rateLimit({ name: "another-me-sum
   try {
     res.status(201).json(await summonAnotherMe(req.dbUser!.id, parsed.data, req.log));
   } catch (err) {
-    req.log.error({ err }, "Another Me summon failed");
+    req.log.error({ err }, "DavaQ summon failed");
     sendAnotherMeError(res, err);
   }
 });

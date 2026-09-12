@@ -68,7 +68,7 @@ if (createMemorySample) {
     .values({
       userId: verifiedUserId,
       memoryType: "preference",
-      text: `런타임 검증용 AI 기억입니다. Another Me는 답변을 짧고 명확하게 정리하는 방식을 선호합니다. ${new Date().toISOString()}`,
+      text: `런타임 검증용 AI 기억입니다. DavaQ는 답변을 짧고 명확하게 정리하는 방식을 선호합니다. ${new Date().toISOString()}`,
       privacyScope: "user_private",
       status: "approved",
       source: "runtime_verify",

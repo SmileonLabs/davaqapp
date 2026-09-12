@@ -245,7 +245,7 @@ function ontologyNextActions(profile: PersonaProfileView | null): string[] {
   const counts = profile.sourceCounts ?? {};
   const actions: string[] = [];
   if (!counts.chat) actions.push("Talk to Earn 보상을 수령해 대화 스타일 근거를 추가해 보세요.");
-  if (!counts.memory) actions.push("AI 기억을 추가해 Another Me가 선호와 말투를 더 정확히 참고하게 해보세요.");
+  if (!counts.memory) actions.push("AI 기억을 추가해 DavaQ가 선호와 말투를 더 정확히 참고하게 해보세요.");
   if (!counts.battle) actions.push("토크배틀 발언 평가를 반영하면 표현 역량이 더 입체적으로 정리돼요.");
   if (profile.confidence < 70) actions.push("서로 다른 출처가 2개 이상 쌓이면 신뢰도가 더 안정적으로 올라가요.");
 
@@ -260,7 +260,7 @@ function ontologySyncTimeline(profile: PersonaProfileView | null): PersonaCard["
 /**
  * Build the persona card for a user from ontology data only. Returning null when
  * the ontology snapshot is missing is intentional: stale legacy stats must not
- * masquerade as a valid Another Me profile.
+ * masquerade as a valid DavaQ profile.
  */
 export async function getPersonaCard(
   userId: string,
@@ -286,7 +286,7 @@ export async function getPersonaCard(
     ].slice(0, 3),
     weaknesses: [],
     growthDirection: ontologyProfile.capabilities.length > 0 || ontologyProfile.communicationStyles.length > 0
-      ? "대화와 토크배틀 evidence가 쌓일수록 Another Me가 말투와 표현 방식을 더 안전하게 동기화합니다."
+      ? "대화와 토크배틀 evidence가 쌓일수록 DavaQ가 말투와 표현 방식을 더 안전하게 동기화합니다."
       : "직접 AI 기억을 추가하거나 토크배틀에서 발언하면 자아 프로필이 더 또렷해집니다.",
     motto: "나는 점수보다 맥락으로 성장하는 또 다른 자아입니다.",
   };

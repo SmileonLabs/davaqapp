@@ -15,7 +15,7 @@ import {
 export const BIBI_OFFICIAL_USER_ID = "00000000-0000-4000-8000-00000000b1b1";
 export const BIBI_OFFICIAL_HANDLE = "@bibi_official";
 export const BIBI_OFFICIAL_CHARACTER_IMAGE_URL =
-  "https://anothermeai.app/images/bibi-character-profile-v2.png";
+  "https://davaq.anothermeai.app/images/bibi-character-profile-v2.png";
 
 const BIBI_OFFICIAL_SEED = {
   id: BIBI_OFFICIAL_USER_ID,

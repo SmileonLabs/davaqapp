@@ -42,9 +42,9 @@ describe("API readiness and CORS", () => {
   it("allows the configured PWA origin and rejects arbitrary browser origins", async () => {
     const allowed = await request(app)
       .get("/api/healthz")
-      .set("Origin", "https://anothermeai.app");
+      .set("Origin", "https://davaq.anothermeai.app");
     expect(allowed.status).toBe(200);
-    expect(allowed.headers["access-control-allow-origin"]).toBe("https://anothermeai.app");
+    expect(allowed.headers["access-control-allow-origin"]).toBe("https://davaq.anothermeai.app");
     expect(allowed.headers["access-control-expose-headers"]).toContain(
       "X-Edge-Request-Id",
     );
