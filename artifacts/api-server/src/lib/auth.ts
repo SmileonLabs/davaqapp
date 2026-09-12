@@ -88,7 +88,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
   }
 
-  if (provisionedInThisRequest) {
+  if (provisionedInThisRequest && process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true") {
     try {
       await ensureBibiFriendshipForUser(user.id);
     } catch (err) {

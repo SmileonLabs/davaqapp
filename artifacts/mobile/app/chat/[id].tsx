@@ -32,6 +32,7 @@ import {
   type MessageStickerBadge,
 } from "@workspace/api-client-react";
 import { MessageBubble } from "@/components/MessageBubble";
+import { ExchangeChatCard } from "@/components/davaq/ProposalScreens";
 import { ChatRoomContextBar } from "@/components/chat/ChatRoomContextBar";
 import { ChatRoomSheets } from "@/components/chat/ChatRoomSheets";
 import { FadeInView } from "@/components/FadeInView";
@@ -894,6 +895,7 @@ export default function ChatScreen() {
               </View>
             </View>
           ) : null}
+          {(item as any).metadata?.exchangeProposalId && !(item as any).deletedAt ? <ExchangeChatCard proposalId={(item as any).metadata.exchangeProposalId} version={(item as any).metadata.exchangeVersion ?? 1}/> : null}
           <MessageBubble
             messageId={item.id}
             content={item.content}

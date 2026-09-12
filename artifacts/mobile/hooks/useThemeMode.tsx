@@ -22,7 +22,7 @@ interface ThemeModeValue {
 
 export const ThemeModeContext = createContext<ThemeModeValue | null>(null);
 
-const STORAGE_KEY = "todotalk:themeMode";
+const STORAGE_KEY = "davaq:themeMode:v1";
 
 /**
  * Holds the app-wide theme preference. "system" follows the device appearance;
@@ -32,7 +32,7 @@ const STORAGE_KEY = "todotalk:themeMode";
  */
 export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [mode, setModeState] = useState<ThemeMode>("light");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {

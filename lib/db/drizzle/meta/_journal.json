@@ -90,6 +90,10 @@
     { "idx": 25, "version": "7", "when": 1784966400000, "tag": "0025_remove_legacy_account_avatars", "breakpoints": true },
     { "idx": 26, "version": "7", "when": 1785052800000, "tag": "0026_bibi_official_character_avatar", "breakpoints": true },
     { "idx": 27, "version": "7", "when": 1788480000000, "tag": "0027_avatar_customization", "breakpoints": true },
-    { "idx": 28, "version": "7", "when": 1788652800000, "tag": "0028_call_consistency", "breakpoints": true }
+    { "idx": 28, "version": "7", "when": 1788652800000, "tag": "0028_call_consistency", "breakpoints": true },
+    { "idx": 29, "version": "7", "when": 1789171200000, "tag": "0029_davaq_exchange", "breakpoints": true },
+    { "idx": 30, "version": "7", "when": 1789171200001, "tag": "0030_davaq_media_learning", "breakpoints": true },
+    { "idx": 31, "version": "7", "when": 1789171200002, "tag": "0031_davaq_request_keys", "breakpoints": true },
+    { "idx": 32, "version": "7", "when": 1789171200003, "tag": "0032_davaq_operational_state", "breakpoints": true }
   ]
 }

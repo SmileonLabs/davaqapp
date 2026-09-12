@@ -1,1 +1,1 @@
-export { default } from "@/components/ChatsScreenV2";
+export { InboxScreen as default } from "@/components/davaq/Tabs";

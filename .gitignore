@@ -9,6 +9,7 @@ out-tsc
 .expo-shared
 
 # dependencies
+artifacts/api-server/.davaq-integration/
 node_modules
 
 # IDEs and editors

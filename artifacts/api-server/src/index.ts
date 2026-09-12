@@ -4,6 +4,7 @@ import { logger } from "./lib/logger";
 import { attachRealtimeServer } from "./lib/realtime";
 import { startOntologySyncWorker } from "./lib/ontologySync";
 import { startCallLifecycleWorker } from "./routes/calls";
+import { startDavaqAgentWorker } from "./lib/davaqAgent";
 
 const rawPort = process.env["PORT"] ?? "8080";
 
@@ -25,6 +26,7 @@ server.once("error", (err) => {
 // before replicas start. App startup only begins request-serving workers.
 startOntologySyncWorker(logger);
 startCallLifecycleWorker(logger);
+startDavaqAgentWorker();
 
 server.listen(port, () => {
   logger.info({ port }, "Server listening");

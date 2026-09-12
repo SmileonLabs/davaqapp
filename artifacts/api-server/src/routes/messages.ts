@@ -717,7 +717,7 @@ router.post(
         ),
       );
 
-      void enqueueChatKnowledgeCandidateFromMessage({
+      if (process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true") void enqueueChatKnowledgeCandidateFromMessage({
         messageId: message.id,
         roomId: raw,
         roomType: room?.type,
@@ -729,7 +729,7 @@ router.post(
 
     if (
       createdResult.created &&
-      room?.type === "direct" &&
+      process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true" && room?.type === "direct" &&
       input.type === "text"
     ) {
       void handleAnotherMeAfterUserMessage({

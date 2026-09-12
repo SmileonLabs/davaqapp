@@ -1,1 +1,1 @@
-export { default } from "@/components/home/HomeV2";
+export { HomeScreen as default } from "@/components/davaq/Tabs";

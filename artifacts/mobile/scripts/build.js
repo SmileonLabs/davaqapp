@@ -79,9 +79,9 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     if (!html.includes('name="viewport"')) html = html.replace("</head>", `    ${viewport}\n  </head>`);
 
     const headMeta = [
-      '<meta name="theme-color" content="#05040D">',
+      '<meta name="theme-color" content="#F7F6FB">',
       '<meta name="apple-mobile-web-app-capable" content="yes">',
-      '<meta name="apple-mobile-web-app-status-bar-style" content="black">',
+      '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
       '<meta name="mobile-web-app-capable" content="yes">',
     ];
     for (const meta of headMeta) {
@@ -107,7 +107,7 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     // ScrollView/FlatList screens remain scrollable inside this fixed shell.
     const MARKER = "anotherme-pwa-layout-fix";
     if (!html.includes(MARKER) && html.includes("</head>")) {
-      const style = `    <style id="${MARKER}">\n      :root { background: #05040D; color-scheme: dark; }\n      html, body { width: 100%; max-width: 100%; height: 100%; min-height: 100dvh; margin: 0; overflow: hidden; }\n      body { background: #05040D; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overscroll-behavior: none; }\n      #root { width: 100%; height: 100%; min-height: 100dvh; overflow: auto; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }\n    </style>\n  </head>`;
+      const style = `    <style id="${MARKER}">\n      :root { background: #F7F6FB; color-scheme: light; }\n      html, body { width: 100%; max-width: 100%; height: 100%; min-height: 100dvh; margin: 0; overflow: hidden; }\n      body { background: #F7F6FB; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overscroll-behavior: none; }\n      #root { width: 100%; height: 100%; min-height: 100dvh; overflow: auto; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }\n    </style>\n  </head>`;
       html = html.replace("</head>", style);
     }
 
@@ -118,7 +118,7 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     if (!html.includes(`id="${SPLASH_MARKER}"`) && /<body[^>]*>/i.test(html)) {
       const splash = `<div id="${SPLASH_MARKER}" aria-hidden="true"><img src="${assetBase}/icon-512.png" alt=""></div>
     <style>
-      #${SPLASH_MARKER} { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; background: #05040D; }
+      #${SPLASH_MARKER} { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; background: #F7F6FB; }
       #${SPLASH_MARKER} img { width: min(44vw, 224px); height: auto; display: block; }
     </style>
     <script>
@@ -363,7 +363,7 @@ async function main() {
   fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2) + "\n");
 
   try {
-    await runPnpm(["exec", "expo", "export", "--clear", "-p", "web", "--output-dir", OUTPUT_DIR], env);
+    await run(process.execPath, [path.join(path.dirname(require.resolve("expo/package.json")), "bin", "cli"), "export", "--clear", "-p", "web", "--output-dir", OUTPUT_DIR], env);
   } finally {
     // Always restore the committed app.json (no baseUrl) for native builds.
     fs.writeFileSync(appJsonPath, originalAppJson);

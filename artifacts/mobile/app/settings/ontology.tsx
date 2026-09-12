@@ -1,7 +1,2 @@
-import React from "react";
-
-import { PersonaScreen } from "../(tabs)/persona";
-
-export default function OntologyScreen() {
-  return <PersonaScreen key="persona-ontology" showOntologyDetails />;
-}
+import { Redirect } from "expo-router";
+export default function LegacyOntology(){return <Redirect href="/agent/memories"/>;}

@@ -345,7 +345,7 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
 
   const statusMessageChanged =
     statusMessage !== undefined && (statusMessage ?? null) !== (user.statusMessage ?? null);
-  const shouldRecordProfileUpdate = statusMessageChanged;
+  const shouldRecordProfileUpdate = statusMessageChanged && process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true";
 
   const updated = await db.transaction(async (tx) => {
     const [updatedUser] = Object.keys(updates).length > 0

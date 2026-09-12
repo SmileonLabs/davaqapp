@@ -35,7 +35,7 @@ import { useColors } from "@/hooks/useColors";
 import { getApiBase } from "@/lib/apiBase";
 import { useRealtimeInvalidation } from "@/lib/realtime";
 import { usePresenceHeartbeat } from "@/hooks/usePresence";
-import { WalletConnectionProvider } from "@/lib/walletConnection";
+
 
 const apiBase = getApiBase();
 if (apiBase) setBaseUrl(apiBase);
@@ -348,7 +348,7 @@ function RootLayoutNav() {
   const authenticatedTheme = React.useMemo(
     () =>
       isSignedIn
-        ? { ...themeMode, mode: "dark" as const, scheme: "dark" as const }
+        ? { ...themeMode, mode: "light" as const, scheme: "light" as const }
         : themeMode,
     [isSignedIn, themeMode],
   );
@@ -406,7 +406,7 @@ export default function RootLayout() {
           <ApiAuthBridge>
             <SafeAreaProvider>
               <SessionQueryProvider>
-                <WalletConnectionProvider>
+                <React.Fragment>
                   <GestureHandlerRootView style={{ flex: 1 }}>
                     <CallProvider>
                     <RealtimeInvalidator />
@@ -427,7 +427,7 @@ export default function RootLayout() {
                     )}
                     </CallProvider>
                   </GestureHandlerRootView>
-                </WalletConnectionProvider>
+                </React.Fragment>
               </SessionQueryProvider>
             </SafeAreaProvider>
           </ApiAuthBridge>

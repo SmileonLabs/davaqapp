@@ -1,25 +1,25 @@
 const colors = {
   light: {
-    text: "#1A1A2E",
-    tint: "#5B6EE8",
+    text: "#242438",
+    tint: "#6D4AFF",
 
-    background: "#FFFFFF",
-    foreground: "#1A1A2E",
+    background: "#F7F6FB",
+    foreground: "#242438",
 
-    card: "#F8F8FF",
-    cardForeground: "#1A1A2E",
+    card: "#FFFFFF",
+    cardForeground: "#242438",
 
-    primary: "#5B6EE8",
+    primary: "#6D4AFF",
     primaryForeground: "#FFFFFF",
 
     secondary: "#F0F1FD",
-    secondaryForeground: "#1A1A2E",
+    secondaryForeground: "#242438",
 
     muted: "#F5F5FA",
     mutedForeground: "#8E8E93",
 
     accent: "#EEF0FD",
-    accentForeground: "#5B6EE8",
+    accentForeground: "#6D4AFF",
 
     destructive: "#FF3B30",
     destructiveForeground: "#FFFFFF",
@@ -27,10 +27,10 @@ const colors = {
     border: "#E5E5EA",
     input: "#F2F2F7",
 
-    myBubble: "#5B6EE8",
+    myBubble: "#6D4AFF",
     myBubbleText: "#FFFFFF",
     otherBubble: "#F0F1FD",
-    otherBubbleText: "#1A1A2E",
+    otherBubbleText: "#242438",
 
     destructiveMuted: "#FFEAE8",
 
@@ -79,7 +79,7 @@ const colors = {
 /** Reusable gradient ramps (tuples typed for expo-linear-gradient). */
 export const gradients = {
   /** Primary call-to-action button. */
-  cta: ["#7B88F5", "#5B6EE8"] as const,
+  cta: ["#7B88F5", "#6D4AFF"] as const,
   /** Soft lavender surface for highlighted cards (light mode). */
   soft: ["#EEF0FE", "#F2ECFF"] as const,
 };

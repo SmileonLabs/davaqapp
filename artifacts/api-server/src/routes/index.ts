@@ -36,7 +36,12 @@ import adminRolesRouter from "./adminRoles";
 import adminOperationsRouter from "./adminOperations";
 import characterProfilesRouter from "./characterProfiles";
 
+import exchangeRouter from "./exchange";
+import agentsRouter from "./agents";
+
 const router: IRouter = Router();
+router.use(exchangeRouter);
+router.use(agentsRouter);
 
 router.use(usersRouter);
 router.use(friendsRouter);
@@ -46,29 +51,29 @@ router.use(invitesRouter);
 router.use(blockedRouter);
 router.use(callsRouter);
 router.use(storageRouter);
-router.use(dungeonsRouter);
-router.use(lifeQuestsRouter);
-router.use(battlesRouter);
+// DavaQ: dungeons is outside the exchange service.
+// DavaQ: lifeQuests is outside the exchange service.
+// DavaQ: battles is outside the exchange service.
 router.use(personaRouter);
-router.use(clansRouter);
-router.use(clanWarsRouter);
-router.use(questsRouter);
-router.use(playModeRouter);
+// DavaQ: clans is outside the exchange service.
+// DavaQ: clanWars is outside the exchange service.
+// DavaQ: quests is outside the exchange service.
+// DavaQ: playMode is outside the exchange service.
 router.use(starFeedRouter);
-router.use(walletsRouter);
-router.use(torimiaRouter);
+// DavaQ: wallets is outside the exchange service.
+// DavaQ: torimia is outside the exchange service.
 router.use(presenceRouter);
-router.use(dailyTalkRewardRouter);
-router.use(pvtRouter);
+// DavaQ: dailyTalkReward is outside the exchange service.
+// DavaQ: pvt is outside the exchange service.
 router.use(anotherMeRouter);
 router.use(officialAccountsRouter);
 router.use(knowledgeRouter);
 router.use(realtimeRouter);
-router.use(fanCommunitiesRouter);
-router.use(fanCommunityProgramsRouter);
+// DavaQ: fanCommunities is outside the exchange service.
+// DavaQ: fanCommunityPrograms is outside the exchange service.
 router.use(starFeedAdminRouter);
 router.use(searchAdminRouter);
-router.use(nftCollectionsRouter);
+// DavaQ: nftCollections is outside the exchange service.
 router.use(adminMembersRouter);
 router.use(adminAuditRouter);
 router.use(adminRolesRouter);

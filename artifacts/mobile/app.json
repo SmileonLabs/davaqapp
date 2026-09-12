@@ -6,12 +6,12 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "davaq",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#05040D"
+      "backgroundColor": "#F7F6FB"
     },
     "ios": {
       "supportsTablet": false,
@@ -31,7 +31,7 @@
       "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#05040D"
+        "backgroundColor": "#F7F6FB"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -54,8 +54,8 @@
       "name": "DavaQ",
       "shortName": "DavaQ",
       "description": "DavaQ (다바꿔)",
-      "backgroundColor": "#0A0A0A",
-      "themeColor": "#000000",
+      "backgroundColor": "#F7F6FB",
+      "themeColor": "#F7F6FB",
       "lang": "ko",
       "display": "standalone",
       "orientation": "portrait"

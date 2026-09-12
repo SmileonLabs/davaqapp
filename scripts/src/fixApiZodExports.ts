@@ -8,6 +8,14 @@ const barrel = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..
 if (fs.existsSync(barrel)) {
   const source = fs.readFileSync(barrel, "utf8");
   const markers = new Map([
+    ["export * from './davaqCreateMemoryBody';", "// DavaqCreateMemoryBody uses the canonical generated Zod export."],
+    ["export * from './davaqMatchFeedbackBody';", "// DavaqMatchFeedbackBody uses the canonical generated Zod export."],
+    ["export * from './davaqRegistrationDraftBody';", "// DavaqRegistrationDraftBody uses the canonical generated Zod export."],
+    ["export * from './davaqResolveReviewBody';", "// DavaqResolveReviewBody uses the canonical generated Zod export."],
+    ["export * from './davaqReviewProposalBody';", "// DavaqReviewProposalBody uses the canonical generated Zod export."],
+    ["export * from './davaqSendAgentMessageBody';", "// DavaqSendAgentMessageBody uses the canonical generated Zod export."],
+    ["export * from './davaqSetFavoriteBody';", "// DavaqSetFavoriteBody uses the canonical generated Zod export."],
+    ["export * from './davaqUpdateMemoryBody';", "// DavaqUpdateMemoryBody uses the canonical generated Zod export."],
     ["export * from './globalSearchResponse';", "// GlobalSearchResponse is exported from generated/api as the canonical Zod schema."],
     ["export * from './blockSearchTrendingTermBody';", "// BlockSearchTrendingTermBody is exported from generated/api as the canonical Zod schema."],
     ["export * from './updateMyActiveCharacterProfileBody';", "// UpdateMyActiveCharacterProfileBody is exported from generated/api as the canonical Zod schema."],
