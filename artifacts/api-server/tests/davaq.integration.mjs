@@ -4,6 +4,8 @@ import {randomUUID} from "node:crypto";
 import {readFile} from "node:fs/promises";
 import pg from "pg";
 import express from "express";
+// Match deployed structured logging; the developer pretty transport needs an unbundled worker.
+process.env.NODE_ENV="production";
 const base=new URL(process.env.DATABASE_URL??"");
 assert.equal(base.pathname,"/davaq","This test only runs against the DavaQ database.");
 assert.equal(decodeURIComponent(base.username),"davaq");
