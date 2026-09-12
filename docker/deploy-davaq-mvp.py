@@ -3,7 +3,7 @@
 Archives must be staged in /tmp: davaq-api-<revision>.tar.gz and davaq-web-<revision>.tar.gz.
 No AnotherMe container, proxy configuration, volume or database is modified.
 """
-import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, tarfile, time
+import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, tarfile, time, tempfile, atexit
 from urllib.parse import urlparse, unquote
 p=argparse.ArgumentParser()
 p.add_argument("--revision",required=True)
@@ -23,8 +23,23 @@ if url.path!="/davaq" or unquote(url.username or "")!="davaq": raise RuntimeErro
 base_image=env.get("API_IMAGE","")
 if not re.fullmatch(r"localhost:5000/davaq-api@sha256:[0-9a-f]{64}",base_image): raise RuntimeError("Unexpected base image")
 compose=["docker","compose","-f",str(root/"docker-compose.server.yml")]
+# Compose removes outer quotes; docker run --env-file does not. Normalize on the server only.
+with tempfile.NamedTemporaryFile(mode="w",prefix=".davaq-runtime-",dir=root,delete=False) as runtime:
+ for key,value in env.items():
+  if "\n" in value or "\r" in value:raise RuntimeError("Unsupported multiline environment value")
+  runtime.write(key+"="+value+"\n")
+ runtime_env=pathlib.Path(runtime.name)
+os.chmod(runtime_env,0o600)
+atexit.register(lambda:runtime_env.unlink(missing_ok=True))
+redactions=[v for v in env.values() if len(v)>8]+[unquote(url.password or "")]
+def redact(value):
+ for secret in sorted((v for v in redactions if v),key=len,reverse=True):value=value.replace(secret,"[REDACTED]")
+ return value
 def run(command,capture=False):
- result=subprocess.run(command,cwd=root,check=True,text=True,stdout=subprocess.PIPE if capture else None)
+ result=subprocess.run(command,cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+ if result.returncode:
+  raise RuntimeError(redact(result.stdout+result.stderr)[-5000:])
+ if not capture:print(redact(result.stdout+result.stderr),end="",flush=True)
  return result.stdout.strip() if capture else None
 def extract(source,target):
  if target.exists(): raise RuntimeError("Release target already exists: "+str(target))
@@ -62,7 +77,7 @@ if backup.exists(): raise RuntimeError("Backup already exists")
 env_backup=backup_root/("before-mvp-"+revision[:12]+".env")
 shutil.copyfile(env_path,env_backup);os.chmod(env_backup,0o600)
 # PostgreSQL 16 is already installed as an official Docker image on this host.
-run(["docker","run","--rm","--network","davaq-prod_default","--env-file",str(env_path),
+run(["docker","run","--rm","--network","davaq-prod_default","--env-file",str(runtime_env),
  "-v",str(backup_root)+":/backup","postgres:16","sh","-c",
  'exec pg_dump "$DATABASE_URL" --format=custom --file=/backup/'+backup.name])
 os.chmod(backup,0o600)
@@ -70,7 +85,7 @@ if backup.stat().st_size<1000: raise RuntimeError("Database backup is unexpected
 run(["docker","run","--rm","-v",str(backup_root)+":/backup:ro","postgres:16","pg_restore","--list","/backup/"+backup.name],True)
 print("DavaQ database backup verified:",str(backup),flush=True)
 # Additive migrations run before switching either service; old API remains compatible.
-run(["docker","run","--rm","--network","davaq-prod_default","--env-file",str(env_path),
+run(["docker","run","--rm","--network","davaq-prod_default","--env-file",str(runtime_env),
  "-e","PGOPTIONS=-c lock_timeout=5s -c statement_timeout=15min",image,"pnpm","--filter","@workspace/db","run","migrate"])
 updates={"API_IMAGE":image,"PWA_WEB_ROOT":str(web),"LANDING_WEB_ROOT":str(landing)}
 def update_env():
@@ -91,7 +106,7 @@ try:
   try:
    health=run(compose+["exec","-T","web","wget","-q","-O","-","http://127.0.0.1/api/healthz"],True)
    if json.loads(health).get("status")=="ok":break
-  except (subprocess.CalledProcessError,ValueError):
+  except (RuntimeError,ValueError):
    if attempt==9:raise
   time.sleep(2)
  if json.loads(health).get("status")!="ok":raise RuntimeError("DavaQ health verification failed")
