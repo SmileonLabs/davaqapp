@@ -9,7 +9,7 @@ workflows are future work.
 - PostgreSQL: a new `davaq` database and `davaq` login role on the existing RDS
   instance. Existing users, conversations and media are not copied.
 - Dedicated Redis and Neo4j containers and volumes in Compose project `davaq-prod`.
-- Dedicated object bucket. Clerk login identities and external API credentials
+- Dedicated private object bucket with a bucket-scoped `davaq-prod-storage` IAM identity. Clerk login identities and external API credentials
   are shared by the owner's explicit choice; application profiles and content
   remain separate. Provider quotas and billing remain shared.
 - LiveKit rooms use the `davaq_call_` prefix. Configure an additional webhook

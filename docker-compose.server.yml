@@ -40,8 +40,8 @@ services:
         condition: service_healthy
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./artifacts/landing/dist/public:/srv/landing:ro
-      - ./artifacts/mobile/web-build:/srv/app:ro
+      - ${LANDING_WEB_ROOT:-./artifacts/landing/dist/public}:/srv/landing:ro
+      - ${PWA_WEB_ROOT:-./artifacts/mobile/web-build}:/srv/app:ro
     networks:
       default:
       edge:

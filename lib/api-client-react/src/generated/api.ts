@@ -1361,7 +1361,7 @@ export const getGetMyPersonaUrl = () => {
 }
 
 /**
- * @summary Get my DavaQ persona
+ * @summary Get my Another Me persona
  */
 export const getMyPersona = async ( options?: RequestInit): Promise<PersonaProfile> => {
 
@@ -1408,7 +1408,7 @@ export type GetMyPersonaQueryError = ErrorType<void>
 
 
 /**
- * @summary Get my DavaQ persona
+ * @summary Get my Another Me persona
  */
 
 export function useGetMyPersona<TData = Awaited<ReturnType<typeof getMyPersona>>, TError = ErrorType<void>>(
@@ -1438,9 +1438,9 @@ export const getGetMyPersonaCardUrl = () => {
 }
 
 /**
- * Ontology-only DavaQ identity/sync view. Returns 404 until an ontology snapshot exists. No legacy stats fallback, AI call, or XP/stat mutation.
+ * Ontology-only Another Me identity/sync view. Returns 404 until an ontology snapshot exists. No legacy stats fallback, AI call, or XP/stat mutation.
 
- * @summary Get my DavaQ identity card
+ * @summary Get my Another Me identity card
  */
 export const getMyPersonaCard = async ( options?: RequestInit): Promise<PersonaCard> => {
 
@@ -1487,7 +1487,7 @@ export type GetMyPersonaCardQueryError = ErrorType<void>
 
 
 /**
- * @summary Get my DavaQ identity card
+ * @summary Get my Another Me identity card
  */
 
 export function useGetMyPersonaCard<TData = Awaited<ReturnType<typeof getMyPersonaCard>>, TError = ErrorType<void>>(
@@ -1519,7 +1519,7 @@ export const getAnalyzeMyPersonaUrl = () => {
 /**
  * Triggered only by the user. Analyzes recent app activity and enqueues ontology evidence without storing legacy AI detail fields. Rate-limited to once per 10 minutes per user.
 
- * @summary Run an on-demand AI analysis of my DavaQ persona
+ * @summary Run an on-demand AI analysis of my Another Me persona
  */
 export const analyzeMyPersona = async ( options?: RequestInit): Promise<PersonaProfile> => {
 
@@ -1567,7 +1567,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AnalyzeMyPersonaMutationError = ErrorType<void | PersonaAnalysisError>
 
     /**
- * @summary Run an on-demand AI analysis of my DavaQ persona
+ * @summary Run an on-demand AI analysis of my Another Me persona
  */
 export const useAnalyzeMyPersona = <TError = ErrorType<void | PersonaAnalysisError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeMyPersona>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -8551,7 +8551,7 @@ export const getGetAnotherMeSettingsUrl = () => {
 }
 
 /**
- * @summary Get my DavaQ settings
+ * @summary Get my Another Me settings
  */
 export const getAnotherMeSettings = async ( options?: RequestInit): Promise<AnotherMeSettings> => {
 
@@ -8598,7 +8598,7 @@ export type GetAnotherMeSettingsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get my DavaQ settings
+ * @summary Get my Another Me settings
  */
 
 export function useGetAnotherMeSettings<TData = Awaited<ReturnType<typeof getAnotherMeSettings>>, TError = ErrorType<unknown>>(
@@ -8628,7 +8628,7 @@ export const getUpdateAnotherMeSettingsUrl = () => {
 }
 
 /**
- * @summary Update my DavaQ settings
+ * @summary Update my Another Me settings
  */
 export const updateAnotherMeSettings = async (anotherMeSettingsPatch: AnotherMeSettingsPatch, options?: RequestInit): Promise<AnotherMeSettings> => {
 
@@ -8677,7 +8677,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateAnotherMeSettingsMutationError = ErrorType<ApiError>
 
     /**
- * @summary Update my DavaQ settings
+ * @summary Update my Another Me settings
  */
 export const useUpdateAnotherMeSettings = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnotherMeSettings>>, TError,{data: BodyType<AnotherMeSettingsPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -8699,7 +8699,7 @@ export const getGetAnotherMeRoomSettingsUrl = (roomId: string,) => {
 }
 
 /**
- * @summary Get my DavaQ settings for a room
+ * @summary Get my Another Me settings for a room
  */
 export const getAnotherMeRoomSettings = async (roomId: string, options?: RequestInit): Promise<AnotherMeRoomSettings> => {
 
@@ -8746,7 +8746,7 @@ export type GetAnotherMeRoomSettingsQueryError = ErrorType<ApiError>
 
 
 /**
- * @summary Get my DavaQ settings for a room
+ * @summary Get my Another Me settings for a room
  */
 
 export function useGetAnotherMeRoomSettings<TData = Awaited<ReturnType<typeof getAnotherMeRoomSettings>>, TError = ErrorType<ApiError>>(
@@ -8776,7 +8776,7 @@ export const getUpdateAnotherMeRoomSettingsUrl = (roomId: string,) => {
 }
 
 /**
- * @summary Update my DavaQ settings for a room
+ * @summary Update my Another Me settings for a room
  */
 export const updateAnotherMeRoomSettings = async (roomId: string,
     anotherMeRoomSettingsPatch: AnotherMeRoomSettingsPatch, options?: RequestInit): Promise<AnotherMeRoomSettings> => {
@@ -8826,7 +8826,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateAnotherMeRoomSettingsMutationError = ErrorType<ApiError>
 
     /**
- * @summary Update my DavaQ settings for a room
+ * @summary Update my Another Me settings for a room
  */
 export const useUpdateAnotherMeRoomSettings = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAnotherMeRoomSettings>>, TError,{roomId: string;data: BodyType<AnotherMeRoomSettingsPatch>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -8855,7 +8855,7 @@ export const getGetAnotherMeSummonStatusUrl = (params: GetAnotherMeSummonStatusP
 }
 
 /**
- * @summary Check whether an DavaQ can be summoned into a direct room
+ * @summary Check whether an Another Me can be summoned into a direct room
  */
 export const getAnotherMeSummonStatus = async (params: GetAnotherMeSummonStatusParams, options?: RequestInit): Promise<AnotherMeSummonStatus> => {
 
@@ -8902,7 +8902,7 @@ export type GetAnotherMeSummonStatusQueryError = ErrorType<ApiError>
 
 
 /**
- * @summary Check whether an DavaQ can be summoned into a direct room
+ * @summary Check whether an Another Me can be summoned into a direct room
  */
 
 export function useGetAnotherMeSummonStatus<TData = Awaited<ReturnType<typeof getAnotherMeSummonStatus>>, TError = ErrorType<ApiError>>(
@@ -8932,7 +8932,7 @@ export const getSummonAnotherMeUrl = () => {
 }
 
 /**
- * @summary Summon another participant's DavaQ into a direct room
+ * @summary Summon another participant's Another Me into a direct room
  */
 export const summonAnotherMe = async (anotherMeSummonInput: AnotherMeSummonInput, options?: RequestInit): Promise<AnotherMeSession> => {
 
@@ -8981,7 +8981,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SummonAnotherMeMutationError = ErrorType<ApiError>
 
     /**
- * @summary Summon another participant's DavaQ into a direct room
+ * @summary Summon another participant's Another Me into a direct room
  */
 export const useSummonAnotherMe = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof summonAnotherMe>>, TError,{data: BodyType<AnotherMeSummonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -9003,7 +9003,7 @@ export const getDismissAnotherMeSessionUrl = (sessionId: string,) => {
 }
 
 /**
- * @summary Dismiss an DavaQ session
+ * @summary Dismiss an Another Me session
  */
 export const dismissAnotherMeSession = async (sessionId: string, options?: RequestInit): Promise<AnotherMeSession> => {
 
@@ -9051,7 +9051,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DismissAnotherMeSessionMutationError = ErrorType<ApiError>
 
     /**
- * @summary Dismiss an DavaQ session
+ * @summary Dismiss an Another Me session
  */
 export const useDismissAnotherMeSession = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dismissAnotherMeSession>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -9073,7 +9073,7 @@ export const getGenerateAnotherMeToneProfileUrl = () => {
 }
 
 /**
- * @summary Generate my DavaQ tone profile from my messages
+ * @summary Generate my Another Me tone profile from my messages
  */
 export const generateAnotherMeToneProfile = async (anotherMeToneProfileInput?: AnotherMeToneProfileInput, options?: RequestInit): Promise<AnotherMeToneProfile> => {
 
@@ -9122,7 +9122,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GenerateAnotherMeToneProfileMutationError = ErrorType<unknown>
 
     /**
- * @summary Generate my DavaQ tone profile from my messages
+ * @summary Generate my Another Me tone profile from my messages
  */
 export const useGenerateAnotherMeToneProfile = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateAnotherMeToneProfile>>, TError,{data?: BodyType<AnotherMeToneProfileInput>}, TContext>, request?: SecondParameter<typeof customFetch>}

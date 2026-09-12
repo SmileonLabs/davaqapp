@@ -363,7 +363,7 @@ async function main() {
   fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2) + "\n");
 
   try {
-    await runPnpm(["exec", "expo", "export", "-p", "web", "--output-dir", OUTPUT_DIR], env);
+    await runPnpm(["exec", "expo", "export", "--clear", "-p", "web", "--output-dir", OUTPUT_DIR], env);
   } finally {
     // Always restore the committed app.json (no baseUrl) for native builds.
     fs.writeFileSync(appJsonPath, originalAppJson);
