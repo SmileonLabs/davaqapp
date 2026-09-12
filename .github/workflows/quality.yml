@@ -52,7 +52,7 @@ jobs:
       - run: pnpm --filter @workspace/mobile run test:call-plugin
       - run: pnpm --filter @workspace/api-server exec vitest --root ../.. run artifacts/mobile/lib/callApi.owner.test.ts
       - run: pnpm --filter @workspace/api-server exec vitest --root ../mobile run lib/voiceCall.web.test.ts
-      - run: node --experimental-strip-types --test artifacts/mobile/lib/callVideoPlayback.test.ts artifacts/mobile/lib/brandVideoGeometry.test.ts
+      - run: node --experimental-strip-types --test artifacts/mobile/lib/callVideoPlayback.test.ts artifacts/mobile/lib/brandVideoGeometry.test.mjs
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server test
       - run: pnpm run typecheck
