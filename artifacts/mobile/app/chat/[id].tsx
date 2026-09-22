@@ -1174,7 +1174,7 @@ export default function ChatScreen({roomId,onBack,embedded=false}:{roomId?:strin
           own text state so typing never re-renders this screen / message list. */}
       {!isDungeon ? (
         <MessageComposer
-          key={id+":"+me?.id}
+          key={`${me?.id}:${activeProfile?.id}:${id}`}
           draftKey={me?.id&&activeProfile?.id?`${me.id}:${activeProfile.id}:${id}`:undefined}
           sending={isSending}
           uploading={uploadTask?.kind ?? null}

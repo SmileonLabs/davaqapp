@@ -789,7 +789,7 @@ export function AgentConversation({
         </View>
       )}
       <MessageComposer
-        key={roomId}
+        key={`${me.data?.id}:${activeProfile?.id}:${roomId}`}
         draftKey={
           me.data?.id && activeProfile?.id
             ? `${me.data.id}:${activeProfile.id}:${roomId}`
