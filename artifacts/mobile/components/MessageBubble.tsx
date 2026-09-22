@@ -48,6 +48,7 @@ interface MessageBubbleProps {
   senderCharacterType?: "fan" | "star" | "official_ai";
   time: string;
   showSender?: boolean;
+  compact?: boolean;
   readLabel?: string;
   isDM?: boolean;
   isAnotherMe?: boolean;
@@ -66,9 +67,7 @@ interface MessageBubbleProps {
 // A "call" message carries { callId, status, media, durationSec? } JSON so the
 // in-chat card can show a join button while ringing/active and flip to a
 // distinct result card (종료/부재중/거절/취소) once finished.
-function parseCallContent(
-  raw: string,
-): {
+function parseCallContent(raw: string): {
   callId: string;
   status: string;
   media: "audio" | "video";
@@ -114,6 +113,7 @@ function MessageBubbleComponent({
   senderCharacterType,
   time,
   showSender = false,
+  compact = false,
   readLabel,
   isDM = false,
   isAnotherMe = false,
@@ -131,7 +131,9 @@ function MessageBubbleComponent({
   noteChatRender("bubbleRenders");
   const colors = useColors();
   const authorizedImageUri = useMediaUri(imageUri);
-  const safeLinkPreviewThumbnail = linkPreviewThumbnailUri(linkPreview?.imageUrl);
+  const safeLinkPreviewThumbnail = linkPreviewThumbnailUri(
+    linkPreview?.imageUrl,
+  );
   const isDeleted = !!deletedAt;
   const isImage = !isDeleted && type === "image" && !!imageUri;
   const isSticker = !isDeleted && type === "sticker";
@@ -333,8 +335,32 @@ function MessageBubbleComponent({
             hitSlop={8}
             onPress={handleRetry}
           >
-            <Text style={[styles.read, { color: colors.destructive }]}>다시 시도</Text>
+            <Text style={[styles.read, { color: colors.destructive }]}>
+              다시 시도
+            </Text>
           </Pressable>
+        ) : ["읽음", "안읽음", "전송됨", "전송 중"].includes(readLabel) ? (
+          <View
+            accessible
+            accessibilityLabel={readLabel}
+            style={{ flexDirection: "row", alignItems: "center", height: 14 }}
+          >
+            <Feather
+              name={readLabel === "전송 중" ? "clock" : "check"}
+              size={13}
+              color={
+                readLabel === "읽음" ? colors.primary : colors.mutedForeground
+              }
+            />
+            {readLabel === "읽음" && (
+              <Feather
+                name="check"
+                size={13}
+                color={colors.primary}
+                style={{ marginLeft: -8 }}
+              />
+            )}
+          </View>
         ) : (
           <Text style={[styles.read, { color: colors.primary }]}>
             {readLabel}
@@ -535,7 +561,11 @@ function MessageBubbleComponent({
         styles.bubble,
         isMe
           ? [styles.bubbleMe, { backgroundColor: colors.myBubble }]
-          : [styles.bubbleOther, { backgroundColor: colors.otherBubble }],
+          : [styles.bubbleOther, { backgroundColor: colors.card }],
+        compact && {
+          borderTopLeftRadius: isMe ? 18 : 6,
+          borderTopRightRadius: isMe ? 6 : 18,
+        },
       ]}
     >
       {replyBlock}
@@ -593,34 +623,59 @@ function MessageBubbleComponent({
   const Row = longPressHandler ? Pressable : View;
   return (
     <Row
-      testID={"message-"+messageId}
-      {...(longPressHandler ? { onLongPress: longPressHandler, delayLongPress: 280 } : {})}
+      testID={"message-" + messageId}
+      {...(longPressHandler
+        ? { onLongPress: longPressHandler, delayLongPress: 320 }
+        : {})}
+      {...(Platform.OS === "web" && longPressHandler
+        ? {
+            onContextMenu: (event: any) => {
+              event.preventDefault();
+              longPressHandler();
+            },
+            onKeyDown: (event: any) => {
+              if (
+                event.key === "ContextMenu" ||
+                (event.shiftKey && event.key === "F10")
+              ) {
+                event.preventDefault();
+                longPressHandler();
+              }
+            },
+            tabIndex: 0,
+          }
+        : ({} as any))}
       style={[
         styles.row,
+        { marginTop: compact ? 1 : 9, marginBottom: 2 },
         isMe ? styles.rowMe : styles.rowOther,
         selected && { backgroundColor: colors.accent },
       ]}
     >
-      {!isMe && (
-        senderAvatarNode ?? (simpleAvatars ? (
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: colors.muted,
-            }}
-          />
+      {!isMe &&
+        (compact ? (
+          <View style={{ width: 32 }} />
         ) : (
-          <Avatar
-            uri={senderAvatar}
-            name={senderName ?? "?"}
-            size={32}
-            crop="face"
-            characterType={senderCharacterType}
-          />
-        ))
-      )}
+          (senderAvatarNode ??
+          (simpleAvatars ? (
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: colors.muted,
+              }}
+            />
+          ) : (
+            <Avatar
+              uri={senderAvatar}
+              name={senderName ?? "?"}
+              size={32}
+              crop="face"
+              characterType={senderCharacterType}
+            />
+          )))
+        ))}
       <View style={[styles.bubbleWrap, isMe && styles.bubbleWrapMe]}>
         {!isMe && showSender && senderName ? (
           <Text style={[styles.senderName, { color: colors.mutedForeground }]}>
@@ -751,7 +806,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   bubbleWrap: {
-    maxWidth: "82%",
+    maxWidth: "86%",
     minWidth: 0,
     gap: 3,
   },
@@ -830,7 +885,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
-    lineHeight: 21,
+    lineHeight: 23,
     maxWidth: "100%",
     minWidth: 0,
   },

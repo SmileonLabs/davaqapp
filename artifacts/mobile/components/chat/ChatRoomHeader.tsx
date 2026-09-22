@@ -1,11 +1,17 @@
+import React from "react";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "@/components/Avatar";
 import { useColors } from "@/hooks/useColors";
-
+import { MessengerIconButton } from "./MessengerUI";
 type CallMedia = "audio" | "video";
-
 export function ChatRoomHeader({
   title,
   subtitle,
@@ -25,7 +31,9 @@ export function ChatRoomHeader({
   onStartCall,
   onInvite,
   onOpenOptions,
+  embedded = false,
 }: {
+  embedded?: boolean;
   title: string;
   subtitle: string;
   avatarUri?: string | null;
@@ -45,154 +53,174 @@ export function ChatRoomHeader({
   onInvite: () => void;
   onOpenOptions: () => void;
 }) {
-  const colors = useColors();
-  const insets = useSafeAreaInsets();
-
+  const c = useColors(),
+    insets = useSafeAreaInsets(),
+    { width } = useWindowDimensions();
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 6, borderBottomColor: colors.border }]}>
-      <Pressable
+    <View
+      style={[
+        s.header,
+        {
+          backgroundColor: c.card,
+          borderBottomColor: c.border,
+          paddingTop: embedded ? 8 : insets.top + 6,
+        },
+      ]}
+    >
+      <MessengerIconButton
+        icon={embedded ? "sidebar" : "chevron-left"}
+        label={embedded ? "대화 닫기" : "채팅 목록으로"}
         onPress={onBack}
-        hitSlop={10}
-        style={({ pressed }) => [styles.headerBack, { opacity: pressed ? 0.6 : 1 }]}
-      >
-        <Feather name="chevron-left" size={28} color={colors.primary} />
-      </Pressable>
-
-      <View style={styles.headerCenter}>
+      />
+      <View style={s.center}>
         <View>
-          {avatar ?? (isGroupRoom || isDungeon ? (
-            <View style={[styles.headerIconAvatar, { backgroundColor: colors.accent }]}>
-              <Feather name={isDungeon ? "compass" : "users"} size={19} color={colors.primary} />
-            </View>
-          ) : (
-            <Avatar
-              uri={avatarUri}
-              name={title}
-              size={40}
-              crop="face"
-              characterType={avatarCharacterType ?? "fan"}
+          {avatar ??
+            (isGroupRoom || isDungeon ? (
+              <View style={[s.group, { backgroundColor: c.accent }]}>
+                <Feather
+                  name={isDungeon ? "compass" : "users"}
+                  size={19}
+                  color={c.primary}
+                />
+              </View>
+            ) : (
+              <Avatar
+                uri={avatarUri}
+                name={title}
+                size={36}
+                crop="face"
+                characterType={avatarCharacterType ?? "fan"}
+              />
+            ))}
+          {isDirect && isOtherOnline && (
+            <View
+              style={[
+                s.online,
+                { backgroundColor: c.online, borderColor: c.card },
+              ]}
             />
-          ))}
-          {isDirect && isOtherOnline ? (
-            <View style={[styles.onlineDot, { backgroundColor: colors.online, borderColor: colors.background }]} />
-          ) : null}
+          )}
         </View>
-        <View style={styles.headerTextWrap}>
-          <View style={styles.headerNameRow}>
-            <Text style={[styles.headerName, { color: colors.foreground }]} numberOfLines={1}>
-              {title}
-            </Text>
-            {isDirect && isOtherOnline ? (
-              <View style={[styles.nameDot, { backgroundColor: colors.online }]} />
-            ) : null}
-          </View>
-          <Text style={[styles.headerSubtitle, { color: colors.mutedForeground }]} numberOfLines={1}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+          <Text numberOfLines={1} style={[s.name, { color: c.foreground }]}>
+            {title}
+          </Text>
+          <Text
+            numberOfLines={1}
+            style={[
+              s.subtitle,
+              { color: isOtherOnline ? c.online : c.mutedForeground },
+            ]}
+          >
             {subtitle}
           </Text>
         </View>
       </View>
-
-      <View style={styles.headerActions}>
-        {showAnotherMeToggle ? (
+      <View style={s.actions}>
+        {showAnotherMeToggle && width > 640 && (
           <Pressable
             accessibilityRole="switch"
-            accessibilityState={{ checked: anotherMeEnabled, disabled: anotherMePending }}
-            hitSlop={10}
+            accessibilityLabel="이 방의 AI 소환 허용"
+            accessibilityState={{
+              checked: anotherMeEnabled,
+              disabled: anotherMePending,
+            }}
             onPress={() => onToggleAnotherMe(!anotherMeEnabled)}
             disabled={anotherMePending}
-            style={({ pressed }) => [
-              styles.headerAiToggle,
-              {
-                backgroundColor: anotherMeEnabled ? colors.accent : colors.muted,
-                borderColor: anotherMeEnabled ? colors.primary : colors.border,
-                opacity: pressed || anotherMePending ? 0.6 : 1,
-              },
+            style={[
+              s.ai,
+              { backgroundColor: anotherMeEnabled ? c.accent : c.muted },
             ]}
           >
-            <Feather name="cpu" size={13} color={anotherMeEnabled ? colors.primary : colors.mutedForeground} />
-            <Text style={[styles.headerAiText, { color: anotherMeEnabled ? colors.primary : colors.mutedForeground }]}>
+            <Feather
+              name="cpu"
+              size={16}
+              color={anotherMeEnabled ? c.primary : c.mutedForeground}
+            />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color: anotherMeEnabled ? c.primary : c.mutedForeground,
+              }}
+            >
               AI
             </Text>
-            <View style={[styles.headerAiTrack, { backgroundColor: anotherMeEnabled ? colors.primary : colors.border }]}>
-              <View
-                style={[
-                  styles.headerAiThumb,
-                  {
-                    backgroundColor: anotherMeEnabled ? colors.primaryForeground : colors.card,
-                    transform: [{ translateX: anotherMeEnabled ? 14 : 0 }],
-                  },
-                ]}
-              />
-            </View>
           </Pressable>
-        ) : null}
-        {canCall ? (
+        )}
+        {canCall && (
           <>
-            <Pressable hitSlop={10} onPress={() => onStartCall("audio")} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <Feather name="phone" size={22} color={colors.foreground} />
-            </Pressable>
-            <Pressable hitSlop={10} onPress={() => onStartCall("video")} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-              <Feather name="video" size={22} color={colors.foreground} />
-            </Pressable>
+            <MessengerIconButton
+              icon="phone"
+              label="음성 통화"
+              onPress={() => onStartCall("audio")}
+            />
+            <MessengerIconButton
+              icon="video"
+              label="영상 통화"
+              onPress={() => onStartCall("video")}
+            />
           </>
-        ) : null}
-        {isGroupRoom ? (
-          <Pressable hitSlop={10} onPress={onInvite} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <Feather name="user-plus" size={22} color={colors.foreground} />
-          </Pressable>
-        ) : null}
-        <Pressable hitSlop={10} onPress={onOpenOptions} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-          <Feather name="more-horizontal" size={24} color={colors.foreground} />
-        </Pressable>
+        )}
+        {isGroupRoom && (
+          <MessengerIconButton
+            icon="user-plus"
+            label="그룹에 친구 초대"
+            onPress={onInvite}
+          />
+        )}
+        <MessengerIconButton
+          icon="more-horizontal"
+          label="대화 설정"
+          onPress={onOpenOptions}
+        />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingBottom: 10,
-    gap: 2,
+    paddingHorizontal: 6,
+    paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 64,
+    gap: 4,
   },
-  headerBack: { padding: 4 },
-  headerCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
-  headerIconAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  center: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  group: {
+    width: 36,
+    height: 36,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
   },
-  onlineDot: {
+  name: { fontSize: 16, fontWeight: "600" },
+  subtitle: { fontSize: 11 },
+  actions: { flexDirection: "row", alignItems: "center", gap: 0 },
+  online: {
     position: "absolute",
-    right: -1,
-    bottom: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    right: 0,
+    bottom: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 2,
   },
-  headerTextWrap: { flex: 1, gap: 1 },
-  headerNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  headerName: { fontSize: 17, fontFamily: "Inter_600SemiBold", flexShrink: 1 },
-  nameDot: { width: 7, height: 7, borderRadius: 3.5 },
-  headerSubtitle: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 18, paddingHorizontal: 8 },
-  headerAiToggle: {
-    alignItems: "center",
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+  ai: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    minHeight: 28,
-    paddingLeft: 8,
-    paddingRight: 6,
+    borderRadius: 14,
+    paddingHorizontal: 9,
+    height: 32,
+    marginRight: 4,
   },
-  headerAiText: { fontFamily: "Inter_700Bold", fontSize: 11 },
-  headerAiTrack: { borderRadius: 999, height: 16, padding: 2, width: 30 },
-  headerAiThumb: { borderRadius: 6, height: 12, width: 12 },
 });

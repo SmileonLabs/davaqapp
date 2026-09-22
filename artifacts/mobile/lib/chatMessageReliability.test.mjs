@@ -606,3 +606,17 @@ test('one latest-window read covers idle/small updates, but never skips a burst 
  assert.equal(latestWindowCoversCursor([{id:'new',roomSeq:700}],1,50),true);
  assert.equal(latestWindowCoversCursor(Array.from({length:50},(_,i)=>({id:String(i)})),20,50),false);
 });
+
+
+test('draft autosaves serialize before send clears the draft',async()=>{
+ const {createChatDraftStore}=await import('./chatDraftPolicy.ts');const data=new Map(),writes=[];
+ const store=createChatDraftStore({getItem:async k=>data.get(k)??null,setItem:async(k,v)=>{await new Promise(r=>setTimeout(r,5));data.set(k,v);writes.push('save');},removeItem:async k=>{data.delete(k);writes.push('clear');}});
+ const save=store.write('user-a:profile:room','전송할 초안');const clear=store.write('user-a:profile:room','');await Promise.all([save,clear]);assert.deepEqual(writes,['save','clear']);assert.equal(await store.read('user-a:profile:room'),'');
+});
+test('drafts are isolated by account, profile and conversation',async()=>{
+ const {createChatDraftStore}=await import('./chatDraftPolicy.ts');const data=new Map();const store=createChatDraftStore({getItem:async k=>data.get(k)??null,setItem:async(k,v)=>data.set(k,v),removeItem:async k=>data.delete(k)});
+ await store.write('user-a:p1:room','A의 초안');await store.write('user-b:p1:room','B의 초안');await store.write('user-a:p2:room','다른 프로필');assert.equal(await store.read('user-a:p1:room'),'A의 초안');assert.equal(await store.read('user-b:p1:room'),'B의 초안');assert.equal(await store.read('user-a:p2:room'),'다른 프로필');assert.equal(await store.read('user-a:p1:another-room'),'');
+});
+test('a failed draft write does not block the next save and corrupt storage is ignored',async()=>{
+ const {createChatDraftStore}=await import('./chatDraftPolicy.ts');let fail=true,value='not-json';const store=createChatDraftStore({getItem:async()=>value,setItem:async(k,v)=>{if(fail){fail=false;throw Error('full');}value=v;},removeItem:async()=>{value=null;}});assert.equal(await store.read('a'),'');await assert.rejects(store.write('a','first'));await store.write('a','second');assert.equal(await store.read('a'),'second');
+});

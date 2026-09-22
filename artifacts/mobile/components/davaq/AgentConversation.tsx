@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Text,
 } from "react-native";
 import { useScreenActive as useIsFocused } from "@/hooks/useScreenActive";
+import { TypingIndicator } from "@/components/chat/MessengerUI";
 import { ChatRoomSheets } from "@/components/chat/ChatRoomSheets";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,9 +51,78 @@ import {
   errorText,
 } from "@/lib/davaq";
 import type { BrandCampaign } from "@/lib/brandExchange";
-import { C, S, Txt, Cue, Chip, Button, Notice, QueryState, Icon } from "./UI";
+import {
+  C,
+  S,
+  Txt as BaseTxt,
+  Cue,
+  Chip as BaseChip,
+  Button as BaseButton,
+  Notice,
+  QueryState,
+  Icon,
+} from "./UI";
+function Txt(props: React.ComponentProps<typeof BaseTxt>) {
+  const c = useColors();
+  return (
+    <BaseTxt
+      {...props}
+      color={
+        !props.color
+          ? c.foreground
+          : props.color === C.muted
+            ? c.mutedForeground
+            : props.color === C.purple
+              ? c.primary
+              : props.color
+      }
+    />
+  );
+}
+function Chip({
+  label,
+  onPress,
+  active,
+}: React.ComponentProps<typeof BaseChip>) {
+  const c = useColors();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
+        backgroundColor: active ? c.primary : pressed ? c.accent : c.muted,
+      })}
+    >
+      <Text
+        style={{
+          fontSize: 12,
+          color: active ? "white" : c.mutedForeground,
+          fontWeight: "500",
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+function Button(props: React.ComponentProps<typeof BaseButton>) {
+  const c = useColors();
+  return (
+    <BaseButton
+      {...props}
+      style={{
+        ...props.style,
+        backgroundColor: props.secondary ? c.accent : c.primary,
+      }}
+    />
+  );
+}
 
 const noop = () => {};
+const qReadState = { unreadCount: 0 };
 type Card =
   | { kind: "match"; match: Match }
   | { kind: "brand"; campaign: BrandCampaign }
@@ -67,6 +138,7 @@ function ConversationCards({
   cards: Card[];
   onChange: () => void;
 }) {
+  const colors = useColors();
   const router = useRouter(),
     mutation = useDavaqMutation(),
     [error, setError] = useState("");
@@ -96,7 +168,13 @@ function ConversationCards({
       {cards.map((card, i) => {
         if (card.kind === "match")
           return (
-            <View key={card.match.id} style={S.card}>
+            <View
+              key={card.match.id}
+              style={[
+                S.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
               <Txt color={C.purple} size={12} bold>
                 큐가 찾은 교환
               </Txt>
@@ -127,7 +205,13 @@ function ConversationCards({
           );
         if (card.kind === "brand")
           return (
-            <View key={card.campaign.id} style={S.card}>
+            <View
+              key={card.campaign.id}
+              style={[
+                S.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
               <Txt color={C.purple} size={12} bold>
                 브랜드 혜택 · 내 1분 바꾸기
               </Txt>
@@ -149,7 +233,13 @@ function ConversationCards({
           );
         if (card.kind === "memory")
           return (
-            <View key={card.memory.id} style={S.card}>
+            <View
+              key={card.memory.id}
+              style={[
+                S.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
               <Txt bold>
                 {card.memory.status === "confirmed"
                   ? "큐가 기억하고 있어요"
@@ -181,7 +271,13 @@ function ConversationCards({
             </View>
           );
         return (
-          <View key={"register" + i} style={S.card}>
+          <View
+            key={"register" + i}
+            style={[
+              S.card,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Txt bold>이 대화로 교환을 준비해볼까요?</Txt>
             <Txt color={C.muted} size={13}>
               말씀하신 내용을 초안으로 정리하고, 확인한 뒤 공개할 수 있어요.
@@ -205,7 +301,10 @@ function ConversationCards({
   );
 }
 
-export function AgentConversation() {
+export function AgentConversation({
+  embedded = false,
+  onBack,
+}: { embedded?: boolean; onBack?: () => void } = {}) {
   const router = useRouter(),
     colors = useColors(),
     queryClient = useQueryClient(),
@@ -244,7 +343,7 @@ export function AgentConversation() {
   const [draft, setDraft] = useState<{ key: number; text: string }>();
   const list = useInvertedChatListController({
     roomId,
-    room: undefined,
+    room: qReadState,
     viewerId: undefined,
     messages,
     visibleMessages: messages,
@@ -402,10 +501,7 @@ export function AgentConversation() {
       }
       setSelectedId(id);
       const index = [...rows].reverse().findIndex((m) => m.id === id);
-      if (index >= 0)
-        requestAnimationFrame(() =>
-          list.listRef.current?.scrollToIndex({ index, animated: true }),
-        );
+      if (index >= 0) requestAnimationFrame(() => list.scrollToMessage(id));
     } catch (e) {
       setActionError(errorText(e));
     }
@@ -428,14 +524,23 @@ export function AgentConversation() {
       ["queued", "running"].includes(metadata(m).replyState ?? ""),
   );
   const name = agent.data?.settings.name || "큐";
+  const latestPreview = messages[messages.length - 1];
+  useEffect(() => {
+    if (me.data?.id && latestPreview)
+      queryClient.setQueryData(
+        ["davaq-agent-preview", me.data.id],
+        [latestPreview],
+      );
+  }, [me.data?.id, latestPreview, queryClient]);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <Stack.Screen options={{ headerShown: false }} />
+      {!embedded && <Stack.Screen options={{ headerShown: false }} />}
       <ChatRoomHeader
         title={"나의 " + name}
+        embedded={embedded}
         subtitle={
           thinking
             ? "큐가 교환을 살펴보고 있어요…"
@@ -450,8 +555,12 @@ export function AgentConversation() {
         showAnotherMeToggle={false}
         anotherMeEnabled={false}
         anotherMePending={false}
-        onBack={() =>
-          router.canGoBack() ? router.back() : router.replace("/(tabs)/chats")
+        onBack={
+          onBack ??
+          (() =>
+            router.canGoBack()
+              ? router.back()
+              : router.replace("/(tabs)/chats"))
         }
         onToggleAnotherMe={noop}
         onStartCall={noop}
@@ -499,7 +608,7 @@ export function AgentConversation() {
             {
               paddingHorizontal: 16,
               paddingVertical: 10,
-              backgroundColor: C.soft,
+              backgroundColor: colors.accent,
             },
           ]}
         >
@@ -541,7 +650,14 @@ export function AgentConversation() {
         ref={list.listRef}
         data={listMessages}
         inverted
-        style={{ flex: 1 }}
+        style={[
+          { flex: 1 },
+          Platform.OS === "web"
+            ? ({ contain: "layout style" } as any)
+            : undefined,
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         contentContainerStyle={{ paddingVertical: 12 }}
         keyExtractor={(m) =>
           clientKeyRef.current.get(m.id) ?? m.clientMessageId ?? m.id
@@ -554,12 +670,7 @@ export function AgentConversation() {
         onLayout={list.onLayout}
         onContentSizeChange={list.onContentSizeChange}
         scrollEventThrottle={32}
-        onScrollToIndexFailed={({ averageItemLength, index }) =>
-          list.listRef.current?.scrollToOffset({
-            offset: averageItemLength * index,
-            animated: true,
-          })
-        }
+        onScrollToIndexFailed={list.onScrollToIndexFailed}
         ListEmptyComponent={
           <View style={{ alignItems: "center", padding: 28, gap: 16 }}>
             <QueryState query={query} />
@@ -589,11 +700,7 @@ export function AgentConversation() {
         }
         ListHeaderComponent={
           thinking ? (
-            <View style={{ paddingHorizontal: 20, paddingBottom: 10 }}>
-              <Txt size={12} color={C.muted}>
-                큐가 생각하고 있어요… 다른 메시지를 보내도 괜찮아요.
-              </Txt>
-            </View>
+            <TypingIndicator label="큐가 생각하고 있어요… 다른 메시지를 보내도 괜찮아요." />
           ) : null
         }
         renderItem={({ item, index }) => {
@@ -602,6 +709,12 @@ export function AgentConversation() {
           const delivery = (item as Message & { _deliveryState?: string })
             ._deliveryState;
           const older = listMessages[index + 1];
+          const compact =
+            !!older &&
+            metadata(older).agentRole === metadata(item).agentRole &&
+            isSameDay(older.createdAt, item.createdAt) &&
+            Math.abs(Date.parse(item.createdAt) - Date.parse(older.createdAt)) <
+              300000;
           return (
             <View>
               {(!older || !isSameDay(older.createdAt, item.createdAt)) && (
@@ -620,14 +733,17 @@ export function AgentConversation() {
                 senderName={name}
                 senderAvatarNode={<Cue size={32} />}
                 senderCharacterType="official_ai"
-                showSender={!mine}
+                showSender={!mine && !compact}
+                compact={compact}
                 time={formatMsgTime(item.createdAt)}
                 readLabel={
                   delivery === "pending"
                     ? "전송 중"
                     : delivery === "failed"
                       ? "전송 실패"
-                      : undefined
+                      : mine
+                        ? "전송됨"
+                        : undefined
                 }
                 retryClientMessageId={
                   delivery === "failed" ? item.clientMessageId : null
@@ -654,7 +770,7 @@ export function AgentConversation() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="최신 메시지로 이동"
-          onPress={() => list.scrollToBottom(true)}
+          onPress={list.jumpToBottom}
           style={{
             alignSelf: "center",
             backgroundColor: colors.card,
@@ -673,6 +789,12 @@ export function AgentConversation() {
         </View>
       )}
       <MessageComposer
+        key={roomId}
+        draftKey={
+          me.data?.id && activeProfile?.id
+            ? `${me.data.id}:${activeProfile.id}:${roomId}`
+            : undefined
+        }
         sending={!me.data?.id || !activeProfile?.id}
         uploading={sender.uploadTask?.kind ?? null}
         uploadProgress={sender.uploadTask?.progress ?? null}
@@ -733,6 +855,7 @@ export function AgentConversation() {
             setForwardTarget(m);
             setActionMessage(null);
           },
+          onReact: (m, code) => void action(m.id, "sticker", { code }),
           onSticker: (m) => {
             setStickerTarget(m);
             setActionMessage(null);
@@ -759,7 +882,12 @@ export function AgentConversation() {
   );
 }
 
-export function PinnedAgentConversation() {
+export function PinnedAgentConversation({
+  compact = false,
+  selected = false,
+  onPress,
+}: { compact?: boolean; selected?: boolean; onPress?: () => void } = {}) {
+  const colors = useColors();
   const focused = useIsFocused();
   const router = useRouter(),
     me = useGetMe(),
@@ -785,16 +913,37 @@ export function PinnedAgentConversation() {
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push("/agent/chat")}
-      style={[S.card, S.row, { backgroundColor: C.soft }]}
+      accessibilityLabel="나의 큐 대화 열기"
+      accessibilityState={{ selected }}
+      onPress={onPress ?? (() => router.push("/agent/chat"))}
+      style={({ pressed }) =>
+        compact
+          ? [
+              S.row,
+              {
+                paddingHorizontal: 16,
+                paddingVertical: 18,
+                gap: 12,
+                minHeight: 84,
+                backgroundColor: selected
+                  ? colors.accent
+                  : pressed
+                    ? colors.muted
+                    : colors.card,
+                borderBottomWidth: 0.5,
+                borderBottomColor: colors.border,
+              },
+            ]
+          : [S.card, S.row, { backgroundColor: C.soft }]
+      }
     >
       <Cue size={48} />
       <View style={{ flex: 1, gap: 4 }}>
         <View style={S.between}>
-          <Txt bold>
+          <Txt bold color={colors.foreground}>
             나의 {agent.data?.settings.name || "큐"}{" "}
             <Txt size={11} color={C.purple}>
-              AI 파트너 · 고정
+              AI
             </Txt>
           </Txt>
           {last && (
@@ -809,7 +958,11 @@ export function PinnedAgentConversation() {
             : "줄 수 있는 것, 받고 싶은 것을 말해주세요."}
         </Txt>
       </View>
-      <Icon name="chevron-right" />
+      <Icon
+        name={compact ? "bookmark" : "chevron-right"}
+        size={compact ? 14 : 20}
+        color={colors.mutedForeground}
+      />
     </Pressable>
   );
 }

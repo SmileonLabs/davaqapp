@@ -13,6 +13,8 @@ import {
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StickerPicker } from "./StickerPicker";
+import { MessengerAction, MessengerSheet } from "./chat/MessengerUI";
+import { chatDrafts } from "@/lib/chatDrafts";
 import { useColors } from "@/hooks/useColors";
 import { usePwaBottomInset } from "@/hooks/usePwaBottomInset";
 import {
@@ -38,6 +40,7 @@ interface MessageComposerProps {
   onCancelUpload?: () => void;
   placeholder?: string;
   draft?: { key: number; text: string };
+  draftKey?: string;
   /**
    * Sends the trimmed text. Returns true on success; on false the composer
    * restores the text so the user doesn't lose their message.
@@ -66,6 +69,7 @@ function MessageComposerComponent({
   onCancelUpload,
   placeholder = "메시지",
   draft,
+  draftKey,
   onSend,
   onTyping,
   onPickImage,
@@ -80,6 +84,50 @@ function MessageComposerComponent({
   const pwaBottom = usePwaBottomInset();
   const [text, setText] = useState("");
   const [showStickers, setShowStickers] = useState(false);
+  const [showAttachments, setShowAttachments] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const edited = useRef(false),
+    textRef = useRef(text),
+    alive = useRef(true);
+  textRef.current = text;
+  const growsWithContent =
+    Platform.OS === "web" &&
+    typeof CSS !== "undefined" &&
+    CSS.supports("field-sizing", "content");
+  useEffect(() => {
+    alive.current = true;
+    let active = true;
+    if (!draftKey) {
+      setDraftReady(true);
+      return;
+    }
+    void chatDrafts
+      .read(draftKey)
+      .then((value) => {
+        if (active && !edited.current) {
+          textRef.current = value;
+          setText(value);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setDraftReady(true);
+      });
+    return () => {
+      active = false;
+      alive.current = false;
+      if (edited.current)
+        void chatDrafts.write(draftKey, textRef.current).catch(() => {});
+    };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftKey || !draftReady || !edited.current) return;
+    const timer = setTimeout(
+      () => void chatDrafts.write(draftKey, text).catch(() => {}),
+      300,
+    );
+    return () => clearTimeout(timer);
+  }, [draftKey, draftReady, text]);
   const [inputHeight, setInputHeight] = useState(INPUT_MIN_HEIGHT);
   const inputRef = useRef<TextInput>(null);
   const lastTypingSentRef = useRef(0);
@@ -111,21 +159,39 @@ function MessageComposerComponent({
 
   const submit = useCallback(async () => {
     const content = text.trim();
-    if (!content || sending || submittingRef.current) return;
+    if (!content || content.length > 2000 || sending || submittingRef.current)
+      return;
     submittingRef.current = true;
+    edited.current = true;
+    textRef.current = "";
     setText("");
+    if (draftKey) void chatDrafts.write(draftKey, "").catch(() => {});
     setInputHeight(INPUT_MIN_HEIGHT);
     lastTypingSentRef.current = 0;
     try {
       const ok = await onSend(content);
-      if (!ok) setText(content);
+      if (!ok && alive.current)
+        setText((current) => {
+          const next = content + (current ? "\n" + current : "");
+          textRef.current = next;
+          return next;
+        });
+    } catch {
+      if (alive.current)
+        setText((current) => {
+          const next = content + (current ? "\n" + current : "");
+          textRef.current = next;
+          return next;
+        });
     } finally {
       submittingRef.current = false;
     }
-  }, [text, sending, onSend]);
+  }, [text, sending, onSend, draftKey]);
 
   const handleChangeText = useCallback(
     (value: string) => {
+      edited.current = true;
+      textRef.current = value;
       setText(value);
       if (!value.trim()) return;
       const now = Date.now();
@@ -174,7 +240,8 @@ function MessageComposerComponent({
           nativeEvent?.isComposing === true ||
           nativeEvent?.keyCode === 229 ||
           nativeEvent?.which === 229 ||
-          Date.now() - lastCompositionEndAtRef.current < SAFARI_COMPOSITION_END_GUARD_MS;
+          Date.now() - lastCompositionEndAtRef.current <
+            SAFARI_COMPOSITION_END_GUARD_MS;
         if (isComposing) return;
         e.preventDefault?.();
         void submit();
@@ -190,14 +257,26 @@ function MessageComposerComponent({
 
   useEffect(() => {
     if (!draft) return;
+    edited.current = true;
+    textRef.current = draft.text;
     setText(draft.text);
     inputRef.current?.focus();
   }, [draft]);
 
+  useEffect(() => {
+    if (replyPreview) inputRef.current?.focus();
+  }, [replyPreview]);
   const hasText = text.trim().length > 0;
-  const uploadLabel = uploading === "image" ? "사진 업로드 중" : uploading === "file" ? "파일 업로드 중" : null;
-  const progressText = typeof uploadProgress === "number" ? `${uploadProgress}%` : "준비 중";
-  const progressWidth = `${Math.max(6, uploadProgress ?? 12)}%` as DimensionValue;
+  const uploadLabel =
+    uploading === "image"
+      ? "사진 업로드 중"
+      : uploading === "file"
+        ? "파일 업로드 중"
+        : null;
+  const progressText =
+    typeof uploadProgress === "number" ? `${uploadProgress}%` : "준비 중";
+  const progressWidth =
+    `${Math.max(6, uploadProgress ?? 12)}%` as DimensionValue;
 
   return (
     <>
@@ -205,22 +284,40 @@ function MessageComposerComponent({
         <View
           style={[
             styles.replyPreview,
-            { backgroundColor: colors.background, borderTopColor: colors.border },
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+            },
           ]}
         >
-          <View style={[styles.replyAccent, { backgroundColor: colors.primary }]} />
+          <View
+            style={[styles.replyAccent, { backgroundColor: colors.primary }]}
+          />
           <View style={styles.replyTextWrap}>
-            <Text style={[styles.replyLabel, { color: colors.primary }]} numberOfLines={1}>
-              {replyPreview.senderName ? `${replyPreview.senderName}에게 답장` : "답장"}
+            <Text
+              style={[styles.replyLabel, { color: colors.primary }]}
+              numberOfLines={1}
+            >
+              {replyPreview.senderName
+                ? `${replyPreview.senderName}에게 답장`
+                : "답장"}
             </Text>
-            <Text style={[styles.replyText, { color: colors.mutedForeground }]} numberOfLines={1}>
+            <Text
+              style={[styles.replyText, { color: colors.mutedForeground }]}
+              numberOfLines={1}
+            >
               {replyPreview.content}
             </Text>
           </View>
           <Pressable
             onPress={onCancelReply}
+            accessibilityRole="button"
+            accessibilityLabel="답장 취소"
             hitSlop={8}
-            style={({ pressed }) => [styles.replyClose, { opacity: pressed ? 0.5 : 1 }]}
+            style={({ pressed }) => [
+              styles.replyClose,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}
           >
             <Feather name="x" size={18} color={colors.mutedForeground} />
           </Pressable>
@@ -230,21 +327,38 @@ function MessageComposerComponent({
         <View
           style={[
             styles.uploadStatus,
-            { backgroundColor: colors.background, borderTopColor: colors.border },
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+            },
           ]}
         >
           <View style={styles.uploadStatusTop}>
             <View style={styles.uploadStatusTextWrap}>
-              <Text style={[styles.uploadStatusLabel, { color: colors.foreground }]} numberOfLines={1}>
+              <Text
+                style={[styles.uploadStatusLabel, { color: colors.foreground }]}
+                numberOfLines={1}
+              >
                 {uploadLabel}
               </Text>
-              <Text style={[styles.uploadStatusProgress, { color: colors.mutedForeground }]}>
+              <Text
+                style={[
+                  styles.uploadStatusProgress,
+                  { color: colors.mutedForeground },
+                ]}
+              >
                 {progressText}
               </Text>
             </View>
             {onCancelUpload ? (
-              <Pressable onPress={onCancelUpload} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}>
-                <Text style={[styles.uploadCancel, { color: colors.primary }]}>취소</Text>
+              <Pressable
+                onPress={onCancelUpload}
+                hitSlop={8}
+                style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })}
+              >
+                <Text style={[styles.uploadCancel, { color: colors.primary }]}>
+                  취소
+                </Text>
               </Pressable>
             ) : null}
           </View>
@@ -262,7 +376,7 @@ function MessageComposerComponent({
         style={[
           styles.inputRow,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.card,
             borderTopColor: colors.border,
             paddingBottom: (insets.bottom > 0 ? insets.bottom : 10) + pwaBottom,
           },
@@ -270,7 +384,10 @@ function MessageComposerComponent({
       >
         <View style={[styles.inputField, { backgroundColor: colors.input }]}>
           <Pressable
-            style={({ pressed }) => [styles.fieldBtn, { opacity: pressed ? 0.5 : 1 }]}
+            style={({ pressed }) => [
+              styles.fieldBtn,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}
             accessibilityRole="button"
             accessibilityLabel="스티커"
             onPress={toggleStickers}
@@ -288,22 +405,29 @@ function MessageComposerComponent({
           </Pressable>
           <TextInput
             ref={inputRef}
+            accessibilityLabel="메시지 입력"
             style={[
               styles.input,
               {
                 color: colors.foreground,
-                // react-native-web synchronously reads scrollHeight/scrollWidth
-                // whenever onContentSizeChange is present. On iOS Safari that
-                // forces a full-page layout on every keystroke and becomes very
-                // expensive once the chat contains media-rich rows. Keep the
-                // PWA composer at one line with its own scroll area; native keeps
-                // the expanding composer behavior.
-                height: Platform.OS === "web" ? INPUT_MIN_HEIGHT : inputHeight,
+                // CSS content sizing avoids synchronous scrollHeight reads while typing.
+                height:
+                  Platform.OS === "web"
+                    ? growsWithContent
+                      ? "auto"
+                      : Math.min(
+                          INPUT_MAX_HEIGHT,
+                          44 + (text.split("\n").length - 1) * 20,
+                        )
+                    : inputHeight,
+                ...(growsWithContent ? { fieldSizing: "content" as any } : {}),
               },
             ]}
             value={text}
             onChangeText={handleChangeText}
-            onContentSizeChange={Platform.OS === "web" ? undefined : handleContentSizeChange}
+            onContentSizeChange={
+              Platform.OS === "web" ? undefined : handleContentSizeChange
+            }
             onKeyPress={handleKeyPress}
             {...(Platform.OS === "web"
               ? ({
@@ -319,34 +443,30 @@ function MessageComposerComponent({
             numberOfLines={1}
             maxLength={2000}
             blurOnSubmit={false}
-            scrollEnabled={Platform.OS === "web" || inputHeight >= INPUT_MAX_HEIGHT}
+            scrollEnabled={
+              Platform.OS === "web" || inputHeight >= INPUT_MAX_HEIGHT
+            }
           />
           <Pressable
-            style={({ pressed }) => [styles.fieldBtn, { opacity: pressed ? 0.5 : 1 }]}
+            style={({ pressed }) => [
+              styles.fieldBtn,
+              styles.fieldBtnLast,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}
             accessibilityRole="button"
-            accessibilityLabel="사진 첨부"
-            onPress={onPickImage}
+            accessibilityLabel="첨부 파일 선택"
             disabled={!!uploading || sending}
+            onPress={() => setShowAttachments(true)}
             hitSlop={6}
           >
-            {uploading === "image" ? (
+            {uploading ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Feather name="image" size={22} color={colors.mutedForeground} />
-            )}
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.fieldBtn, styles.fieldBtnLast, { opacity: pressed ? 0.5 : 1 }]}
-            accessibilityRole="button"
-            accessibilityLabel="파일 첨부"
-            onPress={onPickFile}
-            disabled={!!uploading || sending}
-            hitSlop={6}
-          >
-            {uploading === "file" ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Feather name="paperclip" size={22} color={colors.mutedForeground} />
+              <Feather
+                name="paperclip"
+                size={22}
+                color={colors.mutedForeground}
+              />
             )}
           </Pressable>
         </View>
@@ -361,13 +481,59 @@ function MessageComposerComponent({
           accessibilityRole="button"
           accessibilityLabel="메시지 보내기"
           onPress={() => void submit()}
-          disabled={!hasText || sending}
+          {...(Platform.OS === "web"
+            ? { onMouseDown: (e: any) => e.preventDefault() }
+            : ({} as any))}
+          disabled={!hasText || sending || text.trim().length > 2000}
         >
-          <Feather name="send" size={19} color={hasText ? "#fff" : colors.mutedForeground} />
+          <Feather
+            name="send"
+            size={19}
+            color={hasText ? "#fff" : colors.mutedForeground}
+          />
         </Pressable>
       </View>
 
+      {text.length > 1900 && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={{
+            paddingHorizontal: 16,
+            paddingBottom: 4,
+            textAlign: "right",
+            fontSize: 11,
+            color:
+              text.length > 2000 ? colors.destructive : colors.mutedForeground,
+          }}
+        >
+          {text.length} / 2000
+        </Text>
+      )}
       {showStickers ? <StickerPicker onSelect={onSendSticker} /> : null}
+      <MessengerSheet
+        visible={showAttachments}
+        title="대화에 첨부"
+        onClose={() => setShowAttachments(false)}
+      >
+        <MessengerAction
+          icon="image"
+          title="사진 첨부"
+          subtitle="사진을 골라 대화에 보내기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickImage();
+          }}
+        />
+        <MessengerAction
+          icon="file"
+          title="파일 첨부"
+          subtitle="문서와 파일 공유하기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickFile();
+          }}
+        />
+      </MessengerSheet>
     </>
   );
 }
@@ -451,16 +617,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
-    paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingHorizontal: 12,
+    paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   inputField: {
     flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
-    borderRadius: 22,
-    minHeight: 44,
+    borderRadius: 23,
+    minHeight: 46,
     paddingHorizontal: 2,
   },
   fieldBtn: {
@@ -475,7 +641,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 44,
-    maxHeight: 120,
+    maxHeight: INPUT_MAX_HEIGHT,
     paddingHorizontal: 4,
     paddingTop: 12,
     paddingBottom: 12,

@@ -37,6 +37,7 @@ import { ChatRoomContextBar } from "@/components/chat/ChatRoomContextBar";
 import { ChatRoomSheets } from "@/components/chat/ChatRoomSheets";
 import { FadeInView } from "@/components/FadeInView";
 import { EmptyState } from "@/components/EmptyState";
+import {TypingIndicator} from "@/components/chat/MessengerUI";
 import { ChatRoomHeader } from "@/components/chat/ChatRoomHeader";
 import { MessageComposer } from "@/components/MessageComposer";
 import { useColors } from "@/hooks/useColors";
@@ -107,14 +108,15 @@ function getIsIOSStandalonePwa() {
   return isIOS && standalone;
 }
 
-export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function ChatScreen({roomId,onBack,embedded=false}:{roomId?:string;onBack?:()=>void;embedded?:boolean}={}) {
+  const params = useLocalSearchParams<{ id: string }>();
+  const id=roomId??params.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const colors = useColors();
   const { width: viewportWidth } = useWindowDimensions();
   const [isIOSStandalonePwa, setIsIOSStandalonePwa] = useState(() => getIsIOSStandalonePwa());
-  const shouldAnimatePanel = Platform.OS === "web" && !isIOSStandalonePwa;
+  const shouldAnimatePanel = !embedded && Platform.OS === "web" && !isIOSStandalonePwa;
 
   const [forwardTarget, setForwardTarget] = useState<Message | null>(null);
 
@@ -444,9 +446,10 @@ export default function ChatScreen() {
     : narrativeLanded;
 
   const goBack = React.useCallback(() => {
+    if(onBack){onBack();return;}
     if (router.canGoBack()) router.back();
     else router.replace("/(tabs)/chats");
-  }, [router]);
+  }, [router,onBack]);
 
   const { isDirect, otherMember, otherDisplayName, isOtherOnline, headerTitle, headerSubtitle } = useChatRoomIdentity({
     room,
@@ -802,19 +805,20 @@ export default function ChatScreen() {
           queryClient.invalidateQueries({ queryKey: getGetRoomQueryKey(targetRoomId) }),
           queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() }),
         ]);
-        if (targetRoomId === id && created?.id) scrollToBottom(true);
+        if (targetRoomId === id && created?.id) jumpToBottom();
       } catch {
         crossAlert("오류", "메시지를 전달하지 못했습니다.");
       }
     },
-    [forwardTarget, id, queryClient, scrollToBottom],
+    [forwardTarget, id, queryClient, jumpToBottom],
   );
 
   const performStickerBadge = React.useCallback(
-    async (code: string) => {
-      if (!stickerBadgeTarget) return;
+    async (code: string, target=stickerBadgeTarget) => {
+      if (!target) return;
       try {
-        await addMessageStickerBadge(id, stickerBadgeTarget.id, code);
+        await addMessageStickerBadge(id, target.id, code);
+        setActionMessage(null);
         setStickerBadgeTarget(null);
         await refreshCurrentRoom();
       } catch {
@@ -853,7 +857,8 @@ export default function ChatScreen() {
       const isDM = isSystemAccount(item.sender);
       const prevMsg = listMessages[index + 1];
       const anotherMeOwnerName = ((item as any).metadata?.ownerName as string | undefined) ?? userDisplayName(item.sender as any, "상대");
-      const showSender = isAnotherMe || (isMultiParty && !isMe && !isDM && prevMsg?.senderId !== item.senderId);
+      const compact=!!prevMsg&&prevMsg.senderId===item.senderId&&prevMsg.authorKind===item.authorKind&&isSameDay(prevMsg.createdAt,item.createdAt)&&Math.abs(Date.parse(item.createdAt)-Date.parse(prevMsg.createdAt))<300000;
+      const showSender = !compact&&(isAnotherMe || (isMultiParty && !isMe && !isDM));
       const showDate = !prevMsg || !isSameDay(prevMsg.createdAt, item.createdAt);
       let readLabel: string | undefined;
       const deliveryState = (item as any)._deliveryState as
@@ -909,6 +914,7 @@ export default function ChatScreen() {
             type={item.type}
             imageUri={item.type === "image" ? item.content : undefined}
             showSender={showSender}
+            compact={compact}
             readLabel={readLabel}
             onJoinCall={handleJoinCall}
             onLongPress={canActOnMessage ? handleMessageLongPress : undefined}
@@ -964,7 +970,8 @@ export default function ChatScreen() {
     >
       <ChatRoomHeader
         title={headerTitle}
-        subtitle={`${headerSubtitle} · ${myChatIdentity}`}
+        subtitle={headerSubtitle}
+        embedded={embedded}
         avatarUri={otherMember?.profileImageUrl}
         avatarCharacterType={otherMember?.profile?.type}
         isDirect={isDirect}
@@ -1088,7 +1095,7 @@ export default function ChatScreen() {
         viewabilityConfig={viewabilityConfig}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
+        keyboardDismissMode={Platform.OS==="ios"?"interactive":"on-drag"}
         onScroll={onScroll}
         scrollEventThrottle={16}
         onLayout={onLayout}
@@ -1160,22 +1167,15 @@ export default function ChatScreen() {
         </View>
       ) : null}
 
-      {typingLabel ? (
-        <View style={styles.typingRow}>
-          <Text
-            style={[styles.typingText, { color: colors.mutedForeground }]}
-            numberOfLines={1}
-          >
-            {typingLabel}
-          </Text>
-        </View>
-      ) : null}
+      {typingLabel ? <TypingIndicator label={typingLabel}/> : null}
 
       {/* Dungeon is played entirely via the AI's choice buttons — no free-text
           input bar. Every other room keeps the composer. The composer owns its
           own text state so typing never re-renders this screen / message list. */}
       {!isDungeon ? (
         <MessageComposer
+          key={id+":"+me?.id}
+          draftKey={me?.id&&activeProfile?.id?`${me.id}:${activeProfile.id}:${id}`:undefined}
           sending={isSending}
           uploading={uploadTask?.kind ?? null}
           uploadProgress={uploadTask?.progress ?? null}
@@ -1230,6 +1230,7 @@ export default function ChatScreen() {
             setForwardTarget(message);
             setActionMessage(null);
           },
+          onReact:(message,code)=>void performStickerBadge(code,message),
           onSticker: (message) => {
             setStickerBadgeTarget(message);
             setActionMessage(null);
@@ -1274,7 +1275,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    opacity: 0.08,
+    opacity: 0.025,
   },
   wallpaperOrbOne: {
     right: -80,
@@ -1292,7 +1293,7 @@ const styles = StyleSheet.create({
     bottom: 32,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 28,
-    opacity: 0.18,
+    opacity: 0.04,
     transform: [{ rotate: "-1.5deg" }],
   },
   messageList: {
