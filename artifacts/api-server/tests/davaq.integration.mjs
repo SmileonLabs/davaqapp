@@ -259,6 +259,8 @@ try{
  console.log(JSON.stringify({checks,result:"passed",isolatedSchema:schema}));
 }finally{
  if(server)await new Promise(resolve=>server.close(resolve));
+ // Presence/typing use Redis in CI; release their clients after the last AI chunk.
+ await (await import("../src/lib/redis.ts")).closeRedisClients();
  if(pool)await pool.end();
  // Only this run's generated schema is removed; no public table or real row is touched.
  assert.match(schema,/^davaq_it_[a-f0-9]{32}$/);
