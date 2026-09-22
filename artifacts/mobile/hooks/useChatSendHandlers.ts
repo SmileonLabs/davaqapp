@@ -3,7 +3,6 @@ import { Platform } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getFetchRoomMessagesQueryKey,
-  sendMessage as sendMessageRequest,
   type Message,
 } from "@workspace/api-client-react";
 import { crossAlert } from "@/lib/crossAlert";
@@ -27,6 +26,7 @@ import {
   uploadFileBlob,
   type UploadedFile,
 } from "@/lib/uploadFile";
+import { sendChatMessage as sendMessageRequest } from "@/lib/chatTransport";
 import {
   canRetryChatOutboxEntry,
   ChatOutboxCapacityError,

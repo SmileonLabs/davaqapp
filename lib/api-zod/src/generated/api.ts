@@ -1964,6 +1964,204 @@ export const DavaqSearchMatchesResponse = zod.object({
 
 
 /**
+ * @summary Read the private Q conversation with messenger sequence cursors
+ */
+export const davaqFetchConversationMessagesQueryLimitDefault = 50;
+export const davaqFetchConversationMessagesQueryLimitMax = 100;
+
+export const davaqFetchConversationMessagesQueryAfterSeqMin = 0;
+
+
+
+export const DavaqFetchConversationMessagesQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(davaqFetchConversationMessagesQueryLimitMax).default(davaqFetchConversationMessagesQueryLimitDefault),
+  "afterSeq": zod.coerce.number().min(davaqFetchConversationMessagesQueryAfterSeqMin).optional()
+})
+
+export const DavaqFetchConversationMessagesResponseItem = zod.object({
+  "id": zod.string(),
+  "roomId": zod.string(),
+  "roomSeq": zod.number(),
+  "senderId": zod.string(),
+  "senderProfile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullish(),
+  "activityProfile": zod.union([zod.unknown(),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "authorKind": zod.string(),
+  "type": zod.string(),
+  "content": zod.string(),
+  "replyToMessageId": zod.string().nullish(),
+  "anotherMeSessionId": zod.string().nullish(),
+  "callId": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "clientMessageId": zod.string().nullish(),
+  "deletedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "nickname": zod.string(),
+  "accountKind": zod.enum(['user', 'official', 'system']),
+  "friendAlias": zod.string().nullish().describe('Current viewer\'s saved name for this user, when available.'),
+  "displayName": zod.string().optional().describe('friendAlias when set, otherwise nickname.'),
+  "profileImageUrl": zod.string().nullish().describe('Active character avatar. The legacy member account photo is never exposed.'),
+  "statusMessage": zod.string().nullish(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullable(),
+  "statusMessage": zod.string().nullish()
+}),zod.null()]).optional()
+}).optional(),
+  "replyTo": zod.union([zod.object({
+  "id": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string().nullish(),
+  "type": zod.string(),
+  "content": zod.string(),
+  "deletedAt": zod.string().nullish()
+}),zod.null()]).optional(),
+  "stickerBadges": zod.array(zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "userId": zod.string(),
+  "createdAt": zod.string(),
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "nickname": zod.string(),
+  "accountKind": zod.enum(['user', 'official', 'system']),
+  "friendAlias": zod.string().nullish().describe('Current viewer\'s saved name for this user, when available.'),
+  "displayName": zod.string().optional().describe('friendAlias when set, otherwise nickname.'),
+  "profileImageUrl": zod.string().nullish().describe('Active character avatar. The legacy member account photo is never exposed.'),
+  "statusMessage": zod.string().nullish(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullable(),
+  "statusMessage": zod.string().nullish()
+}),zod.null()]).optional()
+}),zod.null()]).optional()
+})).optional(),
+  "linkPreview": zod.union([zod.object({
+  "url": zod.string(),
+  "domain": zod.string().nullish(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish()
+}),zod.null()]).optional(),
+  "readCount": zod.number().optional().describe('Number of other room members who have read this message')
+})
+export const DavaqFetchConversationMessagesResponse = zod.array(DavaqFetchConversationMessagesResponseItem)
+
+
+/**
+ * @summary Durably accept an idempotent Q message before generating its reply
+ */
+export const davaqEnqueueConversationMessageBodyContentMax = 3000;
+
+export const davaqEnqueueConversationMessageBodyTypeDefault = `text`;
+export const davaqEnqueueConversationMessageBodyClientMessageIdMin = 8;
+export const davaqEnqueueConversationMessageBodyClientMessageIdMax = 100;
+
+
+
+export const DavaqEnqueueConversationMessageBody = zod.object({
+  "content": zod.string().min(1).max(davaqEnqueueConversationMessageBodyContentMax),
+  "type": zod.enum(['text', 'image', 'file', 'sticker']).default(davaqEnqueueConversationMessageBodyTypeDefault),
+  "clientMessageId": zod.string().min(davaqEnqueueConversationMessageBodyClientMessageIdMin).max(davaqEnqueueConversationMessageBodyClientMessageIdMax),
+  "replyToMessageId": zod.null().optional()
+})
+
+export const DavaqEnqueueConversationMessageResponse = zod.object({
+  "id": zod.string(),
+  "roomId": zod.string(),
+  "roomSeq": zod.number(),
+  "senderId": zod.string(),
+  "senderProfile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullish(),
+  "activityProfile": zod.union([zod.unknown(),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "authorKind": zod.string(),
+  "type": zod.string(),
+  "content": zod.string(),
+  "replyToMessageId": zod.string().nullish(),
+  "anotherMeSessionId": zod.string().nullish(),
+  "callId": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "clientMessageId": zod.string().nullish(),
+  "deletedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "nickname": zod.string(),
+  "accountKind": zod.enum(['user', 'official', 'system']),
+  "friendAlias": zod.string().nullish().describe('Current viewer\'s saved name for this user, when available.'),
+  "displayName": zod.string().optional().describe('friendAlias when set, otherwise nickname.'),
+  "profileImageUrl": zod.string().nullish().describe('Active character avatar. The legacy member account photo is never exposed.'),
+  "statusMessage": zod.string().nullish(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullable(),
+  "statusMessage": zod.string().nullish()
+}),zod.null()]).optional()
+}).optional(),
+  "replyTo": zod.union([zod.object({
+  "id": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string().nullish(),
+  "type": zod.string(),
+  "content": zod.string(),
+  "deletedAt": zod.string().nullish()
+}),zod.null()]).optional(),
+  "stickerBadges": zod.array(zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "userId": zod.string(),
+  "createdAt": zod.string(),
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "nickname": zod.string(),
+  "accountKind": zod.enum(['user', 'official', 'system']),
+  "friendAlias": zod.string().nullish().describe('Current viewer\'s saved name for this user, when available.'),
+  "displayName": zod.string().optional().describe('friendAlias when set, otherwise nickname.'),
+  "profileImageUrl": zod.string().nullish().describe('Active character avatar. The legacy member account photo is never exposed.'),
+  "statusMessage": zod.string().nullish(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['fan', 'star', 'official_ai']),
+  "handle": zod.string(),
+  "displayName": zod.string(),
+  "profileImageUrl": zod.string().nullable(),
+  "statusMessage": zod.string().nullish()
+}),zod.null()]).optional()
+}),zod.null()]).optional()
+})).optional(),
+  "linkPreview": zod.union([zod.object({
+  "url": zod.string(),
+  "domain": zod.string().nullish(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish()
+}),zod.null()]).optional(),
+  "readCount": zod.number().optional().describe('Number of other room members who have read this message')
+})
+
+
+/**
  * @summary ListAgentMessages
  */
 export const DavaqListAgentMessagesResponse = zod.object({

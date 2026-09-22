@@ -2056,6 +2056,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DavaqError"
+  /agents/me/conversation/messages:
+    get:
+      operationId: davaqFetchConversationMessages
+      tags: [ agents ]
+      summary: Read the private Q conversation with messenger sequence cursors
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: afterSeq
+          in: query
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Messages with current exchange, reward and memory cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Message" }
+    post:
+      operationId: davaqEnqueueConversationMessage
+      tags: [ agents ]
+      summary: Durably accept an idempotent Q message before generating its reply
+      security: [ { bearerAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [ content, clientMessageId ]
+              properties:
+                content: { type: string, minLength: 1, maxLength: 3000 }
+                type: { type: string, enum: [ text, image, file, sticker ], default: text }
+                clientMessageId: { type: string, minLength: 8, maxLength: 100 }
+                replyToMessageId: { type: "null" }
+      responses:
+        "200":
+          description: Accepted or previously accepted user message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+
   /agents/me/messages:
     get:
       operationId: davaqListAgentMessages

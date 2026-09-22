@@ -38,6 +38,8 @@ export async function canReadPrivateObject(
   userId: string,
   objectPath: string,
 ): Promise<boolean> {
+  const ownUpload = await pool.query("SELECT 1 FROM chat_upload_owners WHERE user_id=$1 AND object_path=$2", [userId, objectPath]);
+  if (ownUpload.rows[0]) return true;
   const brandReference = await pool.query(
     `SELECT 1 FROM brand_media m WHERE m.object_path=$2 AND (m.owner_id=$1 OR EXISTS(SELECT 1 FROM brand_participations p JOIN brand_versions v ON v.id=p.version_id WHERE p.user_id=$1 AND (v.config->>'videoA'=$2 OR v.config->>'videoB'=$2))) LIMIT 1`,
     [userId, objectPath],
@@ -170,6 +172,7 @@ router.post(
       const objectPath =
         objectStorageService.normalizeObjectEntityPath(uploadURL);
 
+      await pool.query("INSERT INTO chat_upload_owners(object_path,user_id,content_type) VALUES($1,$2,$3)", [objectPath, req.dbUser!.id, contentType]);
       res.json(
         RequestUploadUrlResponse.parse({
           uploadURL,
@@ -233,6 +236,7 @@ router.post(
         body,
         contentType,
       );
+      await pool.query("INSERT INTO chat_upload_owners(object_path,user_id,content_type) VALUES($1,$2,$3)", [objectPath, req.dbUser!.id, contentType]);
       res.json({
         objectPath,
         metadata: { name, size: body.length, contentType },

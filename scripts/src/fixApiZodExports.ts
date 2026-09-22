@@ -8,6 +8,7 @@ const barrel = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..
 if (fs.existsSync(barrel)) {
   const source = fs.readFileSync(barrel, "utf8");
   const markers = new Map([
+    ["export * from './davaqEnqueueConversationMessageBody';", "// DavaqEnqueueConversationMessageBody uses the canonical generated Zod export."],
     ["export * from './davaqCreateMemoryBody';", "// DavaqCreateMemoryBody uses the canonical generated Zod export."],
     ["export * from './davaqMatchFeedbackBody';", "// DavaqMatchFeedbackBody uses the canonical generated Zod export."],
     ["export * from './davaqRegistrationDraftBody';", "// DavaqRegistrationDraftBody uses the canonical generated Zod export."],

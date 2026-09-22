@@ -44,6 +44,7 @@ interface MessageBubbleProps {
   imageUri?: string;
   senderName?: string;
   senderAvatar?: string | null;
+  senderAvatarNode?: React.ReactNode;
   senderCharacterType?: "fan" | "star" | "official_ai";
   time: string;
   showSender?: boolean;
@@ -109,6 +110,7 @@ function MessageBubbleComponent({
   imageUri,
   senderName,
   senderAvatar,
+  senderAvatarNode,
   senderCharacterType,
   time,
   showSender = false,
@@ -587,11 +589,11 @@ function MessageBubbleComponent({
       </View>
     ) : null;
 
+  // A disabled Pressable also disables nested retry/media controls on web.
+  const Row = longPressHandler ? Pressable : View;
   return (
-    <Pressable
-      onLongPress={longPressHandler}
-      delayLongPress={280}
-      disabled={!longPressHandler}
+    <Row
+      {...(longPressHandler ? { onLongPress: longPressHandler, delayLongPress: 280 } : {})}
       style={[
         styles.row,
         isMe ? styles.rowMe : styles.rowOther,
@@ -599,7 +601,7 @@ function MessageBubbleComponent({
       ]}
     >
       {!isMe && (
-        simpleAvatars ? (
+        senderAvatarNode ?? (simpleAvatars ? (
           <View
             style={{
               width: 32,
@@ -616,7 +618,7 @@ function MessageBubbleComponent({
             crop="face"
             characterType={senderCharacterType}
           />
-        )
+        ))
       )}
       <View style={[styles.bubbleWrap, isMe && styles.bubbleWrapMe]}>
         {!isMe && showSender && senderName ? (
@@ -633,7 +635,7 @@ function MessageBubbleComponent({
           {!isMe ? meta : null}
         </View>
       </View>
-    </Pressable>
+    </Row>
   );
 }
 

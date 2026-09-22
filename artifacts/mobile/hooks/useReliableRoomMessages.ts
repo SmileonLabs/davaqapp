@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchRoomMessages,
   getFetchRoomMessagesQueryKey,
   type Message,
 } from "@workspace/api-client-react";
@@ -25,6 +24,8 @@ import {
   noteChatResource,
 } from "@/lib/chatPerformanceDiagnostics";
 
+import { fetchChatMessages as fetchRoomMessages } from "@/lib/chatTransport";
+
 const LATEST_WINDOW_SIZE = 50;
 const CATCH_UP_PAGE_SIZE = 100;
 const confirmedCursors = new ConfirmedCatchUpCursorRegistry();
@@ -37,7 +38,7 @@ const confirmedCursors = new ConfirmedCatchUpCursorRegistry();
  */
 export function useReliableRoomMessages(
   roomId: string,
-  identity: { userId?: string | null; profileId?: string | null },
+  identity: { userId?: string | null; profileId?: string | null; pollInterval?: number },
 ) {
   const queryClient = useQueryClient();
   const queryKey = getFetchRoomMessagesQueryKey(roomId);
@@ -117,6 +118,8 @@ export function useReliableRoomMessages(
     queryKey,
     enabled: !!cursorKey && hydratedCursorKey === cursorKey,
     refetchOnReconnect: true,
+    refetchInterval: identity.pollInterval ? (q) => q.state.data?.some(m => ["queued", "running"].includes(String(m.metadata?.replyState ?? ""))) ? identity.pollInterval! : 15000 : false,
+    refetchIntervalInBackground: false,
     structuralSharing: (oldData, newData) => {
       const pending = pendingStructuralMergeRef.current;
       if (!pending || pending.result !== newData) return newData;

@@ -3967,6 +3967,44 @@ export type DavaqUpdateMemoryBody = {
   label?: string;
 };
 
+export type DavaqFetchConversationMessagesParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+afterSeq?: number;
+};
+
+export type DavaqEnqueueConversationMessageBodyType = typeof DavaqEnqueueConversationMessageBodyType[keyof typeof DavaqEnqueueConversationMessageBodyType];
+
+
+export const DavaqEnqueueConversationMessageBodyType = {
+  text: 'text',
+  image: 'image',
+  file: 'file',
+  sticker: 'sticker',
+} as const;
+
+export type DavaqEnqueueConversationMessageBody = {
+  /**
+     * @minLength 1
+     * @maxLength 3000
+     */
+  content: string;
+  type?: DavaqEnqueueConversationMessageBodyType;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  clientMessageId: string;
+  /** @nullable */
+  replyToMessageId?: null;
+};
+
 export type DavaqSendAgentMessageBody = {
   /**
      * @minLength 1

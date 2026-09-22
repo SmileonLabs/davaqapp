@@ -33,6 +33,7 @@ import {
   Icon,
 } from "./UI";
 
+import { PinnedAgentConversation } from "./AgentConversation";
 import { BrandHomeSection } from "./BrandExchangeScreens";
 
 export function HomeScreen() {
@@ -551,25 +552,7 @@ export function InboxScreen() {
         void proposals.refetch();
       }}
     >
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push("/agent/chat")}
-        style={[S.card, S.row, { backgroundColor: C.soft }]}
-      >
-        <Cue size={64} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Txt bold>
-            나의 큐{" "}
-            <Txt size={11} color={C.purple}>
-              AI 파트너
-            </Txt>
-          </Txt>
-          <Txt size={13} color={C.muted}>
-            줄 수 있는 것, 받고 싶은 것을 말해주세요.
-          </Txt>
-        </View>
-        <Icon name="chevron-right" />
-      </Pressable>
+      <PinnedAgentConversation />
       <Field
         label="대화 검색"
         placeholder="이름이나 최근 메시지"

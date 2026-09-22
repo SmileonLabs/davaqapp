@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/expo";
 import { AppState, Platform } from "react-native";
 import {
-  sendMessage as sendMessageRequest,
   useGetMe,
 } from "@workspace/api-client-react";
+import { sendChatMessage as sendMessageRequest } from "@/lib/chatTransport";
 import {
   canRetryChatOutboxEntry,
   ChatOutboxDrainOwnerFence,

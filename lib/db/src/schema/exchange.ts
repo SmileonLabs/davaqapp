@@ -1,5 +1,6 @@
 import {
   boolean,
+  bigserial,
   integer,
   jsonb,
   pgTable,
@@ -262,6 +263,12 @@ export const agentGrowthEventsTable = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.kind, t.sourceId] })],
 );
+export const chatUploadOwnersTable = pgTable("chat_upload_owners", {
+  objectPath: text("object_path").primaryKey(),
+  userId: uuid("user_id").notNull().references(() => usersTable.id),
+  contentType: text("content_type").notNull(),
+  createdAt: at("created_at"),
+});
 export const agentMessagesTable = pgTable(
   "agent_messages",
   {
@@ -269,6 +276,11 @@ export const agentMessagesTable = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => usersTable.id),
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+    type: text("type").notNull().default("text"),
+    metadata: jsonb("metadata").notNull().default({}),
+    replyState: text("reply_state").notNull().default("done"),
+    leaseToken: uuid("lease_token"),
     processingStartedAt: timestamp("processing_started_at", {
       withTimezone: true,
     }),

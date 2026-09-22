@@ -183,10 +183,13 @@ export * from './davaqDraftCategory';
 export * from './davaqDraftDelivery';
 export * from './davaqDraftKind';
 export * from './davaqDraftWantedCategoriesItem';
+// DavaqEnqueueConversationMessageBody uses the canonical generated Zod export.
+export * from './davaqEnqueueConversationMessageBodyType';
 export * from './davaqError';
 export * from './davaqErrorFieldsItem';
 export * from './davaqEvent';
 export * from './davaqEventData';
+export * from './davaqFetchConversationMessagesParams';
 export * from './davaqFulfillment';
 export * from './davaqListing';
 export * from './davaqListingCategory';

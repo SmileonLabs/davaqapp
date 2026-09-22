@@ -29,8 +29,9 @@ export async function agentReply(
   userId: string,
   text: string,
   useHistory = true,
+  throughSeq?: number,
 ) {
-  if (/쿠폰|브랜드.*교환|1분.*바꾸|광고.*혜택|리워드/.test(text)) {
+  if (/쿠폰|브랜드.*(?:교환|혜택)|1분.*바꾸|광고.*혜택|리워드/.test(text)) {
     const settings = await settingsFor(userId),
       result = await listBrandExchanges(userId, true);
     const reply = result.items.length
@@ -47,6 +48,8 @@ export async function agentReply(
       data: { reply, memory: null },
       consentVersion: settings.consent_version,
       chatLearning: false,
+      matchIds: [] as string[],
+      brandIds: result.items.slice(0,3).map(c => c.id),
     };
   }
   const settings = await settingsFor(userId),
@@ -55,8 +58,8 @@ export async function agentReply(
   const history = useHistory
     ? (
         await pool.query(
-          "SELECT role,content FROM agent_messages WHERE user_id=$1 ORDER BY created_at DESC LIMIT 10",
-          [userId],
+          `SELECT role,content FROM agent_messages m WHERE user_id=$1 AND type='text' AND ($2::bigint IS NULL OR seq<=$2 OR (role='assistant' AND EXISTS(SELECT 1 FROM agent_messages p WHERE p.user_id=m.user_id AND p.request_key=m.request_key AND p.role='user' AND p.seq<=$2))) ORDER BY seq DESC LIMIT 10`,
+          [userId, throughSeq ?? null],
         )
       ).rows.reverse()
     : [];
@@ -93,6 +96,8 @@ export async function agentReply(
     ),
     consentVersion: settings.consent_version,
     chatLearning: settings.chat_learning,
+    matchIds: matches.slice(0,3).map(m => m.id),
+    brandIds: [] as string[],
   };
 }
 export async function registerDraft(text: string) {

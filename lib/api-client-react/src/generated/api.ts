@@ -107,7 +107,9 @@ import type {
   DavaqCreateMemoryBody,
   DavaqCreateProposal,
   DavaqDraft,
+  DavaqEnqueueConversationMessageBody,
   DavaqError,
+  DavaqFetchConversationMessagesParams,
   DavaqListListingsParams,
   DavaqListProposalsParams,
   DavaqListing,
@@ -3161,6 +3163,161 @@ export const useDavaqSearchMatches = <TError = ErrorType<DavaqError | void>,
         TContext
       > => {
       return useMutation(getDavaqSearchMatchesMutationOptions(options));
+    }
+
+export const getDavaqFetchConversationMessagesUrl = (params?: DavaqFetchConversationMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/agents/me/conversation/messages?${stringifiedParams}` : `/api/agents/me/conversation/messages`
+}
+
+/**
+ * @summary Read the private Q conversation with messenger sequence cursors
+ */
+export const davaqFetchConversationMessages = async (params?: DavaqFetchConversationMessagesParams, options?: RequestInit): Promise<Message[]> => {
+
+  return customFetch<Message[]>(getDavaqFetchConversationMessagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqFetchConversationMessagesQueryKey = (params?: DavaqFetchConversationMessagesParams,) => {
+    return [
+    `/api/agents/me/conversation/messages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDavaqFetchConversationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof davaqFetchConversationMessages>>, TError = ErrorType<unknown>>(params?: DavaqFetchConversationMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqFetchConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqFetchConversationMessagesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqFetchConversationMessages>>> = ({ signal }) => davaqFetchConversationMessages(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqFetchConversationMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqFetchConversationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof davaqFetchConversationMessages>>>
+export type DavaqFetchConversationMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read the private Q conversation with messenger sequence cursors
+ */
+
+export function useDavaqFetchConversationMessages<TData = Awaited<ReturnType<typeof davaqFetchConversationMessages>>, TError = ErrorType<unknown>>(
+ params?: DavaqFetchConversationMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqFetchConversationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqFetchConversationMessagesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqEnqueueConversationMessageUrl = () => {
+
+
+
+
+  return `/api/agents/me/conversation/messages`
+}
+
+/**
+ * @summary Durably accept an idempotent Q message before generating its reply
+ */
+export const davaqEnqueueConversationMessage = async (davaqEnqueueConversationMessageBody: DavaqEnqueueConversationMessageBody, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getDavaqEnqueueConversationMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqEnqueueConversationMessageBody,)
+  }
+);}
+
+
+
+
+export const getDavaqEnqueueConversationMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>, TError,{data: BodyType<DavaqEnqueueConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>, TError,{data: BodyType<DavaqEnqueueConversationMessageBody>}, TContext> => {
+
+const mutationKey = ['davaqEnqueueConversationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>, {data: BodyType<DavaqEnqueueConversationMessageBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  davaqEnqueueConversationMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqEnqueueConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>>
+    export type DavaqEnqueueConversationMessageMutationBody = BodyType<DavaqEnqueueConversationMessageBody>
+    export type DavaqEnqueueConversationMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Durably accept an idempotent Q message before generating its reply
+ */
+export const useDavaqEnqueueConversationMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>, TError,{data: BodyType<DavaqEnqueueConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqEnqueueConversationMessage>>,
+        TError,
+        {data: BodyType<DavaqEnqueueConversationMessageBody>},
+        TContext
+      > => {
+      return useMutation(getDavaqEnqueueConversationMessageMutationOptions(options));
     }
 
 export const getDavaqListAgentMessagesUrl = () => {

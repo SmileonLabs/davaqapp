@@ -23,13 +23,14 @@ try{
  process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_POOL_MAX="5";process.env.KNOWLEDGE_ADMIN_USER_IDS="";
  // The build aliases the stable workspace package, preserving the real pool and schema.
  const workspace=await import("@workspace/db");pool=workspace.pool;
- for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql"]){
+ for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql"]){
   await pool.query(await readFile(new URL("./"+file,import.meta.url),"utf8"));
  }
  const exchange=(await import("../src/routes/exchange.ts")).default;
  const agents=(await import("../src/routes/agents.ts")).default;
  const brand=(await import("../src/routes/brandExchange.ts")).default;
- const app=express();app.use(express.json());app.use("/api",exchange,agents,brand);
+ const conversation=(await import("../src/routes/agentConversation.ts")).default;
+ const app=express();app.use(express.json());app.use("/api",exchange,agents,brand,conversation);
  server=await new Promise(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
  const origin="http://127.0.0.1:"+server.address().port;
  const users=[];
@@ -240,6 +241,9 @@ try{
  ok((await request(c,"/brand-exchanges")).data.items.length===0,"discovery flag suppresses campaign recommendations");
  ok((await request(c,"/brand-rewards/"+rc.id+"/reveal","POST")).status===200,"discovery shutdown preserves coupon access");
  process.env.BRAND_EXCHANGE_ENABLED="true";
+
+ const {testAgentConversation}=await import("./agentConversation.integration.mjs");
+ await testAgentConversation({pool,request,ok,users});
 
  if(process.env.DAVAQ_INTEGRATION_AI==="1"){
   const ai=await import("../src/lib/davaqAgent.ts");

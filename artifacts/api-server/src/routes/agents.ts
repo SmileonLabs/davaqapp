@@ -12,7 +12,8 @@ import {
   enqueueSearch,
   findMatches,
 } from "../lib/exchangeService";
-import { settingsFor, agentReply, registerDraft } from "../lib/davaqAgent";
+import { enqueueAgentMessage } from "../lib/agentConversation";
+import { settingsFor, registerDraft } from "../lib/davaqAgent";
 const router: IRouter = Router();
 router.use("/agents", requireAuth);
 router.get(
@@ -261,66 +262,8 @@ router.post(
         })
         .strict()
         .parse(req.body);
-    const exists = (
-      await pool.query(
-        "SELECT * FROM agent_messages WHERE user_id=$1 AND request_key=$2 AND role='assistant'",
-        [user, input.requestKey],
-      )
-    ).rows[0];
-    if (exists) {
-      res.json({ message: exists });
-      return;
-    }
-    const claimed = (
-      await pool.query(
-        "INSERT INTO agent_messages(user_id,role,content,request_key,processing_started_at) VALUES($1,'user',$2,$3,now()) ON CONFLICT(user_id,role,request_key) DO UPDATE SET processing_started_at=now() WHERE agent_messages.processing_started_at<now()-interval '2 minutes' AND agent_messages.content=excluded.content RETURNING id",
-        [user, input.text, input.requestKey],
-      )
-    ).rows[0];
-    demand(
-      claimed,
-      409,
-      "큐가 답변을 준비 중이에요. 잠시 후 대화를 새로고침해 주세요.",
-    );
-    let content =
-        "지금은 AI 연결이 원활하지 않아요. 교환 등록에서 내용을 직접 작성하거나 잠시 후 다시 말해주세요.",
-      available = false;
-    try {
-      const answer = await agentReply(user, input.text);
-      content = answer.data.reply;
-      available = true;
-      if (answer.chatLearning && answer.data.memory)
-        await transaction(async (sql) => {
-          const s = (
-            await sql.query(
-              "SELECT * FROM agent_settings WHERE user_id=$1 FOR UPDATE",
-              [user],
-            )
-          ).rows[0];
-          if (s.chat_learning && s.consent_version === answer.consentVersion)
-            await sql.query(
-              "INSERT INTO agent_memories(user_id,label,source_type,source_id,consent_version) VALUES($1,$2,'chat',$3,$4) ON CONFLICT DO NOTHING",
-              [
-                user,
-                answer.data.memory,
-                "agent:" + claimed.id,
-                s.consent_version,
-              ],
-            );
-        });
-    } catch (e) {
-      req.log?.warn(
-        { error: e instanceof Error ? e.name : "Error" },
-        "DavaQ assistant unavailable",
-      );
-    }
-    const message = (
-      await pool.query(
-        "INSERT INTO agent_messages(user_id,role,content,request_key) VALUES($1,'assistant',$2,$3) RETURNING id,role,content,created_at",
-        [user, content, input.requestKey],
-      )
-    ).rows[0];
-    res.json({ message, available });
+    const accepted = await enqueueAgentMessage(user, { content: input.text, type: "text", clientMessageId: input.requestKey });
+    res.json({ message: { id: accepted.id, role: "user", content: accepted.content, created_at: accepted.createdAt }, available: true });
   }),
 );
 router.post(

@@ -37,6 +37,7 @@ interface MessageComposerProps {
   uploadProgress?: number | null;
   onCancelUpload?: () => void;
   placeholder?: string;
+  draft?: { key: number; text: string };
   /**
    * Sends the trimmed text. Returns true on success; on false the composer
    * restores the text so the user doesn't lose their message.
@@ -64,6 +65,7 @@ function MessageComposerComponent({
   uploadProgress = null,
   onCancelUpload,
   placeholder = "메시지",
+  draft,
   onSend,
   onTyping,
   onPickImage,
@@ -186,6 +188,12 @@ function MessageComposerComponent({
     inputStartedAtRef.current = chatPerformanceNow();
   }, []);
 
+  useEffect(() => {
+    if (!draft) return;
+    setText(draft.text);
+    inputRef.current?.focus();
+  }, [draft]);
+
   const hasText = text.trim().length > 0;
   const uploadLabel = uploading === "image" ? "사진 업로드 중" : uploading === "file" ? "파일 업로드 중" : null;
   const progressText = typeof uploadProgress === "number" ? `${uploadProgress}%` : "준비 중";
@@ -263,6 +271,8 @@ function MessageComposerComponent({
         <View style={[styles.inputField, { backgroundColor: colors.input }]}>
           <Pressable
             style={({ pressed }) => [styles.fieldBtn, { opacity: pressed ? 0.5 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="스티커"
             onPress={toggleStickers}
             hitSlop={6}
           >
@@ -313,6 +323,8 @@ function MessageComposerComponent({
           />
           <Pressable
             style={({ pressed }) => [styles.fieldBtn, { opacity: pressed ? 0.5 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="사진 첨부"
             onPress={onPickImage}
             disabled={!!uploading || sending}
             hitSlop={6}
@@ -325,6 +337,8 @@ function MessageComposerComponent({
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.fieldBtn, styles.fieldBtnLast, { opacity: pressed ? 0.5 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="파일 첨부"
             onPress={onPickFile}
             disabled={!!uploading || sending}
             hitSlop={6}
@@ -344,6 +358,8 @@ function MessageComposerComponent({
               opacity: pressed ? 0.85 : 1,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="메시지 보내기"
           onPress={() => void submit()}
           disabled={!hasText || sending}
         >
