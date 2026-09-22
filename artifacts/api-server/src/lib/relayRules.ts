@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import {meetingPointInput} from "./geoRules";
+import { meetingPointInput } from "./geoRules";
 import { categoryEligible, type MatchListing } from "./exchangeRules";
 
 export const relayTermsInput = z
@@ -11,7 +11,7 @@ export const relayTermsInput = z
             listingId: z.uuid(),
             startsAt: z.iso.datetime({ offset: true }),
             location: z.string().trim().min(2).max(200),
-            meetingPoint:meetingPointInput.nullable().optional(),
+            meetingPoint: meetingPointInput.nullable().optional(),
           })
           .strict(),
       )
@@ -93,6 +93,7 @@ export function findRelayCycles(
   viewer: string,
   excluded: (giver: RelayListing, receiver: RelayListing) => boolean = () =>
     false,
+  edgeFor: typeof relayEdge = relayEdge,
 ) {
   const eligible = listings.filter(relayEligible);
   const edges = new Map<string, { listing: RelayListing; score: number }[]>();
@@ -101,7 +102,7 @@ export function findRelayCycles(
   for (const a of eligible) {
     const outgoing = eligible
       .flatMap((b) => {
-        const e = relayEdge(a, b);
+        const e = edgeFor(a, b);
         return e && !excluded(a, b) ? [{ listing: b, score: e.score }] : [];
       })
       .sort(
@@ -123,7 +124,7 @@ export function findRelayCycles(
       if (++visited > 40000) return;
       const last = path[path.length - 1];
       if (path.length >= 3) {
-        const edge = relayEdge(last, start);
+        const edge = edgeFor(last, start);
         if (edge && !excluded(last, start)) {
           const id = canonicalRelay(path.map((l) => l.id));
           if (!found.has(id))

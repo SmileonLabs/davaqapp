@@ -7355,6 +7355,50 @@ paths:
       security: [{"bearerAuth":[]}]
       requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqMapSearch"}}}}
       responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqMapResults"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"429":{"description":"Rate limited"}}
+  /exchange/wishes/draft:
+    post:
+      operationId: "davaqDraftWish"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishDraftInput"}}}}
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishDraft"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+
+  /exchange/wishes:
+    get:
+      operationId: "davaqListWishes"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishes"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+    post:
+      operationId: "davaqCreateWish"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishCreate"}}}}
+      responses: {"201":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWish"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+
+  /exchange/wishes/{id}:
+    get:
+      operationId: "davaqGetWish"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      parameters: [{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}]
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWish"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+    patch:
+      operationId: "davaqUpdateWish"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      parameters: [{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}]
+      requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishUpdate"}}}}
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWish"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+
+  /exchange/wishes/{id}/candidates:
+    get:
+      operationId: "davaqWishCandidates"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      parameters: [{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}]
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqWishCandidates"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Wish state, version or idempotency key conflict"},"429":{"description":"Rate limited"}}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -7377,6 +7421,13 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
+    DavaqWish: {"type":"object","properties":{"id":{"type":"string","format":"uuid"},"title":{"type":"string","maxLength":80},"description":{"type":"string","maxLength":1000,"default":""},"keywords":{"type":"array","items":{"type":"string","minLength":2,"maxLength":40},"maxItems":6},"kind":{"type":"string","enum":["goods","service","experience"]},"category":{"type":"string","enum":["voice","photo","design","language","tech","music","goods","business","other"]},"imageKey":{"type":["string","null"],"pattern":"^/objects/[a-zA-Z0-9/_-]+$"},"status":{"type":"string","enum":["active","paused","fulfilled","deleted"]},"version":{"type":"integer","minimum":1},"createdAt":{"type":"string","format":"date-time"},"updatedAt":{"type":"string","format":"date-time"},"lastSearchedAt":{"type":["string","null"],"format":"date-time"},"candidateCount":{"type":"integer","minimum":0}},"required":["id","title","description","keywords","kind","category","imageKey","status","version","createdAt","updatedAt","lastSearchedAt","candidateCount"]}
+    DavaqWishes: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqWish"}}},"required":["items"]}
+    DavaqWishDraftInput: {"type":"object","properties":{"text":{"type":"string","maxLength":2000,"default":""},"imageKey":{"type":["string","null"],"pattern":"^/objects/[a-zA-Z0-9/_-]+$"}},"required":[],"additionalProperties":false,"description":"Provide text or an image already uploaded by this user. The image and extracted draft remain private.","anyOf":[{"required":["text"],"properties":{"text":{"type":"string","minLength":2}}},{"required":["imageKey"],"properties":{"imageKey":{"type":"string","pattern":"^/objects/[a-zA-Z0-9/_-]+$"}}}]}
+    DavaqWishDraft: {"type":"object","properties":{"title":{"type":"string","maxLength":80},"description":{"type":"string","maxLength":1000,"default":""},"keywords":{"type":"array","items":{"type":"string","minLength":2,"maxLength":40},"maxItems":6},"kind":{"type":"string","enum":["goods","service","experience"]},"category":{"type":"string","enum":["voice","photo","design","language","tech","music","goods","business","other"]},"questions":{"type":"array","items":{"type":"string","maxLength":200},"maxItems":3}},"required":["title","description","keywords","kind","category","questions"]}
+    DavaqWishCreate: {"type":"object","properties":{"title":{"type":"string","minLength":2,"maxLength":80},"description":{"type":"string","maxLength":1000,"default":""},"keywords":{"type":"array","items":{"type":"string","minLength":2,"maxLength":40},"minItems":1,"maxItems":6},"kind":{"type":"string","enum":["goods","service","experience"]},"category":{"type":"string","enum":["voice","photo","design","language","tech","music","goods","business","other"]},"imageKey":{"type":["string","null"],"pattern":"^/objects/[a-zA-Z0-9/_-]+$"},"requestKey":{"type":"string","minLength":8,"maxLength":100}},"required":["title","keywords","kind","category","requestKey"],"additionalProperties":false}
+    DavaqWishUpdate: {"type":"object","properties":{"title":{"type":"string","minLength":2,"maxLength":80},"description":{"type":"string","maxLength":1000},"keywords":{"type":"array","items":{"type":"string","minLength":2,"maxLength":40},"minItems":1,"maxItems":6},"kind":{"type":"string","enum":["goods","service","experience"]},"category":{"type":"string","enum":["voice","photo","design","language","tech","music","goods","business","other"]},"imageKey":{"type":["string","null"],"pattern":"^/objects/[a-zA-Z0-9/_-]+$"},"status":{"type":"string","enum":["active","paused","fulfilled","deleted"]},"version":{"type":"integer","minimum":1}},"required":["version"],"additionalProperties":false,"minProperties":2}
+    DavaqWishCandidates: {"type":"object","properties":{"direct":{"type":"array","items":{"$ref":"#/components/schemas/DavaqMatch"}},"relays":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayCandidate"}},"targets":{"type":"array","items":{"$ref":"#/components/schemas/DavaqListing"}},"offersCount":{"type":"integer"},"targetCount":{"type":"integer"},"scannedCount":{"type":"integer"},"limited":{"type":"boolean"},"searchedAt":{"type":"string","format":"date-time"}},"required":["direct","relays","targets","offersCount","targetCount","scannedCount","limited","searchedAt"]}
     DavaqRelayTerms: {"type":"object","properties":{"legs":{"type":"array","items":{"type":"object","properties":{"listingId":{"type":"string","format":"uuid"},"startsAt":{"type":"string","format":"date-time"},"location":{"type":"string","minLength":2,"maxLength":200},"meetingPoint":{"anyOf":[{"$ref":"#/components/schemas/DavaqMeetingPoint"},{"type":"null"}]}},"required":["listingId","startsAt","location"]},"minItems":3,"maxItems":4},"note":{"type":"string","maxLength":1500},"cancellation":{"type":"string","minLength":5,"maxLength":1000}},"required":["legs","note","cancellation"]}
     DavaqRelayCandidate: {"type":"object","properties":{"id":{"type":"string"},"listings":{"type":"array","items":{"$ref":"#/components/schemas/DavaqListing"}},"reasons":{"type":"array","items":{"type":"string"}},"pending":{"type":"array","items":{"type":"string"}}},"required":["id","listings","reasons","pending"]}
     DavaqRelaySearch: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayCandidate"}},"offersCount":{"type":"integer"},"scannedCount":{"type":"integer"},"limited":{"type":"boolean"}},"required":["items","offersCount","scannedCount","limited"]}
@@ -7384,7 +7435,7 @@ components:
     DavaqRelayEvent: {"type":"object","properties":{"id":{"type":"string","format":"uuid"},"actor_id":{"type":"string","format":"uuid"},"kind":{"type":"string"},"data":{"type":"object","additionalProperties":true},"created_at":{"type":"string","format":"date-time"}},"required":["id","actor_id","kind","data","created_at"]}
     DavaqRelay: {"type":"object","properties":{"id":{"type":"string","format":"uuid"},"creator_id":{"type":"string","format":"uuid"},"room_id":{"type":"string","format":"uuid"},"status":{"type":"string","enum":["negotiating","reserved","in_progress","cancel_requested","cancelled","declined","expired","disputed","completed"]},"version":{"type":"integer"},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"expires_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"},"members":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayMember"}},"events":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayEvent"}}},"required":["id","creator_id","room_id","status","version","terms","expires_at","updated_at","members","events"]}
     DavaqRelays: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelay"}}},"required":["items"]}
-    DavaqRelayCreate: {"type":"object","properties":{"listingIds":{"type":"array","items":{"type":"string","format":"uuid"},"minItems":3,"maxItems":4},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"requestKey":{"type":"string","minLength":8,"maxLength":100}},"required":["listingIds","terms","requestKey"]}
+    DavaqRelayCreate: {"type":"object","properties":{"listingIds":{"type":"array","items":{"type":"string","format":"uuid"},"minItems":3,"maxItems":4},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"requestKey":{"type":"string","minLength":8,"maxLength":100},"wishId":{"type":"string","format":"uuid"}},"required":["listingIds","terms","requestKey"]}
     DavaqRelayAction: {"type":"object","properties":{"action":{"type":"string","enum":["accept","revise","decline","cancel","approve_cancel","provided","received","dispute"]},"version":{"type":"integer","minimum":1},"requestKey":{"type":"string","minLength":8,"maxLength":100},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"note":{"type":"string","maxLength":1500}},"required":["action","version","requestKey"]}
     DavaqMeetingPoint: {"type":"object","properties":{"lat":{"type":"number","minimum":-85,"maximum":85},"lng":{"type":"number","minimum":-180,"maximum":180},"label":{"type":"string","minLength":2,"maxLength":80}},"required":["lat","lng","label"]}
     DavaqListingGeo: {"type":"object","properties":{"lat":{"type":"number","minimum":-85,"maximum":85},"lng":{"type":"number","minimum":-180,"maximum":180},"label":{"type":"string","minLength":2,"maxLength":80},"precision":{"type":"string","enum":["area","place"]}},"required":["lat","lng","label","precision"]}

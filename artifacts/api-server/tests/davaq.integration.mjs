@@ -16,7 +16,7 @@ let pool,server;let checks=0;
 const ok=(condition,message)=>{assert.ok(condition,message);checks++;console.log("PASS "+message);};
 try{
  await setup.query('CREATE SCHEMA "'+schema+'"');
- const baseTables=(await setup.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND NOT(tablename=ANY($1::text[]))",[["exchange_listings","exchange_favorites","exchange_proposals","exchange_proposal_versions","exchange_acceptances","exchange_reservations","exchange_events","exchange_fulfillments","exchange_reviews","agent_settings","agent_memories","agent_growth_events","agent_messages","agent_search_jobs","agent_match_feedback","exchange_media","agent_learning_observations","brand_campaigns","brand_versions","brand_media","brand_units","brand_participations","brand_events","brand_claims","brand_outbox","brand_budget_ledger","brand_preferences","chat_upload_owners","agent_conversation_settings","exchange_relays","exchange_relay_members","exchange_relay_reservations","exchange_relay_events"]])).rows.map(r=>r.tablename);
+ const baseTables=(await setup.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND NOT(tablename=ANY($1::text[]))",[["exchange_listings","exchange_favorites","exchange_proposals","exchange_proposal_versions","exchange_acceptances","exchange_reservations","exchange_events","exchange_fulfillments","exchange_reviews","agent_settings","agent_memories","agent_growth_events","agent_messages","agent_search_jobs","agent_match_feedback","exchange_media","agent_learning_observations","brand_campaigns","brand_versions","brand_media","brand_units","brand_participations","brand_events","brand_claims","brand_outbox","brand_budget_ledger","brand_preferences","chat_upload_owners","agent_conversation_settings","exchange_relays","exchange_relay_members","exchange_relay_reservations","exchange_relay_events","exchange_wishes"]])).rows.map(r=>r.tablename);
  for(const table of baseTables){
   assert.match(table,/^[a-z_]+$/);
   await setup.query('CREATE TABLE "'+schema+'"."'+table+'" (LIKE public."'+table+'" INCLUDING ALL)');
@@ -25,17 +25,18 @@ try{
  process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_POOL_MAX="5";process.env.KNOWLEDGE_ADMIN_USER_IDS="";
  // The build aliases the stable workspace package, preserving the real pool and schema.
  const workspace=await import("@workspace/db");pool=workspace.pool;
- for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql","0035_davaq_messenger_actions.sql","0036_davaq_relay_exchange.sql","0037_davaq_location_map.sql"]){
+ for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql","0035_davaq_messenger_actions.sql","0036_davaq_relay_exchange.sql","0037_davaq_location_map.sql","0038_davaq_wishes.sql"]){
   await pool.query(await readFile(new URL("./"+file,import.meta.url),"utf8"));
  }
  const exchange=(await import("../src/routes/exchange.ts")).default;
  const relay=(await import("../src/routes/relay.ts")).default;
  const locationMap=(await import("../src/routes/locationMap.ts")).default;
+ const wishes=(await import("../src/routes/wishes.ts")).default;
  const agents=(await import("../src/routes/agents.ts")).default;
  const brand=(await import("../src/routes/brandExchange.ts")).default;
  const conversation=(await import("../src/routes/agentConversation.ts")).default;
  const friends=(await import('../src/routes/friends.ts')).default,invites=(await import('../src/routes/invites.ts')).default,rooms=(await import('../src/routes/rooms.ts')).default,messages=(await import('../src/routes/messages.ts')).default,summon=(await import('../src/routes/anotherMe.ts')).default;
- const app=express();app.use(express.json());app.use((req,res,next)=>{req.log={info(){},warn(){},error(){},debug(){}};next();});app.use("/api",exchange,relay,locationMap,agents,brand,conversation,friends,invites,rooms,messages,summon);
+ const app=express();app.use(express.json());app.use((req,res,next)=>{req.log={info(){},warn(){},error(){},debug(){}};next();});app.use("/api",exchange,relay,locationMap,wishes,agents,brand,conversation,friends,invites,rooms,messages,summon);
  server=await new Promise(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
  const origin="http://127.0.0.1:"+server.address().port;
  const users=[];
@@ -253,6 +254,8 @@ try{
  await (await import('./messenger.integration.mjs')).testMessenger({pool,request,ok});
  await (await import("./relay.integration.mjs")).testRelays({pool,request,ok,listing,analyst});
  await (await import("./map.integration.mjs")).testMap({pool,request,ok,listing});
+ await (await import("./wish.integration.mjs")).testWishes({pool,request,ok,listing});
+ await (await import("./wish.integration.mjs")).testWishWorker({pool,request,ok,listing});
  if(process.env.DAVAQ_INTEGRATION_AI==="1"){
   const ai=await import("../src/lib/davaqAgent.ts");
   const draftResult=await ai.registerDraft("영어 회화를 온라인으로 30분 도와줄 수 있어요. 대신 프로필 사진 촬영을 받고 싶어요.");

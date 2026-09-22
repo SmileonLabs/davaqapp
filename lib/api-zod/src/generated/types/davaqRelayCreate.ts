@@ -19,4 +19,5 @@ export interface DavaqRelayCreate {
      * @maxLength 100
      */
   requestKey: string;
+  wishId?: string;
 }

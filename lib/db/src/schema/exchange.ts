@@ -53,7 +53,10 @@ export const exchangeListingsTable = pgTable("exchange_listings", {
     .notNull()
     .default([]),
   location: text("location").notNull().default(""),
-  mapLat:doublePrecision("map_lat"),mapLng:doublePrecision("map_lng"),mapPrecision:text("map_precision"),mapLabel:text("map_label"),
+  mapLat: doublePrecision("map_lat"),
+  mapLng: doublePrecision("map_lng"),
+  mapPrecision: text("map_precision"),
+  mapLabel: text("map_label"),
   delivery: text("delivery").notNull().default("online"),
   durationMinutes: integer("duration_minutes").notNull().default(30),
   availableDays: jsonb("available_days")
@@ -267,7 +270,9 @@ export const agentGrowthEventsTable = pgTable(
 );
 export const chatUploadOwnersTable = pgTable("chat_upload_owners", {
   objectPath: text("object_path").primaryKey(),
-  userId: uuid("user_id").notNull().references(() => usersTable.id),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => usersTable.id),
   contentType: text("content_type").notNull(),
   createdAt: at("created_at"),
 });
@@ -324,4 +329,38 @@ export const agentMatchFeedbackTable = pgTable(
     createdAt: at("created_at"),
   },
   (t) => [primaryKey({ columns: [t.userId, t.listingId] })],
+);
+
+export const exchangeWishesTable = pgTable(
+  "exchange_wishes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    keywords: jsonb("keywords").$type<string[]>().notNull().default([]),
+    kind: text("kind").notNull(),
+    category: text("category").notNull(),
+    imageKey: text("image_key"),
+    status: text("status").notNull().default("active"),
+    version: integer("version").notNull().default(1),
+    requestKey: text("request_key").notNull(),
+    creationHash: text("creation_hash").notNull(),
+    createdAt: at("created_at"),
+    updatedAt: at("updated_at"),
+    lastSearchedAt: timestamp("last_searched_at", { withTimezone: true }),
+    nextSearchAt: at("next_search_at"),
+    candidateCount: integer("candidate_count").notNull().default(0),
+    candidateKeys: jsonb("candidate_keys")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
+    searchLease: uuid("search_lease"),
+  },
+  (t) => [
+    uniqueIndex("exchange_wishes_user_request").on(t.userId, t.requestKey),
+  ],
 );

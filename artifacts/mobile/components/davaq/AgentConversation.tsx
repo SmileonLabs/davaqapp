@@ -126,6 +126,7 @@ import { RelayCandidateCard } from "./RelayScreens";
 import type { RelayCandidate } from "@/lib/relay";
 const qReadState = { unreadCount: 0 };
 type Card =
+  | { kind: "wish"; wish: { id: string; title: string } }
   | { kind: "relay"; candidate: RelayCandidate }
   | { kind: "match"; match: Match }
   | { kind: "brand"; campaign: BrandCampaign }
@@ -169,7 +170,41 @@ function ConversationCards({
       }}
     >
       {cards.map((card, i) => {
-        if (card.kind === "relay") return <RelayCandidateCard key={card.candidate.id} candidate={card.candidate}/>;
+        if (card.kind === "wish")
+          return (
+            <View
+              key={"wish-" + card.wish.id + "-" + i}
+              style={[
+                S.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Txt color={C.purple} size={12} bold>
+                Q와 찾는 내 소원
+              </Txt>
+              <Txt bold>{card.wish.title}</Txt>
+              <Txt color={C.muted} size={13}>
+                내가 줄 것과 받을 것을 확인해 보세요. 아직 상대방에게 제안하거나
+                동의를 받은 상태는 아니에요.
+              </Txt>
+              <Button
+                small
+                label="최신 교환 확인"
+                onPress={() =>
+                  router.push(
+                    ("/wishes/" + encodeURIComponent(card.wish.id)) as never,
+                  )
+                }
+              />
+            </View>
+          );
+        if (card.kind === "relay")
+          return (
+            <RelayCandidateCard
+              key={card.candidate.id}
+              candidate={card.candidate}
+            />
+          );
         if (card.kind === "match")
           return (
             <View
@@ -579,7 +614,18 @@ export function AgentConversation({
         }}
       >
         <View style={S.wrap}>
-          <Chip label="이어 바꾸기" onPress={() => router.push("/relay" as any)} />
+          <Chip
+            label="갖고 싶은 것 보내기"
+            onPress={() => router.push("/wishes/new" as never)}
+          />
+          <Chip
+            label="내 소원함"
+            onPress={() => router.push("/wishes" as never)}
+          />
+          <Chip
+            label="이어 바꾸기"
+            onPress={() => router.push("/relay" as any)}
+          />
           <Chip
             label="교환 추천"
             onPress={() =>

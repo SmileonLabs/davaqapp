@@ -39,6 +39,7 @@ router.post(
     const i = z
       .object({
         listingIds: z.array(z.uuid()).min(3).max(4),
+        wishId: z.uuid().optional(),
         terms: relayTermsInput,
         requestKey: z.string().min(8).max(100),
       })
@@ -49,6 +50,7 @@ router.post(
       i.listingIds,
       i.terms,
       i.requestKey,
+      i.wishId,
     );
     await notifyRelay(p, req.dbUser!.id);
     res.status(201).json(await getRelay(p.id, req.dbUser!.id));

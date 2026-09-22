@@ -143,6 +143,13 @@ import type {
   DavaqSettingsInput,
   DavaqUpdateMemoryBody,
   DavaqUploadImage201,
+  DavaqWish,
+  DavaqWishCandidates,
+  DavaqWishCreate,
+  DavaqWishDraft,
+  DavaqWishDraftInput,
+  DavaqWishUpdate,
+  DavaqWishes,
   DeleteMessageInput,
   DiscoverStarFeedByHashtagParams,
   DungeonInput,
@@ -19464,3 +19471,406 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDavaqMapSearchMutationOptions(options));
     }
+
+export const getDavaqDraftWishUrl = () => {
+
+
+
+
+  return `/api/exchange/wishes/draft`
+}
+
+export const davaqDraftWish = async (davaqWishDraftInput: DavaqWishDraftInput, options?: RequestInit): Promise<DavaqWishDraft> => {
+
+  return customFetch<DavaqWishDraft>(getDavaqDraftWishUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqWishDraftInput,)
+  }
+);}
+
+
+
+
+export const getDavaqDraftWishMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqDraftWish>>, TError,{data: BodyType<DavaqWishDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqDraftWish>>, TError,{data: BodyType<DavaqWishDraftInput>}, TContext> => {
+
+const mutationKey = ['davaqDraftWish'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqDraftWish>>, {data: BodyType<DavaqWishDraftInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  davaqDraftWish(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqDraftWishMutationResult = NonNullable<Awaited<ReturnType<typeof davaqDraftWish>>>
+    export type DavaqDraftWishMutationBody = BodyType<DavaqWishDraftInput>
+    export type DavaqDraftWishMutationError = ErrorType<void>
+
+    export const useDavaqDraftWish = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqDraftWish>>, TError,{data: BodyType<DavaqWishDraftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqDraftWish>>,
+        TError,
+        {data: BodyType<DavaqWishDraftInput>},
+        TContext
+      > => {
+      return useMutation(getDavaqDraftWishMutationOptions(options));
+    }
+
+export const getDavaqListWishesUrl = () => {
+
+
+
+
+  return `/api/exchange/wishes`
+}
+
+export const davaqListWishes = async ( options?: RequestInit): Promise<DavaqWishes> => {
+
+  return customFetch<DavaqWishes>(getDavaqListWishesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqListWishesQueryKey = () => {
+    return [
+    `/api/exchange/wishes`
+    ] as const;
+    }
+
+
+export const getDavaqListWishesQueryOptions = <TData = Awaited<ReturnType<typeof davaqListWishes>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqListWishes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqListWishesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqListWishes>>> = ({ signal }) => davaqListWishes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqListWishes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqListWishesQueryResult = NonNullable<Awaited<ReturnType<typeof davaqListWishes>>>
+export type DavaqListWishesQueryError = ErrorType<void>
+
+
+
+export function useDavaqListWishes<TData = Awaited<ReturnType<typeof davaqListWishes>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqListWishes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqListWishesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqCreateWishUrl = () => {
+
+
+
+
+  return `/api/exchange/wishes`
+}
+
+export const davaqCreateWish = async (davaqWishCreate: DavaqWishCreate, options?: RequestInit): Promise<DavaqWish> => {
+
+  return customFetch<DavaqWish>(getDavaqCreateWishUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqWishCreate,)
+  }
+);}
+
+
+
+
+export const getDavaqCreateWishMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqCreateWish>>, TError,{data: BodyType<DavaqWishCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqCreateWish>>, TError,{data: BodyType<DavaqWishCreate>}, TContext> => {
+
+const mutationKey = ['davaqCreateWish'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqCreateWish>>, {data: BodyType<DavaqWishCreate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  davaqCreateWish(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqCreateWishMutationResult = NonNullable<Awaited<ReturnType<typeof davaqCreateWish>>>
+    export type DavaqCreateWishMutationBody = BodyType<DavaqWishCreate>
+    export type DavaqCreateWishMutationError = ErrorType<void>
+
+    export const useDavaqCreateWish = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqCreateWish>>, TError,{data: BodyType<DavaqWishCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqCreateWish>>,
+        TError,
+        {data: BodyType<DavaqWishCreate>},
+        TContext
+      > => {
+      return useMutation(getDavaqCreateWishMutationOptions(options));
+    }
+
+export const getDavaqGetWishUrl = (id: string,) => {
+
+
+
+
+  return `/api/exchange/wishes/${id}`
+}
+
+export const davaqGetWish = async (id: string, options?: RequestInit): Promise<DavaqWish> => {
+
+  return customFetch<DavaqWish>(getDavaqGetWishUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqGetWishQueryKey = (id: string,) => {
+    return [
+    `/api/exchange/wishes/${id}`
+    ] as const;
+    }
+
+
+export const getDavaqGetWishQueryOptions = <TData = Awaited<ReturnType<typeof davaqGetWish>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetWish>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqGetWishQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqGetWish>>> = ({ signal }) => davaqGetWish(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqGetWish>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqGetWishQueryResult = NonNullable<Awaited<ReturnType<typeof davaqGetWish>>>
+export type DavaqGetWishQueryError = ErrorType<void>
+
+
+
+export function useDavaqGetWish<TData = Awaited<ReturnType<typeof davaqGetWish>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetWish>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqGetWishQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqUpdateWishUrl = (id: string,) => {
+
+
+
+
+  return `/api/exchange/wishes/${id}`
+}
+
+export const davaqUpdateWish = async (id: string,
+    davaqWishUpdate: DavaqWishUpdate, options?: RequestInit): Promise<DavaqWish> => {
+
+  return customFetch<DavaqWish>(getDavaqUpdateWishUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqWishUpdate,)
+  }
+);}
+
+
+
+
+export const getDavaqUpdateWishMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqUpdateWish>>, TError,{id: string;data: BodyType<DavaqWishUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqUpdateWish>>, TError,{id: string;data: BodyType<DavaqWishUpdate>}, TContext> => {
+
+const mutationKey = ['davaqUpdateWish'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqUpdateWish>>, {id: string;data: BodyType<DavaqWishUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  davaqUpdateWish(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqUpdateWishMutationResult = NonNullable<Awaited<ReturnType<typeof davaqUpdateWish>>>
+    export type DavaqUpdateWishMutationBody = BodyType<DavaqWishUpdate>
+    export type DavaqUpdateWishMutationError = ErrorType<void>
+
+    export const useDavaqUpdateWish = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqUpdateWish>>, TError,{id: string;data: BodyType<DavaqWishUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqUpdateWish>>,
+        TError,
+        {id: string;data: BodyType<DavaqWishUpdate>},
+        TContext
+      > => {
+      return useMutation(getDavaqUpdateWishMutationOptions(options));
+    }
+
+export const getDavaqWishCandidatesUrl = (id: string,) => {
+
+
+
+
+  return `/api/exchange/wishes/${id}/candidates`
+}
+
+export const davaqWishCandidates = async (id: string, options?: RequestInit): Promise<DavaqWishCandidates> => {
+
+  return customFetch<DavaqWishCandidates>(getDavaqWishCandidatesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqWishCandidatesQueryKey = (id: string,) => {
+    return [
+    `/api/exchange/wishes/${id}/candidates`
+    ] as const;
+    }
+
+
+export const getDavaqWishCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof davaqWishCandidates>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqWishCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqWishCandidatesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqWishCandidates>>> = ({ signal }) => davaqWishCandidates(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqWishCandidates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqWishCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof davaqWishCandidates>>>
+export type DavaqWishCandidatesQueryError = ErrorType<void>
+
+
+
+export function useDavaqWishCandidates<TData = Awaited<ReturnType<typeof davaqWishCandidates>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqWishCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqWishCandidatesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

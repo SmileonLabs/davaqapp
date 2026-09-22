@@ -28,6 +28,7 @@ export const exchangeRelaysTable = pgTable(
       .references(() => chatRoomsTable.id),
     status: text("status").notNull().default("negotiating"),
     pathKey: text("path_key").notNull(),
+    goalContext: jsonb("goal_context"),
     version: integer("version").notNull().default(1),
     terms: jsonb("terms").notNull(),
     requestKey: text("request_key").notNull(),

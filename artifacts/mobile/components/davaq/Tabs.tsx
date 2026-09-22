@@ -35,8 +35,9 @@ import {
 
 import { PinnedAgentConversation } from "./AgentConversation";
 import { BrandHomeSection } from "./BrandExchangeScreens";
-import {MapEntry} from "./MapScreens";
+import { MapEntry } from "./MapScreens";
 import { RelayEntry } from "./RelayScreens";
+import { WishEntry } from "./WishScreens";
 
 export function HomeScreen() {
   const router = useRouter(),
@@ -65,46 +66,26 @@ export function HomeScreen() {
         </Pressable>
       }
     >
-      <View>
-        <Txt size={29} bold>
-          오늘,
-        </Txt>
-        <Txt size={29} bold>
-          무엇을 바꿔볼까요?
-        </Txt>
-      </View>
+      <WishEntry />
       <Pressable
         accessibilityRole="button"
         onPress={() =>
           router.push(items.length ? "/agent/searches" : "/agent/chat")
         }
-        style={{
-          backgroundColor: C.soft,
-          borderRadius: 24,
-          minHeight: 160,
-          overflow: "hidden",
-          padding: 20,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
+        style={[S.card, S.row]}
       >
-        <View style={{ flex: 1, gap: 8, zIndex: 1 }}>
-          <Txt bold size={19}>
+        <Cue size={48} />
+        <View style={{ flex: 1, gap: 3 }}>
+          <Txt bold size={14}>
             {items.length
-              ? "큐가 " + items.length + "개의\n교환 후보를 찾았어요"
-              : "첫 교환을\n큐와 함께 찾아봐요"}
+              ? "Q가 찾은 교환 후보 " + items.length + "개"
+              : "줄 수 있는 것부터 Q와 이야기해요"}
           </Txt>
           <Txt color={C.muted} size={12}>
             {items.length
-              ? "서로 원하는 분야와 조건을 살펴봤어요."
-              : "줄 수 있는 것과 받고 싶은 것을 알려주세요."}
+              ? "서로 원하는 분야와 조건 살펴보기 →"
+              : "나의 물건·재능으로 시작하는 교환 →"}
           </Txt>
-          <Txt color={C.purple} bold size={14}>
-            {items.length ? "추천 보기" : "큐에게 말하기"} ›
-          </Txt>
-        </View>
-        <View style={{ width: 115, alignItems: "center" }}>
-          <Cue size={160} />
         </View>
       </Pressable>
       <View style={S.row}>
@@ -122,7 +103,7 @@ export function HomeScreen() {
           onPress={() => router.push("/exchange/new?mode=want")}
         />
       </View>
-      <MapEntry/>
+      <MapEntry />
       <RelayEntry />
       <BrandHomeSection />
       <Section
@@ -214,7 +195,8 @@ export function DiscoverScreen() {
         />
       }
     >
-      <MapEntry/>
+      <WishEntry compact />
+      <MapEntry />
       <Button
         secondary
         icon="gift"

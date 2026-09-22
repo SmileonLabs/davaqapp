@@ -17,6 +17,13 @@ import {
   type RelayListing,
 } from "./relayRules";
 
+import {
+  goalRelayEdge,
+  loadActiveWishContext,
+  wishGoalContextInput,
+  type WishGoalContext,
+} from "./wishMatching";
+
 type RelayCandidateDto = {
   id: string;
   listings: ReturnType<typeof listingDto>[];
@@ -110,8 +117,9 @@ export async function getRelay(id: string, user: string, sql: Sql = pool) {
       [id],
     ),
   ]);
+  const { goal_context: _privateGoal, ...publicRelay } = p;
   return {
-    ...p,
+    ...publicRelay,
     status:
       p.status === "negotiating" && new Date(p.expires_at) <= new Date()
         ? "expired"
@@ -134,6 +142,7 @@ async function validate(
   ids: string[],
   terms: RelayTerms,
   expected?: any[],
+  goal?: WishGoalContext,
 ) {
   demand(
     ids.length >= 3 && ids.length <= 4 && new Set(ids).size === ids.length,
@@ -168,10 +177,20 @@ async function validate(
     403,
     "참여자 관계가 바뀌어 이 연결을 진행할 수 없어요.",
   );
+  if (goal)
+    demand(
+      path[0].owner_id === goal.ownerId,
+      403,
+      "내 목표는 내 제공에서 시작하는 연결에만 사용할 수 있어요.",
+    );
   demand(
-    path.every((l, i) => relayEdge(l, path[(i + 1) % path.length])),
+    path.every((l, i) =>
+      goal
+        ? goalRelayEdge(goal, l, path[(i + 1) % path.length])
+        : relayEdge(l, path[(i + 1) % path.length]),
+    ),
     409,
-    "원하는 분야·지역·요일이 바뀌었어요. 연결을 다시 찾아 주세요.",
+    "목표 상품이나 원하는 분야·지역·요일이 바뀌었어요. 연결을 다시 찾아 주세요.",
   );
   demand(
     terms.legs.length === path.length &&
@@ -235,6 +254,7 @@ export async function createRelay(
   ids: string[],
   terms: RelayTerms,
   requestKey: string,
+  wishId?: string,
 ) {
   return transaction(async (sql) => {
     await sql.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
@@ -251,7 +271,10 @@ export async function createRelay(
     await sql.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
       "davaq-relay-path:" + pathKey,
     ]);
-    const path = await validate(sql, ids, terms);
+    const goal = wishId
+      ? await loadActiveWishContext(sql, user, wishId)
+      : undefined;
+    const path = await validate(sql, ids, terms, undefined, goal);
     demand(
       path[0].owner_id === user,
       403,
@@ -272,8 +295,15 @@ export async function createRelay(
     ).rows[0];
     const p = (
       await sql.query(
-        "INSERT INTO exchange_relays(creator_id,room_id,terms,request_key,path_key) VALUES($1,$2,$3,$4,$5) RETURNING *",
-        [user, room.id, JSON.stringify(terms), requestKey, pathKey],
+        "INSERT INTO exchange_relays(creator_id,room_id,terms,request_key,path_key,goal_context) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+        [
+          user,
+          room.id,
+          JSON.stringify(terms),
+          requestKey,
+          pathKey,
+          goal ? JSON.stringify(goal) : null,
+        ],
       )
     ).rows[0];
     for (let i = 0; i < path.length; i++) {
@@ -310,6 +340,7 @@ async function reserve(sql: Sql, p: any, people: any[]) {
     people.map((m) => m.listing_id),
     p.terms,
     people,
+    p.goal_context ? wishGoalContextInput.parse(p.goal_context) : undefined,
   );
   const slots = path.map((l, i) => ({
     l,
@@ -410,6 +441,8 @@ export async function actOnRelay(
         sql,
         people.map((m) => m.listing_id),
         input.terms,
+        undefined,
+        p.goal_context ? wishGoalContextInput.parse(p.goal_context) : undefined,
       );
       p.version++;
       p.terms = input.terms;
@@ -433,6 +466,7 @@ export async function actOnRelay(
         people.map((m) => m.listing_id),
         p.terms,
         people,
+        p.goal_context ? wishGoalContextInput.parse(p.goal_context) : undefined,
       );
       await sql.query(
         "UPDATE exchange_relay_members SET accepted_version=$3 WHERE relay_id=$1 AND user_id=$2",

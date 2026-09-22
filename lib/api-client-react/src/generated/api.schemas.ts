@@ -5,48 +5,242 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
-export interface DavaqMeetingPoint {
+export type DavaqWishKind = typeof DavaqWishKind[keyof typeof DavaqWishKind];
+
+
+export const DavaqWishKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqWishCategory = typeof DavaqWishCategory[keyof typeof DavaqWishCategory];
+
+
+export const DavaqWishCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export type DavaqWishStatus = typeof DavaqWishStatus[keyof typeof DavaqWishStatus];
+
+
+export const DavaqWishStatus = {
+  active: 'active',
+  paused: 'paused',
+  fulfilled: 'fulfilled',
+  deleted: 'deleted',
+} as const;
+
+export interface DavaqWish {
+  id: string;
+  /** @maxLength 80 */
+  title: string;
+  /** @maxLength 1000 */
+  description: string;
+  /** @maxItems 6 */
+  keywords: string[];
+  kind: DavaqWishKind;
+  category: DavaqWishCategory;
   /**
-     * @minimum -85
-     * @maximum 85
+     * @nullable
+     * @pattern ^/objects/[a-zA-Z0-9/_-]+$
      */
-  lat: number;
+  imageKey: string | null;
+  status: DavaqWishStatus;
+  /** @minimum 1 */
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  lastSearchedAt: string | null;
+  /** @minimum 0 */
+  candidateCount: number;
+}
+
+export interface DavaqWishes {
+  items: DavaqWish[];
+}
+
+/**
+ * Provide text or an image already uploaded by this user. The image and extracted draft remain private.
+ */
+export type DavaqWishDraftInput = ({
+  /** @minLength 2 */
+  text: string;
+} & {
+  /** @maxLength 2000 */
+  text?: string;
   /**
-     * @minimum -180
-     * @maximum 180
+     * @nullable
+     * @pattern ^/objects/[a-zA-Z0-9/_-]+$
      */
-  lng: number;
+  imageKey?: string | null;
+}) | ({
+  /** @pattern ^/objects/[a-zA-Z0-9/_-]+$ */
+  imageKey: string;
+} & {
+  /** @maxLength 2000 */
+  text?: string;
+  /**
+     * @nullable
+     * @pattern ^/objects/[a-zA-Z0-9/_-]+$
+     */
+  imageKey?: string | null;
+});
+
+export type DavaqWishDraftKind = typeof DavaqWishDraftKind[keyof typeof DavaqWishDraftKind];
+
+
+export const DavaqWishDraftKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqWishDraftCategory = typeof DavaqWishDraftCategory[keyof typeof DavaqWishDraftCategory];
+
+
+export const DavaqWishDraftCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export interface DavaqWishDraft {
+  /** @maxLength 80 */
+  title: string;
+  /** @maxLength 1000 */
+  description: string;
+  /** @maxItems 6 */
+  keywords: string[];
+  kind: DavaqWishDraftKind;
+  category: DavaqWishDraftCategory;
+  /** @maxItems 3 */
+  questions: string[];
+}
+
+export type DavaqWishCreateKind = typeof DavaqWishCreateKind[keyof typeof DavaqWishCreateKind];
+
+
+export const DavaqWishCreateKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqWishCreateCategory = typeof DavaqWishCreateCategory[keyof typeof DavaqWishCreateCategory];
+
+
+export const DavaqWishCreateCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export interface DavaqWishCreate {
   /**
      * @minLength 2
      * @maxLength 80
      */
-  label: string;
+  title: string;
+  /** @maxLength 1000 */
+  description?: string;
+  /**
+     * @minItems 1
+     * @maxItems 6
+     */
+  keywords: string[];
+  kind: DavaqWishCreateKind;
+  category: DavaqWishCreateCategory;
+  /**
+     * @nullable
+     * @pattern ^/objects/[a-zA-Z0-9/_-]+$
+     */
+  imageKey?: string | null;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  requestKey: string;
 }
 
-export type DavaqRelayTermsLegsItem = {
-  listingId: string;
-  startsAt: string;
+export type DavaqWishUpdateKind = typeof DavaqWishUpdateKind[keyof typeof DavaqWishUpdateKind];
+
+
+export const DavaqWishUpdateKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqWishUpdateCategory = typeof DavaqWishUpdateCategory[keyof typeof DavaqWishUpdateCategory];
+
+
+export const DavaqWishUpdateCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export type DavaqWishUpdateStatus = typeof DavaqWishUpdateStatus[keyof typeof DavaqWishUpdateStatus];
+
+
+export const DavaqWishUpdateStatus = {
+  active: 'active',
+  paused: 'paused',
+  fulfilled: 'fulfilled',
+  deleted: 'deleted',
+} as const;
+
+export interface DavaqWishUpdate {
   /**
      * @minLength 2
-     * @maxLength 200
+     * @maxLength 80
      */
-  location: string;
-  meetingPoint?: DavaqMeetingPoint | null;
-};
-
-export interface DavaqRelayTerms {
+  title?: string;
+  /** @maxLength 1000 */
+  description?: string;
   /**
-     * @minItems 3
-     * @maxItems 4
+     * @minItems 1
+     * @maxItems 6
      */
-  legs: DavaqRelayTermsLegsItem[];
-  /** @maxLength 1500 */
-  note: string;
+  keywords?: string[];
+  kind?: DavaqWishUpdateKind;
+  category?: DavaqWishUpdateCategory;
   /**
-     * @minLength 5
-     * @maxLength 1000
+     * @nullable
+     * @pattern ^/objects/[a-zA-Z0-9/_-]+$
      */
-  cancellation: string;
+  imageKey?: string | null;
+  status?: DavaqWishUpdateStatus;
+  /** @minimum 1 */
+  version: number;
 }
 
 export type DavaqListingGeoPrecision = typeof DavaqListingGeoPrecision[keyof typeof DavaqListingGeoPrecision];
@@ -183,11 +377,74 @@ export interface DavaqListing {
   updatedAt?: string;
 }
 
+export interface DavaqMatch {
+  id: string;
+  offer: DavaqListing;
+  target: DavaqListing;
+  reasons: string[];
+  pending: string[];
+}
+
 export interface DavaqRelayCandidate {
   id: string;
   listings: DavaqListing[];
   reasons: string[];
   pending: string[];
+}
+
+export interface DavaqWishCandidates {
+  direct: DavaqMatch[];
+  relays: DavaqRelayCandidate[];
+  targets: DavaqListing[];
+  offersCount: number;
+  targetCount: number;
+  scannedCount: number;
+  limited: boolean;
+  searchedAt: string;
+}
+
+export interface DavaqMeetingPoint {
+  /**
+     * @minimum -85
+     * @maximum 85
+     */
+  lat: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  lng: number;
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  label: string;
+}
+
+export type DavaqRelayTermsLegsItem = {
+  listingId: string;
+  startsAt: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  location: string;
+  meetingPoint?: DavaqMeetingPoint | null;
+};
+
+export interface DavaqRelayTerms {
+  /**
+     * @minItems 3
+     * @maxItems 4
+     */
+  legs: DavaqRelayTermsLegsItem[];
+  /** @maxLength 1500 */
+  note: string;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  cancellation: string;
 }
 
 export interface DavaqRelaySearch {
@@ -266,6 +523,7 @@ export interface DavaqRelayCreate {
      * @maxLength 100
      */
   requestKey: string;
+  wishId?: string;
 }
 
 export type DavaqRelayActionAction = typeof DavaqRelayActionAction[keyof typeof DavaqRelayActionAction];
@@ -522,14 +780,6 @@ export interface DavaqTerms {
      * @maxLength 1000
      */
   cancellation: string;
-}
-
-export interface DavaqMatch {
-  id: string;
-  offer: DavaqListing;
-  target: DavaqListing;
-  reasons: string[];
-  pending: string[];
 }
 
 export interface DavaqMatches {

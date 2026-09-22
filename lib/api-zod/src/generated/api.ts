@@ -9263,7 +9263,8 @@ export const DavaqCreateRelayBody = zod.object({
   "note": zod.string().max(davaqCreateRelayBodyTermsNoteMax),
   "cancellation": zod.string().min(davaqCreateRelayBodyTermsCancellationMin).max(davaqCreateRelayBodyTermsCancellationMax)
 }),
-  "requestKey": zod.string().min(davaqCreateRelayBodyRequestKeyMin).max(davaqCreateRelayBodyRequestKeyMax)
+  "requestKey": zod.string().min(davaqCreateRelayBodyRequestKeyMin).max(davaqCreateRelayBodyRequestKeyMax),
+  "wishId": zod.string().uuid().optional()
 })
 
 
@@ -9689,4 +9690,491 @@ export const DavaqMapSearchResponse = zod.object({
   "lng": zod.number()
 }),
   "radiusKm": zod.number()
+})
+
+
+export const davaqDraftWishBodyOneTextMin = 2;
+
+export const davaqDraftWishBodyTwoImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+export const davaqDraftWishBodyThreeTextDefault = ``;
+export const davaqDraftWishBodyThreeTextMax = 2000;
+
+export const davaqDraftWishBodyThreeImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+
+
+export const DavaqDraftWishBody = zod.union([zod.object({
+  "text": zod.string().min(davaqDraftWishBodyOneTextMin)
+}),zod.object({
+  "imageKey": zod.string().regex(davaqDraftWishBodyTwoImageKeyRegExp)
+})]).and(zod.object({
+  "text": zod.string().max(davaqDraftWishBodyThreeTextMax).default(davaqDraftWishBodyThreeTextDefault),
+  "imageKey": zod.string().regex(davaqDraftWishBodyThreeImageKeyRegExp).nullish()
+})).describe('Provide text or an image already uploaded by this user. The image and extracted draft remain private.')
+
+export const davaqDraftWishResponseTitleMax = 80;
+
+export const davaqDraftWishResponseDescriptionDefault = ``;
+export const davaqDraftWishResponseDescriptionMax = 1000;
+
+export const davaqDraftWishResponseKeywordsItemMin = 2;
+export const davaqDraftWishResponseKeywordsItemMax = 40;
+
+export const davaqDraftWishResponseKeywordsMax = 6;
+
+export const davaqDraftWishResponseQuestionsItemMax = 200;
+
+export const davaqDraftWishResponseQuestionsMax = 3;
+
+
+
+export const DavaqDraftWishResponse = zod.object({
+  "title": zod.string().max(davaqDraftWishResponseTitleMax),
+  "description": zod.string().max(davaqDraftWishResponseDescriptionMax).default(davaqDraftWishResponseDescriptionDefault),
+  "keywords": zod.array(zod.string().min(davaqDraftWishResponseKeywordsItemMin).max(davaqDraftWishResponseKeywordsItemMax)).max(davaqDraftWishResponseKeywordsMax),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "questions": zod.array(zod.string().max(davaqDraftWishResponseQuestionsItemMax)).max(davaqDraftWishResponseQuestionsMax)
+})
+
+
+export const davaqListWishesResponseItemsItemTitleMax = 80;
+
+export const davaqListWishesResponseItemsItemDescriptionDefault = ``;
+export const davaqListWishesResponseItemsItemDescriptionMax = 1000;
+
+export const davaqListWishesResponseItemsItemKeywordsItemMin = 2;
+export const davaqListWishesResponseItemsItemKeywordsItemMax = 40;
+
+export const davaqListWishesResponseItemsItemKeywordsMax = 6;
+
+export const davaqListWishesResponseItemsItemImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+
+export const davaqListWishesResponseItemsItemCandidateCountMin = 0;
+
+
+
+export const DavaqListWishesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string().max(davaqListWishesResponseItemsItemTitleMax),
+  "description": zod.string().max(davaqListWishesResponseItemsItemDescriptionMax).default(davaqListWishesResponseItemsItemDescriptionDefault),
+  "keywords": zod.array(zod.string().min(davaqListWishesResponseItemsItemKeywordsItemMin).max(davaqListWishesResponseItemsItemKeywordsItemMax)).max(davaqListWishesResponseItemsItemKeywordsMax),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "imageKey": zod.string().regex(davaqListWishesResponseItemsItemImageKeyRegExp).nullable(),
+  "status": zod.enum(['active', 'paused', 'fulfilled', 'deleted']),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastSearchedAt": zod.coerce.date().nullable(),
+  "candidateCount": zod.number().min(davaqListWishesResponseItemsItemCandidateCountMin)
+}))
+})
+
+
+export const davaqCreateWishBodyTitleMin = 2;
+export const davaqCreateWishBodyTitleMax = 80;
+
+export const davaqCreateWishBodyDescriptionDefault = ``;
+export const davaqCreateWishBodyDescriptionMax = 1000;
+
+export const davaqCreateWishBodyKeywordsItemMin = 2;
+export const davaqCreateWishBodyKeywordsItemMax = 40;
+
+export const davaqCreateWishBodyKeywordsMax = 6;
+
+export const davaqCreateWishBodyImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+export const davaqCreateWishBodyRequestKeyMin = 8;
+export const davaqCreateWishBodyRequestKeyMax = 100;
+
+
+
+export const DavaqCreateWishBody = zod.object({
+  "title": zod.string().min(davaqCreateWishBodyTitleMin).max(davaqCreateWishBodyTitleMax),
+  "description": zod.string().max(davaqCreateWishBodyDescriptionMax).default(davaqCreateWishBodyDescriptionDefault),
+  "keywords": zod.array(zod.string().min(davaqCreateWishBodyKeywordsItemMin).max(davaqCreateWishBodyKeywordsItemMax)).min(1).max(davaqCreateWishBodyKeywordsMax),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "imageKey": zod.string().regex(davaqCreateWishBodyImageKeyRegExp).nullish(),
+  "requestKey": zod.string().min(davaqCreateWishBodyRequestKeyMin).max(davaqCreateWishBodyRequestKeyMax)
+})
+
+
+export const DavaqGetWishParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const davaqGetWishResponseTitleMax = 80;
+
+export const davaqGetWishResponseDescriptionDefault = ``;
+export const davaqGetWishResponseDescriptionMax = 1000;
+
+export const davaqGetWishResponseKeywordsItemMin = 2;
+export const davaqGetWishResponseKeywordsItemMax = 40;
+
+export const davaqGetWishResponseKeywordsMax = 6;
+
+export const davaqGetWishResponseImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+
+export const davaqGetWishResponseCandidateCountMin = 0;
+
+
+
+export const DavaqGetWishResponse = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string().max(davaqGetWishResponseTitleMax),
+  "description": zod.string().max(davaqGetWishResponseDescriptionMax).default(davaqGetWishResponseDescriptionDefault),
+  "keywords": zod.array(zod.string().min(davaqGetWishResponseKeywordsItemMin).max(davaqGetWishResponseKeywordsItemMax)).max(davaqGetWishResponseKeywordsMax),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "imageKey": zod.string().regex(davaqGetWishResponseImageKeyRegExp).nullable(),
+  "status": zod.enum(['active', 'paused', 'fulfilled', 'deleted']),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastSearchedAt": zod.coerce.date().nullable(),
+  "candidateCount": zod.number().min(davaqGetWishResponseCandidateCountMin)
+})
+
+
+export const DavaqUpdateWishParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const davaqUpdateWishBodyTitleMin = 2;
+export const davaqUpdateWishBodyTitleMax = 80;
+
+export const davaqUpdateWishBodyDescriptionMax = 1000;
+
+export const davaqUpdateWishBodyKeywordsItemMin = 2;
+export const davaqUpdateWishBodyKeywordsItemMax = 40;
+
+export const davaqUpdateWishBodyKeywordsMax = 6;
+
+export const davaqUpdateWishBodyImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+
+
+
+export const DavaqUpdateWishBody = zod.object({
+  "title": zod.string().min(davaqUpdateWishBodyTitleMin).max(davaqUpdateWishBodyTitleMax).optional(),
+  "description": zod.string().max(davaqUpdateWishBodyDescriptionMax).optional(),
+  "keywords": zod.array(zod.string().min(davaqUpdateWishBodyKeywordsItemMin).max(davaqUpdateWishBodyKeywordsItemMax)).min(1).max(davaqUpdateWishBodyKeywordsMax).optional(),
+  "kind": zod.enum(['goods', 'service', 'experience']).optional(),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']).optional(),
+  "imageKey": zod.string().regex(davaqUpdateWishBodyImageKeyRegExp).nullish(),
+  "status": zod.enum(['active', 'paused', 'fulfilled', 'deleted']).optional(),
+  "version": zod.number().min(1)
+})
+
+export const davaqUpdateWishResponseTitleMax = 80;
+
+export const davaqUpdateWishResponseDescriptionDefault = ``;
+export const davaqUpdateWishResponseDescriptionMax = 1000;
+
+export const davaqUpdateWishResponseKeywordsItemMin = 2;
+export const davaqUpdateWishResponseKeywordsItemMax = 40;
+
+export const davaqUpdateWishResponseKeywordsMax = 6;
+
+export const davaqUpdateWishResponseImageKeyRegExp = new RegExp('^\/objects\/[a-zA-Z0-9\/_-]+$');
+
+export const davaqUpdateWishResponseCandidateCountMin = 0;
+
+
+
+export const DavaqUpdateWishResponse = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string().max(davaqUpdateWishResponseTitleMax),
+  "description": zod.string().max(davaqUpdateWishResponseDescriptionMax).default(davaqUpdateWishResponseDescriptionDefault),
+  "keywords": zod.array(zod.string().min(davaqUpdateWishResponseKeywordsItemMin).max(davaqUpdateWishResponseKeywordsItemMax)).max(davaqUpdateWishResponseKeywordsMax),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "imageKey": zod.string().regex(davaqUpdateWishResponseImageKeyRegExp).nullable(),
+  "status": zod.enum(['active', 'paused', 'fulfilled', 'deleted']),
+  "version": zod.number().min(1),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastSearchedAt": zod.coerce.date().nullable(),
+  "candidateCount": zod.number().min(davaqUpdateWishResponseCandidateCountMin)
+})
+
+
+export const DavaqWishCandidatesParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLatMin = -85;
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLatMax = 85;
+
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLngMin = -180;
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLngMax = 180;
+
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLabelMin = 2;
+export const davaqWishCandidatesResponseDirectItemOfferGeoOneLabelMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemOfferTitleMin = 2;
+export const davaqWishCandidatesResponseDirectItemOfferTitleMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemOfferDescriptionMax = 3000;
+
+export const davaqWishCandidatesResponseDirectItemOfferWantedTextMax = 500;
+
+export const davaqWishCandidatesResponseDirectItemOfferLocationMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemOfferDurationMinutesMin = 5;
+export const davaqWishCandidatesResponseDirectItemOfferDurationMinutesMax = 1440;
+
+export const davaqWishCandidatesResponseDirectItemOfferAvailableDaysItemMin = 0;
+export const davaqWishCandidatesResponseDirectItemOfferAvailableDaysItemMax = 6;
+
+export const davaqWishCandidatesResponseDirectItemOfferEvMax = 100000;
+
+export const davaqWishCandidatesResponseDirectItemOfferTermsMax = 1500;
+
+
+export const davaqWishCandidatesResponseDirectItemOfferRequestKeyMin = 8;
+export const davaqWishCandidatesResponseDirectItemOfferRequestKeyMax = 100;
+
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLatMin = -85;
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLatMax = 85;
+
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLngMin = -180;
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLngMax = 180;
+
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLabelMin = 2;
+export const davaqWishCandidatesResponseDirectItemTargetGeoOneLabelMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemTargetTitleMin = 2;
+export const davaqWishCandidatesResponseDirectItemTargetTitleMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemTargetDescriptionMax = 3000;
+
+export const davaqWishCandidatesResponseDirectItemTargetWantedTextMax = 500;
+
+export const davaqWishCandidatesResponseDirectItemTargetLocationMax = 80;
+
+export const davaqWishCandidatesResponseDirectItemTargetDurationMinutesMin = 5;
+export const davaqWishCandidatesResponseDirectItemTargetDurationMinutesMax = 1440;
+
+export const davaqWishCandidatesResponseDirectItemTargetAvailableDaysItemMin = 0;
+export const davaqWishCandidatesResponseDirectItemTargetAvailableDaysItemMax = 6;
+
+export const davaqWishCandidatesResponseDirectItemTargetEvMax = 100000;
+
+export const davaqWishCandidatesResponseDirectItemTargetTermsMax = 1500;
+
+
+export const davaqWishCandidatesResponseDirectItemTargetRequestKeyMin = 8;
+export const davaqWishCandidatesResponseDirectItemTargetRequestKeyMax = 100;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLatMin = -85;
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLatMax = 85;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLngMin = -180;
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLngMax = 180;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLabelMin = 2;
+export const davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLabelMax = 80;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemTitleMin = 2;
+export const davaqWishCandidatesResponseRelaysItemListingsItemTitleMax = 80;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemDescriptionMax = 3000;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemWantedTextMax = 500;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemLocationMax = 80;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemDurationMinutesMin = 5;
+export const davaqWishCandidatesResponseRelaysItemListingsItemDurationMinutesMax = 1440;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemAvailableDaysItemMin = 0;
+export const davaqWishCandidatesResponseRelaysItemListingsItemAvailableDaysItemMax = 6;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemEvMax = 100000;
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemTermsMax = 1500;
+
+
+export const davaqWishCandidatesResponseRelaysItemListingsItemRequestKeyMin = 8;
+export const davaqWishCandidatesResponseRelaysItemListingsItemRequestKeyMax = 100;
+
+export const davaqWishCandidatesResponseTargetsItemGeoOneLatMin = -85;
+export const davaqWishCandidatesResponseTargetsItemGeoOneLatMax = 85;
+
+export const davaqWishCandidatesResponseTargetsItemGeoOneLngMin = -180;
+export const davaqWishCandidatesResponseTargetsItemGeoOneLngMax = 180;
+
+export const davaqWishCandidatesResponseTargetsItemGeoOneLabelMin = 2;
+export const davaqWishCandidatesResponseTargetsItemGeoOneLabelMax = 80;
+
+export const davaqWishCandidatesResponseTargetsItemTitleMin = 2;
+export const davaqWishCandidatesResponseTargetsItemTitleMax = 80;
+
+export const davaqWishCandidatesResponseTargetsItemDescriptionMax = 3000;
+
+export const davaqWishCandidatesResponseTargetsItemWantedTextMax = 500;
+
+export const davaqWishCandidatesResponseTargetsItemLocationMax = 80;
+
+export const davaqWishCandidatesResponseTargetsItemDurationMinutesMin = 5;
+export const davaqWishCandidatesResponseTargetsItemDurationMinutesMax = 1440;
+
+export const davaqWishCandidatesResponseTargetsItemAvailableDaysItemMin = 0;
+export const davaqWishCandidatesResponseTargetsItemAvailableDaysItemMax = 6;
+
+export const davaqWishCandidatesResponseTargetsItemEvMax = 100000;
+
+export const davaqWishCandidatesResponseTargetsItemTermsMax = 1500;
+
+
+export const davaqWishCandidatesResponseTargetsItemRequestKeyMin = 8;
+export const davaqWishCandidatesResponseTargetsItemRequestKeyMax = 100;
+
+
+
+export const DavaqWishCandidatesResponse = zod.object({
+  "direct": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqWishCandidatesResponseDirectItemOfferGeoOneLatMin).max(davaqWishCandidatesResponseDirectItemOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqWishCandidatesResponseDirectItemOfferGeoOneLngMin).max(davaqWishCandidatesResponseDirectItemOfferGeoOneLngMax),
+  "label": zod.string().min(davaqWishCandidatesResponseDirectItemOfferGeoOneLabelMin).max(davaqWishCandidatesResponseDirectItemOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqWishCandidatesResponseDirectItemOfferTitleMin).max(davaqWishCandidatesResponseDirectItemOfferTitleMax),
+  "description": zod.string().max(davaqWishCandidatesResponseDirectItemOfferDescriptionMax),
+  "wantedText": zod.string().max(davaqWishCandidatesResponseDirectItemOfferWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqWishCandidatesResponseDirectItemOfferLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqWishCandidatesResponseDirectItemOfferDurationMinutesMin).max(davaqWishCandidatesResponseDirectItemOfferDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqWishCandidatesResponseDirectItemOfferAvailableDaysItemMin).max(davaqWishCandidatesResponseDirectItemOfferAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqWishCandidatesResponseDirectItemOfferEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqWishCandidatesResponseDirectItemOfferTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqWishCandidatesResponseDirectItemOfferRequestKeyMin).max(davaqWishCandidatesResponseDirectItemOfferRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "target": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqWishCandidatesResponseDirectItemTargetGeoOneLatMin).max(davaqWishCandidatesResponseDirectItemTargetGeoOneLatMax),
+  "lng": zod.number().min(davaqWishCandidatesResponseDirectItemTargetGeoOneLngMin).max(davaqWishCandidatesResponseDirectItemTargetGeoOneLngMax),
+  "label": zod.string().min(davaqWishCandidatesResponseDirectItemTargetGeoOneLabelMin).max(davaqWishCandidatesResponseDirectItemTargetGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqWishCandidatesResponseDirectItemTargetTitleMin).max(davaqWishCandidatesResponseDirectItemTargetTitleMax),
+  "description": zod.string().max(davaqWishCandidatesResponseDirectItemTargetDescriptionMax),
+  "wantedText": zod.string().max(davaqWishCandidatesResponseDirectItemTargetWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqWishCandidatesResponseDirectItemTargetLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqWishCandidatesResponseDirectItemTargetDurationMinutesMin).max(davaqWishCandidatesResponseDirectItemTargetDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqWishCandidatesResponseDirectItemTargetAvailableDaysItemMin).max(davaqWishCandidatesResponseDirectItemTargetAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqWishCandidatesResponseDirectItemTargetEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqWishCandidatesResponseDirectItemTargetTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqWishCandidatesResponseDirectItemTargetRequestKeyMin).max(davaqWishCandidatesResponseDirectItemTargetRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "reasons": zod.array(zod.string()),
+  "pending": zod.array(zod.string())
+})),
+  "relays": zod.array(zod.object({
+  "id": zod.string(),
+  "listings": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLatMin).max(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLatMax),
+  "lng": zod.number().min(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLngMin).max(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLngMax),
+  "label": zod.string().min(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLabelMin).max(davaqWishCandidatesResponseRelaysItemListingsItemGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqWishCandidatesResponseRelaysItemListingsItemTitleMin).max(davaqWishCandidatesResponseRelaysItemListingsItemTitleMax),
+  "description": zod.string().max(davaqWishCandidatesResponseRelaysItemListingsItemDescriptionMax),
+  "wantedText": zod.string().max(davaqWishCandidatesResponseRelaysItemListingsItemWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqWishCandidatesResponseRelaysItemListingsItemLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqWishCandidatesResponseRelaysItemListingsItemDurationMinutesMin).max(davaqWishCandidatesResponseRelaysItemListingsItemDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqWishCandidatesResponseRelaysItemListingsItemAvailableDaysItemMin).max(davaqWishCandidatesResponseRelaysItemListingsItemAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqWishCandidatesResponseRelaysItemListingsItemEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqWishCandidatesResponseRelaysItemListingsItemTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqWishCandidatesResponseRelaysItemListingsItemRequestKeyMin).max(davaqWishCandidatesResponseRelaysItemListingsItemRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})),
+  "reasons": zod.array(zod.string()),
+  "pending": zod.array(zod.string())
+})),
+  "targets": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqWishCandidatesResponseTargetsItemGeoOneLatMin).max(davaqWishCandidatesResponseTargetsItemGeoOneLatMax),
+  "lng": zod.number().min(davaqWishCandidatesResponseTargetsItemGeoOneLngMin).max(davaqWishCandidatesResponseTargetsItemGeoOneLngMax),
+  "label": zod.string().min(davaqWishCandidatesResponseTargetsItemGeoOneLabelMin).max(davaqWishCandidatesResponseTargetsItemGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqWishCandidatesResponseTargetsItemTitleMin).max(davaqWishCandidatesResponseTargetsItemTitleMax),
+  "description": zod.string().max(davaqWishCandidatesResponseTargetsItemDescriptionMax),
+  "wantedText": zod.string().max(davaqWishCandidatesResponseTargetsItemWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqWishCandidatesResponseTargetsItemLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqWishCandidatesResponseTargetsItemDurationMinutesMin).max(davaqWishCandidatesResponseTargetsItemDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqWishCandidatesResponseTargetsItemAvailableDaysItemMin).max(davaqWishCandidatesResponseTargetsItemAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqWishCandidatesResponseTargetsItemEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqWishCandidatesResponseTargetsItemTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqWishCandidatesResponseTargetsItemRequestKeyMin).max(davaqWishCandidatesResponseTargetsItemRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})),
+  "offersCount": zod.number(),
+  "targetCount": zod.number(),
+  "scannedCount": zod.number(),
+  "limited": zod.boolean(),
+  "searchedAt": zod.coerce.date()
 })

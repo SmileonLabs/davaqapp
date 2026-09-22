@@ -511,7 +511,7 @@ router.get(
       )
     ).rows;
     const relays=(await pool.query("SELECT r.*,(SELECT coalesce(jsonb_agg(m ORDER BY m.position),'[]'::jsonb) FROM exchange_relay_members m WHERE m.relay_id=r.id) members,(SELECT coalesce(jsonb_agg(e ORDER BY e.created_at DESC),'[]'::jsonb) FROM exchange_relay_events e WHERE e.relay_id=r.id) events FROM exchange_relays r WHERE r.status IN('disputed','cancel_requested') ORDER BY r.updated_at DESC LIMIT 50")).rows;
-    res.json({ listings: listings.map(listingDto), disputes, relays });
+    res.json({ listings: listings.map(listingDto), disputes, relays:relays.map(({goal_context,...relay})=>relay) });
   }),
 );
 router.post(

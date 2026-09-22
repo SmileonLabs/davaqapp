@@ -265,7 +265,8 @@ export async function listAgentConversation(
   const needsMatches = visible.some((r) => r.metadata?.matchIds?.length);
   const needsBrands = visible.some((r) => r.metadata?.brandIds?.length);
   const needsMemories = visible.some((r) => r.metadata?.memoryId);
-  const [matches, brands, memories, relays] = await Promise.all([
+  const wishIds=[...new Set(visible.map(r=>r.metadata?.wishId).filter(id=>typeof id==="string"&&z.uuid().safeParse(id).success))];
+  const [matches, brands, memories, relays, wishes] = await Promise.all([
     needsMatches ? findMatches(user) : [],
     needsBrands ? listBrandExchanges(user, true) : { items: [] },
     needsMemories
@@ -275,13 +276,16 @@ export async function listAgentConversation(
         )
       : { rows: [] },
     visible.some(r=>r.metadata?.relayIds?.length) ? findRelayCandidates(user) : {items:[] as Awaited<ReturnType<typeof findRelayCandidates>>["items"]},
+    wishIds.length ? pool.query("SELECT id,title FROM exchange_wishes WHERE user_id=$1 AND status='active' AND id=ANY($2::uuid[])",[user,wishIds]) : {rows:[]},
   ]);
+  const wishesById = new Map(wishes.rows.map((w:any)=>[w.id,w]));
   const matchesById = new Map(matches.map((m) => [m.id, m]));
   const brandsById = new Map(brands.items.map((m: any) => [m.id, m]));
   const memoriesById = new Map(memories.rows.map((m) => [m.id, m]));
   return rows.map((row) => {
     if (row.deleted_at || row.hidden_at) return agentMessageDto(row);
     const cards: any[] = [];
+    const wish=wishesById.get(row.metadata?.wishId);if(wish)cards.push({kind:"wish",wish});
     for(const id of (row.metadata?.relayIds??[]).slice(0,2)){const candidate=relays.items.find(r=>r.id===id);if(candidate)cards.push({kind:"relay",candidate});}
     for (const id of (row.metadata?.matchIds ?? []).slice(0, 3)) {
       const match = matchesById.get(id);

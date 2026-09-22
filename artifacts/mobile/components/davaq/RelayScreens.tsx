@@ -33,7 +33,8 @@ import {
   Cue,
 } from "./UI";
 
-import {GeoPicker,PlaceMap} from "./MapScreens";
+import { GeoPicker, PlaceMap } from "./MapScreens";
+import type { WishCandidates } from "@/lib/wishes";
 
 export function RelayEntry({ compact = false }: { compact?: boolean }) {
   const narrow = useWindowDimensions().width < 360;
@@ -548,7 +549,29 @@ function TermsEditor({
             }
             maxLength={200}
           />
-          <GeoPicker privatePlace value={leg.meetingPoint} onChange={point=>{const meetingPoint=point?{lat:point.lat,lng:point.lng,label:point.label}:null;setTerms(t=>({...t,legs:t.legs.map((l,j)=>i===j?{...l,meetingPoint,...(meetingPoint?{location:meetingPoint.label}:{})}:l)}));}}/>
+          <GeoPicker
+            privatePlace
+            value={leg.meetingPoint}
+            onChange={(point) => {
+              const meetingPoint = point
+                ? { lat: point.lat, lng: point.lng, label: point.label }
+                : null;
+              setTerms((t) => ({
+                ...t,
+                legs: t.legs.map((l, j) =>
+                  i === j
+                    ? {
+                        ...l,
+                        meetingPoint,
+                        ...(meetingPoint
+                          ? { location: meetingPoint.label }
+                          : {}),
+                      }
+                    : l,
+                ),
+              }));
+            }}
+          />
         </View>
       ))}
       <Field
@@ -575,14 +598,26 @@ function TermsEditor({
   );
 }
 export function RelayNewScreen() {
-  const { ids } = useLocalSearchParams<{ ids: string }>(),
-    search = useDavaq<RelaySearch>("/exchange/relays/candidates"),
+  const { ids, wishId } = useLocalSearchParams<{
+      ids: string;
+      wishId?: string;
+    }>(),
+    search = useDavaq<RelaySearch | WishCandidates>(
+      wishId
+        ? "/exchange/wishes/" + encodeURIComponent(wishId) + "/candidates"
+        : "/exchange/relays/candidates",
+    ),
     me = useGetMe(),
     router = useRouter(),
     mutation = useDavaqMutation<Relay>(),
     request = useRef(key()),
     [error, setError] = useState("");
-  const candidate = search.data?.items.find(
+  const available = search.data
+    ? "relays" in search.data
+      ? search.data.relays
+      : search.data.items
+    : [];
+  const candidate = available.find(
     (c) => c.listings.map((l) => l.id).join(",") === ids,
   );
   const submit = async (terms: RelayTerms) => {
@@ -593,6 +628,7 @@ export function RelayNewScreen() {
         path: "/exchange/relays",
         body: {
           listingIds: candidate.listings.map((l) => l.id),
+          ...(wishId ? { wishId } : {}),
           terms,
           requestKey: request.current,
         },
@@ -903,7 +939,10 @@ export function RelayDetailScreen() {
                     {"\n"}
                     {leg?.location}
                   </Txt>
-                  <PlaceMap point={leg?.meetingPoint} title="이 제공의 약속 장소"/>
+                  <PlaceMap
+                    point={leg?.meetingPoint}
+                    title="이 제공의 약속 장소"
+                  />
                 </View>
               );
             })}

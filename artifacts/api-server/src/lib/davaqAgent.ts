@@ -1,4 +1,5 @@
 import { pool } from "@workspace/db";
+import { runWishSearches } from "./wishWorker";
 import { findRelayCandidates } from "./relayService";
 import { getOpenAI } from "./aiClient";
 import { z } from "zod/v4";
@@ -299,6 +300,7 @@ export async function runAgentSearches() {
         );
       }
     });
+    await runWishSearches();
     await learnSelectedMessages();
   } finally {
     await lock
