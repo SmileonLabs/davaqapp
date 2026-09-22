@@ -621,7 +621,10 @@ router.post(
       );
       await enqueueSearch(undefined, sql);
     });
-    if(input.kind==='relay') await notifyRelay({id},req.dbUser!.id);
+    if(input.kind==='relay') {
+      const relay=(await pool.query('SELECT id,room_id FROM exchange_relays WHERE id=$1',[id])).rows[0];
+      await notifyRelay(relay,req.dbUser!.id);
+    }
     res.json({ ok: true });
   }),
 );
