@@ -481,6 +481,15 @@ export const DavaqListListingsQueryParams = zod.object({
   "offset": zod.coerce.number().min(davaqListListingsQueryOffsetMin).optional()
 })
 
+export const davaqListListingsResponseItemsItemGeoOneLatMin = -85;
+export const davaqListListingsResponseItemsItemGeoOneLatMax = 85;
+
+export const davaqListListingsResponseItemsItemGeoOneLngMin = -180;
+export const davaqListListingsResponseItemsItemGeoOneLngMax = 180;
+
+export const davaqListListingsResponseItemsItemGeoOneLabelMin = 2;
+export const davaqListListingsResponseItemsItemGeoOneLabelMax = 80;
+
 export const davaqListListingsResponseItemsItemTitleMin = 2;
 export const davaqListListingsResponseItemsItemTitleMax = 80;
 
@@ -510,6 +519,12 @@ export const davaqListListingsResponseNextOffsetMin = 0;
 
 export const DavaqListListingsResponse = zod.object({
   "items": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListListingsResponseItemsItemGeoOneLatMin).max(davaqListListingsResponseItemsItemGeoOneLatMax),
+  "lng": zod.number().min(davaqListListingsResponseItemsItemGeoOneLngMin).max(davaqListListingsResponseItemsItemGeoOneLngMax),
+  "label": zod.string().min(davaqListListingsResponseItemsItemGeoOneLabelMin).max(davaqListListingsResponseItemsItemGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -542,6 +557,15 @@ export const DavaqListListingsResponse = zod.object({
 /**
  * @summary CreateListing
  */
+export const davaqCreateListingBodyGeoOneLatMin = -85;
+export const davaqCreateListingBodyGeoOneLatMax = 85;
+
+export const davaqCreateListingBodyGeoOneLngMin = -180;
+export const davaqCreateListingBodyGeoOneLngMax = 180;
+
+export const davaqCreateListingBodyGeoOneLabelMin = 2;
+export const davaqCreateListingBodyGeoOneLabelMax = 80;
+
 export const davaqCreateListingBodyTitleMin = 2;
 export const davaqCreateListingBodyTitleMax = 80;
 
@@ -568,6 +592,12 @@ export const davaqCreateListingBodyRequestKeyMax = 100;
 
 
 export const DavaqCreateListingBody = zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqCreateListingBodyGeoOneLatMin).max(davaqCreateListingBodyGeoOneLatMax),
+  "lng": zod.number().min(davaqCreateListingBodyGeoOneLngMin).max(davaqCreateListingBodyGeoOneLngMax),
+  "label": zod.string().min(davaqCreateListingBodyGeoOneLabelMin).max(davaqCreateListingBodyGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -595,6 +625,15 @@ export const DavaqGetListingParams = zod.object({
   "id": zod.coerce.string().uuid()
 })
 
+export const davaqGetListingResponseGeoOneLatMin = -85;
+export const davaqGetListingResponseGeoOneLatMax = 85;
+
+export const davaqGetListingResponseGeoOneLngMin = -180;
+export const davaqGetListingResponseGeoOneLngMax = 180;
+
+export const davaqGetListingResponseGeoOneLabelMin = 2;
+export const davaqGetListingResponseGeoOneLabelMax = 80;
+
 export const davaqGetListingResponseTitleMin = 2;
 export const davaqGetListingResponseTitleMax = 80;
 
@@ -621,6 +660,12 @@ export const davaqGetListingResponseRequestKeyMax = 100;
 
 
 export const DavaqGetListingResponse = zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetListingResponseGeoOneLatMin).max(davaqGetListingResponseGeoOneLatMax),
+  "lng": zod.number().min(davaqGetListingResponseGeoOneLngMin).max(davaqGetListingResponseGeoOneLngMax),
+  "label": zod.string().min(davaqGetListingResponseGeoOneLabelMin).max(davaqGetListingResponseGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -655,6 +700,15 @@ export const DavaqUpdateListingParams = zod.object({
   "id": zod.coerce.string().uuid()
 })
 
+export const davaqUpdateListingBodyGeoOneLatMin = -85;
+export const davaqUpdateListingBodyGeoOneLatMax = 85;
+
+export const davaqUpdateListingBodyGeoOneLngMin = -180;
+export const davaqUpdateListingBodyGeoOneLngMax = 180;
+
+export const davaqUpdateListingBodyGeoOneLabelMin = 2;
+export const davaqUpdateListingBodyGeoOneLabelMax = 80;
+
 export const davaqUpdateListingBodyTitleMin = 2;
 export const davaqUpdateListingBodyTitleMax = 80;
 
@@ -681,6 +735,12 @@ export const davaqUpdateListingBodyRequestKeyMax = 100;
 
 
 export const DavaqUpdateListingBody = zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqUpdateListingBodyGeoOneLatMin).max(davaqUpdateListingBodyGeoOneLatMax),
+  "lng": zod.number().min(davaqUpdateListingBodyGeoOneLngMin).max(davaqUpdateListingBodyGeoOneLngMax),
+  "label": zod.string().min(davaqUpdateListingBodyGeoOneLabelMin).max(davaqUpdateListingBodyGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -699,6 +759,15 @@ export const DavaqUpdateListingBody = zod.object({
   "version": zod.number().min(1).optional(),
   "requestKey": zod.string().min(davaqUpdateListingBodyRequestKeyMin).max(davaqUpdateListingBodyRequestKeyMax).optional()
 })
+
+export const davaqUpdateListingResponseGeoOneLatMin = -85;
+export const davaqUpdateListingResponseGeoOneLatMax = 85;
+
+export const davaqUpdateListingResponseGeoOneLngMin = -180;
+export const davaqUpdateListingResponseGeoOneLngMax = 180;
+
+export const davaqUpdateListingResponseGeoOneLabelMin = 2;
+export const davaqUpdateListingResponseGeoOneLabelMax = 80;
 
 export const davaqUpdateListingResponseTitleMin = 2;
 export const davaqUpdateListingResponseTitleMax = 80;
@@ -726,6 +795,12 @@ export const davaqUpdateListingResponseRequestKeyMax = 100;
 
 
 export const DavaqUpdateListingResponse = zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqUpdateListingResponseGeoOneLatMin).max(davaqUpdateListingResponseGeoOneLatMax),
+  "lng": zod.number().min(davaqUpdateListingResponseGeoOneLngMin).max(davaqUpdateListingResponseGeoOneLngMax),
+  "label": zod.string().min(davaqUpdateListingResponseGeoOneLabelMin).max(davaqUpdateListingResponseGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -772,6 +847,15 @@ export const DavaqSetFavoriteResponse = zod.object({
 /**
  * @summary ListMatches
  */
+export const davaqListMatchesResponseItemsItemOfferGeoOneLatMin = -85;
+export const davaqListMatchesResponseItemsItemOfferGeoOneLatMax = 85;
+
+export const davaqListMatchesResponseItemsItemOfferGeoOneLngMin = -180;
+export const davaqListMatchesResponseItemsItemOfferGeoOneLngMax = 180;
+
+export const davaqListMatchesResponseItemsItemOfferGeoOneLabelMin = 2;
+export const davaqListMatchesResponseItemsItemOfferGeoOneLabelMax = 80;
+
 export const davaqListMatchesResponseItemsItemOfferTitleMin = 2;
 export const davaqListMatchesResponseItemsItemOfferTitleMax = 80;
 
@@ -794,6 +878,15 @@ export const davaqListMatchesResponseItemsItemOfferTermsMax = 1500;
 
 export const davaqListMatchesResponseItemsItemOfferRequestKeyMin = 8;
 export const davaqListMatchesResponseItemsItemOfferRequestKeyMax = 100;
+
+export const davaqListMatchesResponseItemsItemTargetGeoOneLatMin = -85;
+export const davaqListMatchesResponseItemsItemTargetGeoOneLatMax = 85;
+
+export const davaqListMatchesResponseItemsItemTargetGeoOneLngMin = -180;
+export const davaqListMatchesResponseItemsItemTargetGeoOneLngMax = 180;
+
+export const davaqListMatchesResponseItemsItemTargetGeoOneLabelMin = 2;
+export const davaqListMatchesResponseItemsItemTargetGeoOneLabelMax = 80;
 
 export const davaqListMatchesResponseItemsItemTargetTitleMin = 2;
 export const davaqListMatchesResponseItemsItemTargetTitleMax = 80;
@@ -824,6 +917,12 @@ export const DavaqListMatchesResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string().uuid(),
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListMatchesResponseItemsItemOfferGeoOneLatMin).max(davaqListMatchesResponseItemsItemOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqListMatchesResponseItemsItemOfferGeoOneLngMin).max(davaqListMatchesResponseItemsItemOfferGeoOneLngMax),
+  "label": zod.string().min(davaqListMatchesResponseItemsItemOfferGeoOneLabelMin).max(davaqListMatchesResponseItemsItemOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -850,6 +949,12 @@ export const DavaqListMatchesResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "target": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListMatchesResponseItemsItemTargetGeoOneLatMin).max(davaqListMatchesResponseItemsItemTargetGeoOneLatMax),
+  "lng": zod.number().min(davaqListMatchesResponseItemsItemTargetGeoOneLngMin).max(davaqListMatchesResponseItemsItemTargetGeoOneLngMax),
+  "label": zod.string().min(davaqListMatchesResponseItemsItemTargetGeoOneLabelMin).max(davaqListMatchesResponseItemsItemTargetGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -905,6 +1010,15 @@ export const DavaqListProposalsQueryParams = zod.object({
 })
 
 
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLatMin = -85;
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLatMax = 85;
+
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLngMin = -180;
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLngMax = 180;
+
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLabelMin = 2;
+export const davaqListProposalsResponseItemsItemTermsMeetingPointOneLabelMax = 80;
+
 export const davaqListProposalsResponseItemsItemTermsLocationMin = 2;
 export const davaqListProposalsResponseItemsItemTermsLocationMax = 200;
 
@@ -912,6 +1026,15 @@ export const davaqListProposalsResponseItemsItemTermsNoteMax = 1500;
 
 export const davaqListProposalsResponseItemsItemTermsCancellationMin = 5;
 export const davaqListProposalsResponseItemsItemTermsCancellationMax = 1000;
+
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLatMin = -85;
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLatMax = 85;
+
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLngMin = -180;
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLngMax = 180;
+
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLabelMin = 2;
+export const davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLabelMax = 80;
 
 export const davaqListProposalsResponseItemsItemSnapshotsOfferTitleMin = 2;
 export const davaqListProposalsResponseItemsItemSnapshotsOfferTitleMax = 80;
@@ -935,6 +1058,15 @@ export const davaqListProposalsResponseItemsItemSnapshotsOfferTermsMax = 1500;
 
 export const davaqListProposalsResponseItemsItemSnapshotsOfferRequestKeyMin = 8;
 export const davaqListProposalsResponseItemsItemSnapshotsOfferRequestKeyMax = 100;
+
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLatMin = -85;
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLatMax = 85;
+
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLngMin = -180;
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLngMax = 180;
+
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLabelMin = 2;
+export const davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLabelMax = 80;
 
 export const davaqListProposalsResponseItemsItemSnapshotsRequestedTitleMin = 2;
 export const davaqListProposalsResponseItemsItemSnapshotsRequestedTitleMax = 80;
@@ -975,6 +1107,11 @@ export const DavaqListProposalsResponse = zod.object({
   "version": zod.number().min(1),
   "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'completed', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed']),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqListProposalsResponseItemsItemTermsMeetingPointOneLatMin).max(davaqListProposalsResponseItemsItemTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqListProposalsResponseItemsItemTermsMeetingPointOneLngMin).max(davaqListProposalsResponseItemsItemTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqListProposalsResponseItemsItemTermsMeetingPointOneLabelMin).max(davaqListProposalsResponseItemsItemTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqListProposalsResponseItemsItemTermsLocationMin).max(davaqListProposalsResponseItemsItemTermsLocationMax),
@@ -983,6 +1120,12 @@ export const DavaqListProposalsResponse = zod.object({
 }),
   "snapshots": zod.object({
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLatMin).max(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLngMin).max(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLngMax),
+  "label": zod.string().min(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLabelMin).max(davaqListProposalsResponseItemsItemSnapshotsOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1009,6 +1152,12 @@ export const DavaqListProposalsResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "requested": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLatMin).max(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLatMax),
+  "lng": zod.number().min(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLngMin).max(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLngMax),
+  "label": zod.string().min(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLabelMin).max(davaqListProposalsResponseItemsItemSnapshotsRequestedGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1071,6 +1220,15 @@ export const DavaqListProposalsResponse = zod.object({
 /**
  * @summary CreateProposal
  */
+export const davaqCreateProposalBodyTermsMeetingPointOneLatMin = -85;
+export const davaqCreateProposalBodyTermsMeetingPointOneLatMax = 85;
+
+export const davaqCreateProposalBodyTermsMeetingPointOneLngMin = -180;
+export const davaqCreateProposalBodyTermsMeetingPointOneLngMax = 180;
+
+export const davaqCreateProposalBodyTermsMeetingPointOneLabelMin = 2;
+export const davaqCreateProposalBodyTermsMeetingPointOneLabelMax = 80;
+
 export const davaqCreateProposalBodyTermsLocationMin = 2;
 export const davaqCreateProposalBodyTermsLocationMax = 200;
 
@@ -1088,6 +1246,11 @@ export const DavaqCreateProposalBody = zod.object({
   "offerId": zod.string().uuid(),
   "requestedId": zod.string().uuid(),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqCreateProposalBodyTermsMeetingPointOneLatMin).max(davaqCreateProposalBodyTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqCreateProposalBodyTermsMeetingPointOneLngMin).max(davaqCreateProposalBodyTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqCreateProposalBodyTermsMeetingPointOneLabelMin).max(davaqCreateProposalBodyTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqCreateProposalBodyTermsLocationMin).max(davaqCreateProposalBodyTermsLocationMax),
@@ -1106,6 +1269,15 @@ export const DavaqGetProposalParams = zod.object({
 })
 
 
+export const davaqGetProposalResponseTermsMeetingPointOneLatMin = -85;
+export const davaqGetProposalResponseTermsMeetingPointOneLatMax = 85;
+
+export const davaqGetProposalResponseTermsMeetingPointOneLngMin = -180;
+export const davaqGetProposalResponseTermsMeetingPointOneLngMax = 180;
+
+export const davaqGetProposalResponseTermsMeetingPointOneLabelMin = 2;
+export const davaqGetProposalResponseTermsMeetingPointOneLabelMax = 80;
+
 export const davaqGetProposalResponseTermsLocationMin = 2;
 export const davaqGetProposalResponseTermsLocationMax = 200;
 
@@ -1113,6 +1285,15 @@ export const davaqGetProposalResponseTermsNoteMax = 1500;
 
 export const davaqGetProposalResponseTermsCancellationMin = 5;
 export const davaqGetProposalResponseTermsCancellationMax = 1000;
+
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLatMin = -85;
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLatMax = 85;
+
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLngMin = -180;
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLngMax = 180;
+
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLabelMin = 2;
+export const davaqGetProposalResponseSnapshotsOfferGeoOneLabelMax = 80;
 
 export const davaqGetProposalResponseSnapshotsOfferTitleMin = 2;
 export const davaqGetProposalResponseSnapshotsOfferTitleMax = 80;
@@ -1136,6 +1317,15 @@ export const davaqGetProposalResponseSnapshotsOfferTermsMax = 1500;
 
 export const davaqGetProposalResponseSnapshotsOfferRequestKeyMin = 8;
 export const davaqGetProposalResponseSnapshotsOfferRequestKeyMax = 100;
+
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLatMin = -85;
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLatMax = 85;
+
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLngMin = -180;
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLngMax = 180;
+
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLabelMin = 2;
+export const davaqGetProposalResponseSnapshotsRequestedGeoOneLabelMax = 80;
 
 export const davaqGetProposalResponseSnapshotsRequestedTitleMin = 2;
 export const davaqGetProposalResponseSnapshotsRequestedTitleMax = 80;
@@ -1175,6 +1365,11 @@ export const DavaqGetProposalResponse = zod.object({
   "version": zod.number().min(1),
   "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'completed', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed']),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetProposalResponseTermsMeetingPointOneLatMin).max(davaqGetProposalResponseTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqGetProposalResponseTermsMeetingPointOneLngMin).max(davaqGetProposalResponseTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqGetProposalResponseTermsMeetingPointOneLabelMin).max(davaqGetProposalResponseTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqGetProposalResponseTermsLocationMin).max(davaqGetProposalResponseTermsLocationMax),
@@ -1183,6 +1378,12 @@ export const DavaqGetProposalResponse = zod.object({
 }),
   "snapshots": zod.object({
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetProposalResponseSnapshotsOfferGeoOneLatMin).max(davaqGetProposalResponseSnapshotsOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqGetProposalResponseSnapshotsOfferGeoOneLngMin).max(davaqGetProposalResponseSnapshotsOfferGeoOneLngMax),
+  "label": zod.string().min(davaqGetProposalResponseSnapshotsOfferGeoOneLabelMin).max(davaqGetProposalResponseSnapshotsOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1209,6 +1410,12 @@ export const DavaqGetProposalResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "requested": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetProposalResponseSnapshotsRequestedGeoOneLatMin).max(davaqGetProposalResponseSnapshotsRequestedGeoOneLatMax),
+  "lng": zod.number().min(davaqGetProposalResponseSnapshotsRequestedGeoOneLngMin).max(davaqGetProposalResponseSnapshotsRequestedGeoOneLngMax),
+  "label": zod.string().min(davaqGetProposalResponseSnapshotsRequestedGeoOneLabelMin).max(davaqGetProposalResponseSnapshotsRequestedGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1278,6 +1485,15 @@ export const DavaqActOnProposalParams = zod.object({
 export const davaqActOnProposalBodyRequestKeyMin = 8;
 export const davaqActOnProposalBodyRequestKeyMax = 100;
 
+export const davaqActOnProposalBodyTermsMeetingPointOneLatMin = -85;
+export const davaqActOnProposalBodyTermsMeetingPointOneLatMax = 85;
+
+export const davaqActOnProposalBodyTermsMeetingPointOneLngMin = -180;
+export const davaqActOnProposalBodyTermsMeetingPointOneLngMax = 180;
+
+export const davaqActOnProposalBodyTermsMeetingPointOneLabelMin = 2;
+export const davaqActOnProposalBodyTermsMeetingPointOneLabelMax = 80;
+
 export const davaqActOnProposalBodyTermsLocationMin = 2;
 export const davaqActOnProposalBodyTermsLocationMax = 200;
 
@@ -1295,6 +1511,11 @@ export const DavaqActOnProposalBody = zod.object({
   "version": zod.number().min(1),
   "requestKey": zod.string().min(davaqActOnProposalBodyRequestKeyMin).max(davaqActOnProposalBodyRequestKeyMax),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnProposalBodyTermsMeetingPointOneLatMin).max(davaqActOnProposalBodyTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqActOnProposalBodyTermsMeetingPointOneLngMin).max(davaqActOnProposalBodyTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqActOnProposalBodyTermsMeetingPointOneLabelMin).max(davaqActOnProposalBodyTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqActOnProposalBodyTermsLocationMin).max(davaqActOnProposalBodyTermsLocationMax),
@@ -1305,6 +1526,15 @@ export const DavaqActOnProposalBody = zod.object({
 })
 
 
+export const davaqActOnProposalResponseTermsMeetingPointOneLatMin = -85;
+export const davaqActOnProposalResponseTermsMeetingPointOneLatMax = 85;
+
+export const davaqActOnProposalResponseTermsMeetingPointOneLngMin = -180;
+export const davaqActOnProposalResponseTermsMeetingPointOneLngMax = 180;
+
+export const davaqActOnProposalResponseTermsMeetingPointOneLabelMin = 2;
+export const davaqActOnProposalResponseTermsMeetingPointOneLabelMax = 80;
+
 export const davaqActOnProposalResponseTermsLocationMin = 2;
 export const davaqActOnProposalResponseTermsLocationMax = 200;
 
@@ -1312,6 +1542,15 @@ export const davaqActOnProposalResponseTermsNoteMax = 1500;
 
 export const davaqActOnProposalResponseTermsCancellationMin = 5;
 export const davaqActOnProposalResponseTermsCancellationMax = 1000;
+
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLatMin = -85;
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLatMax = 85;
+
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLngMin = -180;
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLngMax = 180;
+
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLabelMin = 2;
+export const davaqActOnProposalResponseSnapshotsOfferGeoOneLabelMax = 80;
 
 export const davaqActOnProposalResponseSnapshotsOfferTitleMin = 2;
 export const davaqActOnProposalResponseSnapshotsOfferTitleMax = 80;
@@ -1335,6 +1574,15 @@ export const davaqActOnProposalResponseSnapshotsOfferTermsMax = 1500;
 
 export const davaqActOnProposalResponseSnapshotsOfferRequestKeyMin = 8;
 export const davaqActOnProposalResponseSnapshotsOfferRequestKeyMax = 100;
+
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLatMin = -85;
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLatMax = 85;
+
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLngMin = -180;
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLngMax = 180;
+
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLabelMin = 2;
+export const davaqActOnProposalResponseSnapshotsRequestedGeoOneLabelMax = 80;
 
 export const davaqActOnProposalResponseSnapshotsRequestedTitleMin = 2;
 export const davaqActOnProposalResponseSnapshotsRequestedTitleMax = 80;
@@ -1374,6 +1622,11 @@ export const DavaqActOnProposalResponse = zod.object({
   "version": zod.number().min(1),
   "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'completed', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed']),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnProposalResponseTermsMeetingPointOneLatMin).max(davaqActOnProposalResponseTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqActOnProposalResponseTermsMeetingPointOneLngMin).max(davaqActOnProposalResponseTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqActOnProposalResponseTermsMeetingPointOneLabelMin).max(davaqActOnProposalResponseTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqActOnProposalResponseTermsLocationMin).max(davaqActOnProposalResponseTermsLocationMax),
@@ -1382,6 +1635,12 @@ export const DavaqActOnProposalResponse = zod.object({
 }),
   "snapshots": zod.object({
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnProposalResponseSnapshotsOfferGeoOneLatMin).max(davaqActOnProposalResponseSnapshotsOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqActOnProposalResponseSnapshotsOfferGeoOneLngMin).max(davaqActOnProposalResponseSnapshotsOfferGeoOneLngMax),
+  "label": zod.string().min(davaqActOnProposalResponseSnapshotsOfferGeoOneLabelMin).max(davaqActOnProposalResponseSnapshotsOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1408,6 +1667,12 @@ export const DavaqActOnProposalResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "requested": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnProposalResponseSnapshotsRequestedGeoOneLatMin).max(davaqActOnProposalResponseSnapshotsRequestedGeoOneLatMax),
+  "lng": zod.number().min(davaqActOnProposalResponseSnapshotsRequestedGeoOneLngMin).max(davaqActOnProposalResponseSnapshotsRequestedGeoOneLngMax),
+  "label": zod.string().min(davaqActOnProposalResponseSnapshotsRequestedGeoOneLabelMin).max(davaqActOnProposalResponseSnapshotsRequestedGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1496,6 +1761,15 @@ export const DavaqReviewProposalResponse = zod.object({
 export const davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMin = 2;
 export const davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMax = 200;
 
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqAdminQueueResponseRelaysItemTermsLegsMin = 3;
 export const davaqAdminQueueResponseRelaysItemTermsLegsMax = 4;
 
@@ -1503,6 +1777,15 @@ export const davaqAdminQueueResponseRelaysItemTermsNoteMax = 1500;
 
 export const davaqAdminQueueResponseRelaysItemTermsCancellationMin = 5;
 export const davaqAdminQueueResponseRelaysItemTermsCancellationMax = 1000;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLatMin = -85;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLatMax = 85;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLngMin = -180;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLngMax = 180;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLabelMin = 2;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLabelMax = 80;
 
 export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMin = 2;
 export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMax = 80;
@@ -1526,6 +1809,15 @@ export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTermsMax = 1500
 
 export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMin = 8;
 export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMax = 100;
+
+export const davaqAdminQueueResponseListingsItemGeoOneLatMin = -85;
+export const davaqAdminQueueResponseListingsItemGeoOneLatMax = 85;
+
+export const davaqAdminQueueResponseListingsItemGeoOneLngMin = -180;
+export const davaqAdminQueueResponseListingsItemGeoOneLngMax = 180;
+
+export const davaqAdminQueueResponseListingsItemGeoOneLabelMin = 2;
+export const davaqAdminQueueResponseListingsItemGeoOneLabelMax = 80;
 
 export const davaqAdminQueueResponseListingsItemTitleMin = 2;
 export const davaqAdminQueueResponseListingsItemTitleMax = 80;
@@ -1551,6 +1843,15 @@ export const davaqAdminQueueResponseListingsItemRequestKeyMin = 8;
 export const davaqAdminQueueResponseListingsItemRequestKeyMax = 100;
 
 
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLatMin = -85;
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLatMax = 85;
+
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLngMin = -180;
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLngMax = 180;
+
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLabelMin = 2;
+export const davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLabelMax = 80;
+
 export const davaqAdminQueueResponseDisputesItemTermsLocationMin = 2;
 export const davaqAdminQueueResponseDisputesItemTermsLocationMax = 200;
 
@@ -1558,6 +1859,15 @@ export const davaqAdminQueueResponseDisputesItemTermsNoteMax = 1500;
 
 export const davaqAdminQueueResponseDisputesItemTermsCancellationMin = 5;
 export const davaqAdminQueueResponseDisputesItemTermsCancellationMax = 1000;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLatMin = -85;
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLatMax = 85;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLngMin = -180;
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLngMax = 180;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLabelMin = 2;
+export const davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLabelMax = 80;
 
 export const davaqAdminQueueResponseDisputesItemSnapshotsOfferTitleMin = 2;
 export const davaqAdminQueueResponseDisputesItemSnapshotsOfferTitleMax = 80;
@@ -1581,6 +1891,15 @@ export const davaqAdminQueueResponseDisputesItemSnapshotsOfferTermsMax = 1500;
 
 export const davaqAdminQueueResponseDisputesItemSnapshotsOfferRequestKeyMin = 8;
 export const davaqAdminQueueResponseDisputesItemSnapshotsOfferRequestKeyMax = 100;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLatMin = -85;
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLatMax = 85;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLngMin = -180;
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLngMax = 180;
+
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLabelMin = 2;
+export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLabelMax = 80;
 
 export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedTitleMin = 2;
 export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedTitleMax = 80;
@@ -1619,7 +1938,12 @@ export const DavaqAdminQueueResponse = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLatMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLngMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLabelMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqAdminQueueResponseRelaysItemTermsLegsMin).max(davaqAdminQueueResponseRelaysItemTermsLegsMax),
   "note": zod.string().max(davaqAdminQueueResponseRelaysItemTermsNoteMax),
   "cancellation": zod.string().min(davaqAdminQueueResponseRelaysItemTermsCancellationMin).max(davaqAdminQueueResponseRelaysItemTermsCancellationMax)
@@ -1631,6 +1955,12 @@ export const DavaqAdminQueueResponse = zod.object({
   "position": zod.number(),
   "listing_id": zod.string().uuid(),
   "snapshot": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLatMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLngMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLabelMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1671,6 +2001,12 @@ export const DavaqAdminQueueResponse = zod.object({
 }))
 })).optional(),
   "listings": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseListingsItemGeoOneLatMin).max(davaqAdminQueueResponseListingsItemGeoOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseListingsItemGeoOneLngMin).max(davaqAdminQueueResponseListingsItemGeoOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseListingsItemGeoOneLabelMin).max(davaqAdminQueueResponseListingsItemGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1708,6 +2044,11 @@ export const DavaqAdminQueueResponse = zod.object({
   "version": zod.number().min(1),
   "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'completed', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed']),
   "terms": zod.object({
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLatMin).max(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLngMin).max(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLabelMin).max(davaqAdminQueueResponseDisputesItemTermsMeetingPointOneLabelMax)
+}),zod.null()]).optional(),
   "offerStartsAt": zod.coerce.date(),
   "requestedStartsAt": zod.coerce.date(),
   "location": zod.string().min(davaqAdminQueueResponseDisputesItemTermsLocationMin).max(davaqAdminQueueResponseDisputesItemTermsLocationMax),
@@ -1716,6 +2057,12 @@ export const DavaqAdminQueueResponse = zod.object({
 }),
   "snapshots": zod.object({
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLatMin).max(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLngMin).max(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLabelMin).max(davaqAdminQueueResponseDisputesItemSnapshotsOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1742,6 +2089,12 @@ export const DavaqAdminQueueResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "requested": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLatMin).max(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLatMax),
+  "lng": zod.number().min(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLngMin).max(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLngMax),
+  "label": zod.string().min(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLabelMin).max(davaqAdminQueueResponseDisputesItemSnapshotsRequestedGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -1949,6 +2302,15 @@ export const DavaqUpdateMemoryResponse = zod.object({
 /**
  * @summary SearchMatches
  */
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLatMin = -85;
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLatMax = 85;
+
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLngMin = -180;
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLngMax = 180;
+
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLabelMin = 2;
+export const davaqSearchMatchesResponseItemsItemOfferGeoOneLabelMax = 80;
+
 export const davaqSearchMatchesResponseItemsItemOfferTitleMin = 2;
 export const davaqSearchMatchesResponseItemsItemOfferTitleMax = 80;
 
@@ -1971,6 +2333,15 @@ export const davaqSearchMatchesResponseItemsItemOfferTermsMax = 1500;
 
 export const davaqSearchMatchesResponseItemsItemOfferRequestKeyMin = 8;
 export const davaqSearchMatchesResponseItemsItemOfferRequestKeyMax = 100;
+
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLatMin = -85;
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLatMax = 85;
+
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLngMin = -180;
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLngMax = 180;
+
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLabelMin = 2;
+export const davaqSearchMatchesResponseItemsItemTargetGeoOneLabelMax = 80;
 
 export const davaqSearchMatchesResponseItemsItemTargetTitleMin = 2;
 export const davaqSearchMatchesResponseItemsItemTargetTitleMax = 80;
@@ -2001,6 +2372,12 @@ export const DavaqSearchMatchesResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string().uuid(),
   "offer": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqSearchMatchesResponseItemsItemOfferGeoOneLatMin).max(davaqSearchMatchesResponseItemsItemOfferGeoOneLatMax),
+  "lng": zod.number().min(davaqSearchMatchesResponseItemsItemOfferGeoOneLngMin).max(davaqSearchMatchesResponseItemsItemOfferGeoOneLngMax),
+  "label": zod.string().min(davaqSearchMatchesResponseItemsItemOfferGeoOneLabelMin).max(davaqSearchMatchesResponseItemsItemOfferGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -2027,6 +2404,12 @@ export const DavaqSearchMatchesResponse = zod.object({
   "updatedAt": zod.coerce.date().optional()
 }),
   "target": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqSearchMatchesResponseItemsItemTargetGeoOneLatMin).max(davaqSearchMatchesResponseItemsItemTargetGeoOneLatMax),
+  "lng": zod.number().min(davaqSearchMatchesResponseItemsItemTargetGeoOneLngMin).max(davaqSearchMatchesResponseItemsItemTargetGeoOneLngMax),
+  "label": zod.string().min(davaqSearchMatchesResponseItemsItemTargetGeoOneLabelMin).max(davaqSearchMatchesResponseItemsItemTargetGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -8618,6 +9001,15 @@ export const UpdateAdminCharacterProfileStatusResponse = zod.object({
 /**
  * @summary davaqRelayCandidates
  */
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLatMin = -85;
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLatMax = 85;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLngMin = -180;
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLngMax = 180;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLabelMin = 2;
+export const davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLabelMax = 80;
+
 export const davaqRelayCandidatesResponseItemsItemListingsItemTitleMin = 2;
 export const davaqRelayCandidatesResponseItemsItemListingsItemTitleMax = 80;
 
@@ -8647,6 +9039,12 @@ export const DavaqRelayCandidatesResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),
   "listings": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLatMin).max(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLatMax),
+  "lng": zod.number().min(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLngMin).max(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLngMax),
+  "label": zod.string().min(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLabelMin).max(davaqRelayCandidatesResponseItemsItemListingsItemGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -8691,6 +9089,15 @@ export const DavaqListRelaysQueryParams = zod.object({
 export const davaqListRelaysResponseItemsItemTermsLegsItemLocationMin = 2;
 export const davaqListRelaysResponseItemsItemTermsLegsItemLocationMax = 200;
 
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqListRelaysResponseItemsItemTermsLegsMin = 3;
 export const davaqListRelaysResponseItemsItemTermsLegsMax = 4;
 
@@ -8698,6 +9105,15 @@ export const davaqListRelaysResponseItemsItemTermsNoteMax = 1500;
 
 export const davaqListRelaysResponseItemsItemTermsCancellationMin = 5;
 export const davaqListRelaysResponseItemsItemTermsCancellationMax = 1000;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLatMin = -85;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLatMax = 85;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLngMin = -180;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLngMax = 180;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLabelMin = 2;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLabelMax = 80;
 
 export const davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMin = 2;
 export const davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMax = 80;
@@ -8735,7 +9151,12 @@ export const DavaqListRelaysResponse = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqListRelaysResponseItemsItemTermsLegsItemLocationMin).max(davaqListRelaysResponseItemsItemTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqListRelaysResponseItemsItemTermsLegsItemLocationMin).max(davaqListRelaysResponseItemsItemTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLatMin).max(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLngMin).max(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLabelMin).max(davaqListRelaysResponseItemsItemTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqListRelaysResponseItemsItemTermsLegsMin).max(davaqListRelaysResponseItemsItemTermsLegsMax),
   "note": zod.string().max(davaqListRelaysResponseItemsItemTermsNoteMax),
   "cancellation": zod.string().min(davaqListRelaysResponseItemsItemTermsCancellationMin).max(davaqListRelaysResponseItemsItemTermsCancellationMax)
@@ -8747,6 +9168,12 @@ export const DavaqListRelaysResponse = zod.object({
   "position": zod.number(),
   "listing_id": zod.string().uuid(),
   "snapshot": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLatMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLatMax),
+  "lng": zod.number().min(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLngMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLngMax),
+  "label": zod.string().min(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLabelMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -8798,6 +9225,15 @@ export const davaqCreateRelayBodyListingIdsMax = 4;
 export const davaqCreateRelayBodyTermsLegsItemLocationMin = 2;
 export const davaqCreateRelayBodyTermsLegsItemLocationMax = 200;
 
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqCreateRelayBodyTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqCreateRelayBodyTermsLegsMin = 3;
 export const davaqCreateRelayBodyTermsLegsMax = 4;
 
@@ -8817,7 +9253,12 @@ export const DavaqCreateRelayBody = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqCreateRelayBodyTermsLegsItemLocationMin).max(davaqCreateRelayBodyTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqCreateRelayBodyTermsLegsItemLocationMin).max(davaqCreateRelayBodyTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLatMin).max(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLngMin).max(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLabelMin).max(davaqCreateRelayBodyTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqCreateRelayBodyTermsLegsMin).max(davaqCreateRelayBodyTermsLegsMax),
   "note": zod.string().max(davaqCreateRelayBodyTermsNoteMax),
   "cancellation": zod.string().min(davaqCreateRelayBodyTermsCancellationMin).max(davaqCreateRelayBodyTermsCancellationMax)
@@ -8836,6 +9277,15 @@ export const DavaqGetRelayParams = zod.object({
 export const davaqGetRelayResponseTermsLegsItemLocationMin = 2;
 export const davaqGetRelayResponseTermsLegsItemLocationMax = 200;
 
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqGetRelayResponseTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqGetRelayResponseTermsLegsMin = 3;
 export const davaqGetRelayResponseTermsLegsMax = 4;
 
@@ -8843,6 +9293,15 @@ export const davaqGetRelayResponseTermsNoteMax = 1500;
 
 export const davaqGetRelayResponseTermsCancellationMin = 5;
 export const davaqGetRelayResponseTermsCancellationMax = 1000;
+
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLatMin = -85;
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLatMax = 85;
+
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLngMin = -180;
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLngMax = 180;
+
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLabelMin = 2;
+export const davaqGetRelayResponseMembersItemSnapshotGeoOneLabelMax = 80;
 
 export const davaqGetRelayResponseMembersItemSnapshotTitleMin = 2;
 export const davaqGetRelayResponseMembersItemSnapshotTitleMax = 80;
@@ -8879,7 +9338,12 @@ export const DavaqGetRelayResponse = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqGetRelayResponseTermsLegsItemLocationMin).max(davaqGetRelayResponseTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqGetRelayResponseTermsLegsItemLocationMin).max(davaqGetRelayResponseTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetRelayResponseTermsLegsItemMeetingPointOneLatMin).max(davaqGetRelayResponseTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqGetRelayResponseTermsLegsItemMeetingPointOneLngMin).max(davaqGetRelayResponseTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqGetRelayResponseTermsLegsItemMeetingPointOneLabelMin).max(davaqGetRelayResponseTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqGetRelayResponseTermsLegsMin).max(davaqGetRelayResponseTermsLegsMax),
   "note": zod.string().max(davaqGetRelayResponseTermsNoteMax),
   "cancellation": zod.string().min(davaqGetRelayResponseTermsCancellationMin).max(davaqGetRelayResponseTermsCancellationMax)
@@ -8891,6 +9355,12 @@ export const DavaqGetRelayResponse = zod.object({
   "position": zod.number(),
   "listing_id": zod.string().uuid(),
   "snapshot": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqGetRelayResponseMembersItemSnapshotGeoOneLatMin).max(davaqGetRelayResponseMembersItemSnapshotGeoOneLatMax),
+  "lng": zod.number().min(davaqGetRelayResponseMembersItemSnapshotGeoOneLngMin).max(davaqGetRelayResponseMembersItemSnapshotGeoOneLngMax),
+  "label": zod.string().min(davaqGetRelayResponseMembersItemSnapshotGeoOneLabelMin).max(davaqGetRelayResponseMembersItemSnapshotGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -8946,6 +9416,15 @@ export const davaqActOnRelayBodyRequestKeyMax = 100;
 export const davaqActOnRelayBodyTermsLegsItemLocationMin = 2;
 export const davaqActOnRelayBodyTermsLegsItemLocationMax = 200;
 
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqActOnRelayBodyTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqActOnRelayBodyTermsLegsMin = 3;
 export const davaqActOnRelayBodyTermsLegsMax = 4;
 
@@ -8966,7 +9445,12 @@ export const DavaqActOnRelayBody = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqActOnRelayBodyTermsLegsItemLocationMin).max(davaqActOnRelayBodyTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqActOnRelayBodyTermsLegsItemLocationMin).max(davaqActOnRelayBodyTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLatMin).max(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLngMin).max(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLabelMin).max(davaqActOnRelayBodyTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqActOnRelayBodyTermsLegsMin).max(davaqActOnRelayBodyTermsLegsMax),
   "note": zod.string().max(davaqActOnRelayBodyTermsNoteMax),
   "cancellation": zod.string().min(davaqActOnRelayBodyTermsCancellationMin).max(davaqActOnRelayBodyTermsCancellationMax)
@@ -8977,6 +9461,15 @@ export const DavaqActOnRelayBody = zod.object({
 export const davaqActOnRelayResponseTermsLegsItemLocationMin = 2;
 export const davaqActOnRelayResponseTermsLegsItemLocationMax = 200;
 
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLatMin = -85;
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLatMax = 85;
+
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLngMin = -180;
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLngMax = 180;
+
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLabelMin = 2;
+export const davaqActOnRelayResponseTermsLegsItemMeetingPointOneLabelMax = 80;
+
 export const davaqActOnRelayResponseTermsLegsMin = 3;
 export const davaqActOnRelayResponseTermsLegsMax = 4;
 
@@ -8984,6 +9477,15 @@ export const davaqActOnRelayResponseTermsNoteMax = 1500;
 
 export const davaqActOnRelayResponseTermsCancellationMin = 5;
 export const davaqActOnRelayResponseTermsCancellationMax = 1000;
+
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLatMin = -85;
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLatMax = 85;
+
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLngMin = -180;
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLngMax = 180;
+
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLabelMin = 2;
+export const davaqActOnRelayResponseMembersItemSnapshotGeoOneLabelMax = 80;
 
 export const davaqActOnRelayResponseMembersItemSnapshotTitleMin = 2;
 export const davaqActOnRelayResponseMembersItemSnapshotTitleMax = 80;
@@ -9020,7 +9522,12 @@ export const DavaqActOnRelayResponse = zod.object({
   "legs": zod.array(zod.object({
   "listingId": zod.string().uuid(),
   "startsAt": zod.coerce.date(),
-  "location": zod.string().min(davaqActOnRelayResponseTermsLegsItemLocationMin).max(davaqActOnRelayResponseTermsLegsItemLocationMax)
+  "location": zod.string().min(davaqActOnRelayResponseTermsLegsItemLocationMin).max(davaqActOnRelayResponseTermsLegsItemLocationMax),
+  "meetingPoint": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLatMin).max(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLatMax),
+  "lng": zod.number().min(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLngMin).max(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLngMax),
+  "label": zod.string().min(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLabelMin).max(davaqActOnRelayResponseTermsLegsItemMeetingPointOneLabelMax)
+}),zod.null()]).optional()
 })).min(davaqActOnRelayResponseTermsLegsMin).max(davaqActOnRelayResponseTermsLegsMax),
   "note": zod.string().max(davaqActOnRelayResponseTermsNoteMax),
   "cancellation": zod.string().min(davaqActOnRelayResponseTermsCancellationMin).max(davaqActOnRelayResponseTermsCancellationMax)
@@ -9032,6 +9539,12 @@ export const DavaqActOnRelayResponse = zod.object({
   "position": zod.number(),
   "listing_id": zod.string().uuid(),
   "snapshot": zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqActOnRelayResponseMembersItemSnapshotGeoOneLatMin).max(davaqActOnRelayResponseMembersItemSnapshotGeoOneLatMax),
+  "lng": zod.number().min(davaqActOnRelayResponseMembersItemSnapshotGeoOneLngMin).max(davaqActOnRelayResponseMembersItemSnapshotGeoOneLngMax),
+  "label": zod.string().min(davaqActOnRelayResponseMembersItemSnapshotGeoOneLabelMin).max(davaqActOnRelayResponseMembersItemSnapshotGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
   "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
@@ -9070,4 +9583,110 @@ export const DavaqActOnRelayResponse = zod.object({
   "data": zod.record(zod.string(), zod.unknown()),
   "created_at": zod.coerce.date()
 }))
+})
+
+
+export const DavaqMapConfigResponse = zod.object({
+  "tileUrl": zod.string(),
+  "attribution": zod.string()
+})
+
+
+export const davaqMapSearchBodyLatMin = -85;
+export const davaqMapSearchBodyLatMax = 85;
+
+export const davaqMapSearchBodyLngMin = -180;
+export const davaqMapSearchBodyLngMax = 180;
+
+export const davaqMapSearchBodyRadiusKmMax = 50;
+
+export const davaqMapSearchBodyQMax = 80;
+
+
+
+export const DavaqMapSearchBody = zod.object({
+  "lat": zod.number().min(davaqMapSearchBodyLatMin).max(davaqMapSearchBodyLatMax),
+  "lng": zod.number().min(davaqMapSearchBodyLngMin).max(davaqMapSearchBodyLngMax),
+  "radiusKm": zod.number().min(1).max(davaqMapSearchBodyRadiusKmMax).optional(),
+  "q": zod.string().max(davaqMapSearchBodyQMax).optional(),
+  "kind": zod.enum(['goods', 'service', 'experience']).optional(),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']).optional(),
+  "mode": zod.enum(['offer', 'want']).optional()
+})
+
+export const davaqMapSearchResponseItemsItemOneGeoOneLatMin = -85;
+export const davaqMapSearchResponseItemsItemOneGeoOneLatMax = 85;
+
+export const davaqMapSearchResponseItemsItemOneGeoOneLngMin = -180;
+export const davaqMapSearchResponseItemsItemOneGeoOneLngMax = 180;
+
+export const davaqMapSearchResponseItemsItemOneGeoOneLabelMin = 2;
+export const davaqMapSearchResponseItemsItemOneGeoOneLabelMax = 80;
+
+export const davaqMapSearchResponseItemsItemOneTitleMin = 2;
+export const davaqMapSearchResponseItemsItemOneTitleMax = 80;
+
+export const davaqMapSearchResponseItemsItemOneDescriptionMax = 3000;
+
+export const davaqMapSearchResponseItemsItemOneWantedTextMax = 500;
+
+export const davaqMapSearchResponseItemsItemOneLocationMax = 80;
+
+export const davaqMapSearchResponseItemsItemOneDurationMinutesMin = 5;
+export const davaqMapSearchResponseItemsItemOneDurationMinutesMax = 1440;
+
+export const davaqMapSearchResponseItemsItemOneAvailableDaysItemMin = 0;
+export const davaqMapSearchResponseItemsItemOneAvailableDaysItemMax = 6;
+
+export const davaqMapSearchResponseItemsItemOneEvMax = 100000;
+
+export const davaqMapSearchResponseItemsItemOneTermsMax = 1500;
+
+
+export const davaqMapSearchResponseItemsItemOneRequestKeyMin = 8;
+export const davaqMapSearchResponseItemsItemOneRequestKeyMax = 100;
+
+
+
+export const DavaqMapSearchResponse = zod.object({
+  "items": zod.array(zod.object({
+  "geo": zod.union([zod.object({
+  "lat": zod.number().min(davaqMapSearchResponseItemsItemOneGeoOneLatMin).max(davaqMapSearchResponseItemsItemOneGeoOneLatMax),
+  "lng": zod.number().min(davaqMapSearchResponseItemsItemOneGeoOneLngMin).max(davaqMapSearchResponseItemsItemOneGeoOneLngMax),
+  "label": zod.string().min(davaqMapSearchResponseItemsItemOneGeoOneLabelMin).max(davaqMapSearchResponseItemsItemOneGeoOneLabelMax),
+  "precision": zod.enum(['area', 'place'])
+}),zod.null()]).optional(),
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqMapSearchResponseItemsItemOneTitleMin).max(davaqMapSearchResponseItemsItemOneTitleMax),
+  "description": zod.string().max(davaqMapSearchResponseItemsItemOneDescriptionMax),
+  "wantedText": zod.string().max(davaqMapSearchResponseItemsItemOneWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqMapSearchResponseItemsItemOneLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqMapSearchResponseItemsItemOneDurationMinutesMin).max(davaqMapSearchResponseItemsItemOneDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqMapSearchResponseItemsItemOneAvailableDaysItemMin).max(davaqMapSearchResponseItemsItemOneAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqMapSearchResponseItemsItemOneEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqMapSearchResponseItemsItemOneTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqMapSearchResponseItemsItemOneRequestKeyMin).max(davaqMapSearchResponseItemsItemOneRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}).and(zod.object({
+  "distanceKm": zod.number()
+}))),
+  "limited": zod.boolean(),
+  "center": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number()
+}),
+  "radiusKm": zod.number()
 })

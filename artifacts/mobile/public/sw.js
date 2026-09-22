@@ -175,6 +175,11 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
   // Authentication/API responses and uploads must never enter the service-worker cache.
   if (url.pathname.includes("/api/") || request.headers.has("authorization")) return;
+  // Map documents must never fall back to the top-level app inside an iframe.
+  if (request.destination === "iframe") {
+    event.respondWith(fetch(request));
+    return;
+  }
   if (request.mode === "navigate") {
     event.respondWith(networkFirstNavigation(request));
   } else if (isCacheableAsset(url)) {

@@ -35,6 +35,7 @@ import {
 
 import { PinnedAgentConversation } from "./AgentConversation";
 import { BrandHomeSection } from "./BrandExchangeScreens";
+import {MapEntry} from "./MapScreens";
 import { RelayEntry } from "./RelayScreens";
 
 export function HomeScreen() {
@@ -121,6 +122,7 @@ export function HomeScreen() {
           onPress={() => router.push("/exchange/new?mode=want")}
         />
       </View>
+      <MapEntry/>
       <RelayEntry />
       <BrandHomeSection />
       <Section
@@ -212,6 +214,7 @@ export function DiscoverScreen() {
         />
       }
     >
+      <MapEntry/>
       <Button
         secondary
         icon="gift"

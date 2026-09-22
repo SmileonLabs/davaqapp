@@ -28,7 +28,10 @@ import {
   Notice,
   ProposalCard,
 } from "./UI";
+import {GeoPicker,PlaceMap} from "./MapScreens";
+import type {MeetingPoint} from "@/lib/maps";
 type TermForm = {
+  meetingPoint?:MeetingPoint|null;
   offerDate: string;
   requestedDate: string;
   location: string;
@@ -56,6 +59,7 @@ function formTerms(t: Terms): TermForm {
     offerDate: localDate(t.offerStartsAt),
     requestedDate: localDate(t.requestedStartsAt),
     location: t.location,
+    meetingPoint:t.meetingPoint,
     note: t.note,
     cancellation: t.cancellation,
   };
@@ -81,6 +85,7 @@ function parsedTerms(f: TermForm): Terms {
     offerStartsAt: parse(f.offerDate),
     requestedStartsAt: parse(f.requestedDate),
     location: f.location.trim(),
+    meetingPoint:f.meetingPoint??null,
     note: f.note.trim(),
     cancellation: f.cancellation.trim(),
   };
@@ -118,6 +123,7 @@ function TermsEditor({
         value={f.location}
         onChangeText={(v) => onChange({ ...f, location: v })}
       />
+      <GeoPicker privatePlace value={f.meetingPoint} onChange={point=>{const meetingPoint=point?{lat:point.lat,lng:point.lng,label:point.label}:null;onChange({...f,meetingPoint,...(meetingPoint?{location:meetingPoint.label}:{})});}}/>
       <Field
         label="서로 확인할 제공 범위"
         multiline
@@ -364,6 +370,7 @@ export function ProposalDetail() {
           <View style={S.card}>
             <Txt bold>장소 · 진행 방식</Txt>
             <Txt>{p.terms.location}</Txt>
+            <PlaceMap point={p.terms.meetingPoint} title="참여자끼리 정한 약속 장소"/>
             <Txt bold>추가 제공 조건</Txt>
             <Txt>{p.terms.note || "추가 조건 없음"}</Txt>
             <Txt bold>일정 변경 · 취소</Txt>

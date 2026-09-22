@@ -1,3 +1,4 @@
+import type {ListingGeo,MeetingPoint} from "./maps";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch, createRequestId } from "@workspace/api-client-react";
 import { useFocusEffect } from "expo-router";
@@ -15,6 +16,7 @@ export type Listing = {
   wantedText: string;
   wantedCategories: string[];
   location: string;
+  geo?:ListingGeo|null;
   delivery: "online" | "offline" | "either";
   durationMinutes: number;
   availableDays: number[];
@@ -27,6 +29,7 @@ export type Listing = {
   favorite: boolean;
 };
 export type Terms = {
+  meetingPoint?:MeetingPoint|null;
   offerStartsAt: string;
   requestedStartsAt: string;
   location: string;
@@ -209,6 +212,7 @@ export function listingBody(l: Listing, status = l.status) {
     wantedText: l.wantedText,
     wantedCategories: l.wantedCategories,
     location: l.location,
+    geo:l.delivery==='online'?null:l.geo??null,
     delivery: l.delivery,
     durationMinutes: l.durationMinutes,
     availableDays: l.availableDays,

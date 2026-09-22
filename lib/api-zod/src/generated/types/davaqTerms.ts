@@ -5,8 +5,10 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { DavaqMeetingPoint } from './davaqMeetingPoint';
 
 export interface DavaqTerms {
+  meetingPoint?: DavaqMeetingPoint | null;
   offerStartsAt: Date;
   requestedStartsAt: Date;
   /**

@@ -5,6 +5,7 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { DavaqMeetingPoint } from './davaqMeetingPoint';
 
 export type DavaqRelayTermsLegsItem = {
   listingId: string;
@@ -14,4 +15,5 @@ export type DavaqRelayTermsLegsItem = {
      * @maxLength 200
      */
   location: string;
+  meetingPoint?: DavaqMeetingPoint | null;
 };

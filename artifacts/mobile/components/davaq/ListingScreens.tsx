@@ -35,6 +35,8 @@ import {
   ListingImage,
 } from "./UI";
 
+import {GeoPicker,PlaceMap} from "./MapScreens";
+
 const emptyListing: Listing = {
   id: "",
   ownerId: "",
@@ -93,6 +95,7 @@ export function ListingEditor() {
       id?: string;
       mode?: string;
       template?: string;
+    delivery?: string;
       text?: string;
     }>(),
     existing = useDavaq<Listing>(
@@ -103,6 +106,7 @@ export function ListingEditor() {
     [form, setForm] = useState<Listing>(() => ({
       ...emptyListing,
       mode: params.mode === "want" ? "want" : "offer",
+      delivery:params.delivery==='offline'?'offline':'online',
       ...(templates[params.template ?? ""] ?? {}),
     })),
     [speech, setSpeech] = useState(params.text ?? ""),
@@ -386,6 +390,7 @@ export function ListingEditor() {
           onChangeText={(v) => set("location", v)}
         />
       )}
+      {form.delivery!=='online'&&<GeoPicker value={form.geo} onChange={geo=>setForm(f=>({...f,geo,...(geo&&!f.location?{location:geo.label}:{})}))}/> }
       <View style={S.row}>
         <View style={{ flex: 1 }}>
           <Field
@@ -522,6 +527,7 @@ export function ListingDetail() {
             </Txt>
           )}
           <Txt>{l.description || "제공 범위는 대화로 확인해 주세요."}</Txt>
+          <PlaceMap point={l.geo} approximateArea={l.geo?.precision==='area'} title="지도 위치"/>
           <View style={S.card}>
             <Txt bold>
               {l.mode === "offer"

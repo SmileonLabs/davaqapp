@@ -7,11 +7,13 @@
  */
 import type { DavaqListingCategory } from './davaqListingCategory';
 import type { DavaqListingDelivery } from './davaqListingDelivery';
+import type { DavaqListingGeo } from './davaqListingGeo';
 import type { DavaqListingKind } from './davaqListingKind';
 import type { DavaqListingMode } from './davaqListingMode';
 import type { DavaqListingWantedCategoriesItem } from './davaqListingWantedCategoriesItem';
 
 export interface DavaqListing {
+  geo?: DavaqListingGeo | null;
   mode: DavaqListingMode;
   kind: DavaqListingKind;
   category: DavaqListingCategory;

@@ -33,6 +33,8 @@ import {
   Cue,
 } from "./UI";
 
+import {GeoPicker,PlaceMap} from "./MapScreens";
+
 export function RelayEntry({ compact = false }: { compact?: boolean }) {
   const narrow = useWindowDimensions().width < 360;
   const router = useRouter();
@@ -546,6 +548,7 @@ function TermsEditor({
             }
             maxLength={200}
           />
+          <GeoPicker privatePlace value={leg.meetingPoint} onChange={point=>{const meetingPoint=point?{lat:point.lat,lng:point.lng,label:point.label}:null;setTerms(t=>({...t,legs:t.legs.map((l,j)=>i===j?{...l,meetingPoint,...(meetingPoint?{location:meetingPoint.label}:{})}:l)}));}}/>
         </View>
       ))}
       <Field
@@ -900,6 +903,7 @@ export function RelayDetailScreen() {
                     {"\n"}
                     {leg?.location}
                   </Txt>
+                  <PlaceMap point={leg?.meetingPoint} title="이 제공의 약속 장소"/>
                 </View>
               );
             })}

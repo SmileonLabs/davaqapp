@@ -387,6 +387,11 @@ async function main() {
   //     screen (there's no browser chrome to snap it back). Clamping the root
   //     elements pins the layout to the viewport.
   copyPwaShellAssets(outPath);
+  const mapAssets=path.join(outPath,'maps','leaflet');
+  fs.mkdirSync(mapAssets,{recursive:true});
+  const leafletRoot=path.dirname(require.resolve('leaflet/package.json'));
+  for(const name of ['leaflet.js','leaflet.css'])fs.copyFileSync(path.join(leafletRoot,'dist',name),path.join(mapAssets,name));
+  fs.copyFileSync(path.join(leafletRoot,'LICENSE'),path.join(mapAssets,'LICENSE'));
   patchExportedHtml(indexHtml, basePath);
   patchExportedFontUrls(outPath, basePath, assetVersion);
   patchServiceWorker(outPath, basePath, assetVersion);

@@ -117,6 +117,9 @@ import type {
   DavaqListing,
   DavaqListingInput,
   DavaqListings,
+  DavaqMapConfig,
+  DavaqMapResults,
+  DavaqMapSearch,
   DavaqMatchFeedbackBody,
   DavaqMatches,
   DavaqMessageResult,
@@ -19324,4 +19327,140 @@ export const useDavaqActOnRelay = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDavaqActOnRelayMutationOptions(options));
+    }
+
+export const getDavaqMapConfigUrl = () => {
+
+
+
+
+  return `/api/exchange/map/config`
+}
+
+export const davaqMapConfig = async ( options?: RequestInit): Promise<DavaqMapConfig> => {
+
+  return customFetch<DavaqMapConfig>(getDavaqMapConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqMapConfigQueryKey = () => {
+    return [
+    `/api/exchange/map/config`
+    ] as const;
+    }
+
+
+export const getDavaqMapConfigQueryOptions = <TData = Awaited<ReturnType<typeof davaqMapConfig>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqMapConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqMapConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqMapConfig>>> = ({ signal }) => davaqMapConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqMapConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqMapConfigQueryResult = NonNullable<Awaited<ReturnType<typeof davaqMapConfig>>>
+export type DavaqMapConfigQueryError = ErrorType<void>
+
+
+
+export function useDavaqMapConfig<TData = Awaited<ReturnType<typeof davaqMapConfig>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqMapConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqMapConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqMapSearchUrl = () => {
+
+
+
+
+  return `/api/exchange/map/search`
+}
+
+export const davaqMapSearch = async (davaqMapSearch: DavaqMapSearch, options?: RequestInit): Promise<DavaqMapResults> => {
+
+  return customFetch<DavaqMapResults>(getDavaqMapSearchUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqMapSearch,)
+  }
+);}
+
+
+
+
+export const getDavaqMapSearchMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqMapSearch>>, TError,{data: BodyType<DavaqMapSearch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqMapSearch>>, TError,{data: BodyType<DavaqMapSearch>}, TContext> => {
+
+const mutationKey = ['davaqMapSearch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqMapSearch>>, {data: BodyType<DavaqMapSearch>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  davaqMapSearch(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqMapSearchMutationResult = NonNullable<Awaited<ReturnType<typeof davaqMapSearch>>>
+    export type DavaqMapSearchMutationBody = BodyType<DavaqMapSearch>
+    export type DavaqMapSearchMutationError = ErrorType<void>
+
+    export const useDavaqMapSearch = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqMapSearch>>, TError,{data: BodyType<DavaqMapSearch>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqMapSearch>>,
+        TError,
+        {data: BodyType<DavaqMapSearch>},
+        TContext
+      > => {
+      return useMutation(getDavaqMapSearchMutationOptions(options));
     }

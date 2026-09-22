@@ -5,6 +5,24 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+export interface DavaqMeetingPoint {
+  /**
+     * @minimum -85
+     * @maximum 85
+     */
+  lat: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  lng: number;
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  label: string;
+}
+
 export type DavaqRelayTermsLegsItem = {
   listingId: string;
   startsAt: string;
@@ -13,6 +31,7 @@ export type DavaqRelayTermsLegsItem = {
      * @maxLength 200
      */
   location: string;
+  meetingPoint?: DavaqMeetingPoint | null;
 };
 
 export interface DavaqRelayTerms {
@@ -28,6 +47,33 @@ export interface DavaqRelayTerms {
      * @maxLength 1000
      */
   cancellation: string;
+}
+
+export type DavaqListingGeoPrecision = typeof DavaqListingGeoPrecision[keyof typeof DavaqListingGeoPrecision];
+
+
+export const DavaqListingGeoPrecision = {
+  area: 'area',
+  place: 'place',
+} as const;
+
+export interface DavaqListingGeo {
+  /**
+     * @minimum -85
+     * @maximum 85
+     */
+  lat: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  lng: number;
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  label: string;
+  precision: DavaqListingGeoPrecision;
 }
 
 export type DavaqListingMode = typeof DavaqListingMode[keyof typeof DavaqListingMode];
@@ -87,6 +133,7 @@ export const DavaqListingDelivery = {
 } as const;
 
 export interface DavaqListing {
+  geo?: DavaqListingGeo | null;
   mode: DavaqListingMode;
   kind: DavaqListingKind;
   category: DavaqListingCategory;
@@ -249,6 +296,82 @@ export interface DavaqRelayAction {
   note?: string;
 }
 
+export type DavaqMapSearchKind = typeof DavaqMapSearchKind[keyof typeof DavaqMapSearchKind];
+
+
+export const DavaqMapSearchKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqMapSearchCategory = typeof DavaqMapSearchCategory[keyof typeof DavaqMapSearchCategory];
+
+
+export const DavaqMapSearchCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export type DavaqMapSearchMode = typeof DavaqMapSearchMode[keyof typeof DavaqMapSearchMode];
+
+
+export const DavaqMapSearchMode = {
+  offer: 'offer',
+  want: 'want',
+} as const;
+
+export interface DavaqMapSearch {
+  /**
+     * @minimum -85
+     * @maximum 85
+     */
+  lat: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  lng: number;
+  /**
+     * @minimum 1
+     * @maximum 50
+     */
+  radiusKm?: number;
+  /** @maxLength 80 */
+  q?: string;
+  kind?: DavaqMapSearchKind;
+  category?: DavaqMapSearchCategory;
+  mode?: DavaqMapSearchMode;
+}
+
+export interface DavaqMapConfig {
+  tileUrl: string;
+  attribution: string;
+}
+
+export type DavaqMapResultsItemsItem = DavaqListing & {
+  distanceKm: number;
+};
+
+export type DavaqMapResultsCenter = {
+  lat: number;
+  lng: number;
+};
+
+export interface DavaqMapResults {
+  items: DavaqMapResultsItemsItem[];
+  limited: boolean;
+  center: DavaqMapResultsCenter;
+  radiusKm: number;
+}
+
 export type DavaqErrorFieldsItem = {
   path?: string;
   message?: string;
@@ -331,6 +454,7 @@ export const DavaqListingInputStatus = {
 } as const;
 
 export interface DavaqListingInput {
+  geo?: DavaqListingGeo | null;
   mode: DavaqListingInputMode;
   kind: DavaqListingInputKind;
   category: DavaqListingInputCategory;
@@ -383,6 +507,7 @@ export interface DavaqListings {
 }
 
 export interface DavaqTerms {
+  meetingPoint?: DavaqMeetingPoint | null;
   offerStartsAt: string;
   requestedStartsAt: string;
   /**

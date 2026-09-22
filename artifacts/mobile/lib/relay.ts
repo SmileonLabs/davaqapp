@@ -11,8 +11,14 @@ export type RelaySearch = {
   scannedCount: number;
   limited: boolean;
 };
+import type { MeetingPoint } from "./maps";
 export type RelayTerms = {
-  legs: { listingId: string; startsAt: string; location: string }[];
+  legs: {
+    listingId: string;
+    startsAt: string;
+    location: string;
+    meetingPoint?: MeetingPoint | null;
+  }[];
   note: string;
   cancellation: string;
 };

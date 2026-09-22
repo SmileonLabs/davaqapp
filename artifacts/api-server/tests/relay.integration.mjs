@@ -31,7 +31,12 @@ export async function testRelays({ request, pool, ok, listing, analyst }) {
         startsAt: new Date(
           Date.now() + days * 86400000 + i * 3600000,
         ).toISOString(),
-        location: "온라인 합의 장소",
+        location: "서로 합의한 장소",
+        meetingPoint: {
+          lat: 37.5712345,
+          lng: 126.9812345,
+          label: "릴레이 약속 장소 " + i,
+        },
       })),
       note: "모두 확인할 제공 범위",
       cancellation: "시작 전 모두 동의하면 취소합니다.",
@@ -98,6 +103,10 @@ export async function testRelays({ request, pool, ok, listing, analyst }) {
   assert.equal(made.status, 201, JSON.stringify(made));
   let p = made.data;
   ok(
+    p.terms.legs.every((l) => l.meetingPoint.lat === 37.57123),
+    "relay legs preserve participant-only meeting points",
+  );
+  ok(
     p.members.length === 3 &&
       p.members.every((m) => m.accepted_version === null),
     "creating a relay does not imply any participant consent",
@@ -146,11 +155,14 @@ export async function testRelays({ request, pool, ok, listing, analyst }) {
     (await action(c, p.id, "accept")).status === 409,
     "listing edits invalidate previously captured relay terms",
   );
+  terms.legs[0].meetingPoint.label = "변경한 릴레이 약속 장소";
   let revised = await action(a, p.id, "revise", 1, { terms });
   assert.equal(revised.status, 200, JSON.stringify(revised));
   p = revised.data;
   ok(
-    p.version === 2 && p.members.every((m) => !m.accepted_version),
+    p.version === 2 &&
+      p.members.every((m) => !m.accepted_version) &&
+      p.terms.legs[0].meetingPoint.label === "변경한 릴레이 약속 장소",
     "revising refreshes snapshots and resets every approval",
   );
   const accepted = await Promise.all(

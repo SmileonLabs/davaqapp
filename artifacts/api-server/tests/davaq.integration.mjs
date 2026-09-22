@@ -25,16 +25,17 @@ try{
  process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_POOL_MAX="5";process.env.KNOWLEDGE_ADMIN_USER_IDS="";
  // The build aliases the stable workspace package, preserving the real pool and schema.
  const workspace=await import("@workspace/db");pool=workspace.pool;
- for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql","0035_davaq_messenger_actions.sql","0036_davaq_relay_exchange.sql"]){
+ for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql","0035_davaq_messenger_actions.sql","0036_davaq_relay_exchange.sql","0037_davaq_location_map.sql"]){
   await pool.query(await readFile(new URL("./"+file,import.meta.url),"utf8"));
  }
  const exchange=(await import("../src/routes/exchange.ts")).default;
  const relay=(await import("../src/routes/relay.ts")).default;
+ const locationMap=(await import("../src/routes/locationMap.ts")).default;
  const agents=(await import("../src/routes/agents.ts")).default;
  const brand=(await import("../src/routes/brandExchange.ts")).default;
  const conversation=(await import("../src/routes/agentConversation.ts")).default;
  const friends=(await import('../src/routes/friends.ts')).default,invites=(await import('../src/routes/invites.ts')).default,rooms=(await import('../src/routes/rooms.ts')).default,messages=(await import('../src/routes/messages.ts')).default,summon=(await import('../src/routes/anotherMe.ts')).default;
- const app=express();app.use(express.json());app.use((req,res,next)=>{req.log={info(){},warn(){},error(){},debug(){}};next();});app.use("/api",exchange,relay,agents,brand,conversation,friends,invites,rooms,messages,summon);
+ const app=express();app.use(express.json());app.use((req,res,next)=>{req.log={info(){},warn(){},error(){},debug(){}};next();});app.use("/api",exchange,relay,locationMap,agents,brand,conversation,friends,invites,rooms,messages,summon);
  server=await new Promise(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
  const origin="http://127.0.0.1:"+server.address().port;
  const users=[];
@@ -251,6 +252,7 @@ try{
 
  await (await import('./messenger.integration.mjs')).testMessenger({pool,request,ok});
  await (await import("./relay.integration.mjs")).testRelays({pool,request,ok,listing,analyst});
+ await (await import("./map.integration.mjs")).testMap({pool,request,ok,listing});
  if(process.env.DAVAQ_INTEGRATION_AI==="1"){
   const ai=await import("../src/lib/davaqAgent.ts");
   const draftResult=await ai.registerDraft("영어 회화를 온라인으로 30분 도와줄 수 있어요. 대신 프로필 사진 촬영을 받고 싶어요.");

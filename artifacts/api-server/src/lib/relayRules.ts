@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import {meetingPointInput} from "./geoRules";
 import { categoryEligible, type MatchListing } from "./exchangeRules";
 
 export const relayTermsInput = z
@@ -10,6 +11,7 @@ export const relayTermsInput = z
             listingId: z.uuid(),
             startsAt: z.iso.datetime({ offset: true }),
             location: z.string().trim().min(2).max(200),
+            meetingPoint:meetingPointInput.nullable().optional(),
           })
           .strict(),
       )

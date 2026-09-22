@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>DavaQ 교환 지도</title>
+    <link rel="stylesheet" href="leaflet/leaflet.css" />
+    <style>
+      html,
+      body,
+      #map {
+        height: 100%;
+        margin: 0;
+        font: 14px system-ui;
+        background: #eeedf4;
+      }
+      #notice {
+        display: none;
+        position: absolute;
+        bottom: 30px;
+        left: 12px;
+        right: 12px;
+        background: white;
+        color: #584967;
+        padding: 10px;
+        border-radius: 12px;
+        z-index: 1200;
+        font-size: 12px;
+      }
+      .pin {
+        background: #6d4aff;
+        color: #fff;
+        border: 3px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        box-shadow: 0 3px 12px #4a367640;
+      }
+      .pin.selected {
+        background: #198a63;
+        transform: scale(1.15);
+      }
+      .leaflet-container {
+        font: 13px system-ui;
+      }
+      .leaflet-popup-content button {
+        display: block;
+        text-align: left;
+        background: #f2edff;
+        color: #493797;
+        padding: 10px;
+        margin: 5px 0;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 100%;
+      }
+      .leaflet-control-attribution {
+        font-size: 10px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" role="application" aria-label="교환 위치 지도"></div>
+    <div id="notice" role="status">
+      배경 지도를 불러오지 못했어요. 위치 목록은 계속 이용할 수 있어요.
+    </div>
+    <script src="leaflet/leaflet.js"></script>
+    <script src="map.js"></script>
+  </body>
+</html>

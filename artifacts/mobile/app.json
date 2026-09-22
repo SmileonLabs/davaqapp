@@ -85,6 +85,12 @@
             }
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "내 주변의 교환을 찾기 위해 현재 위치를 한 번 사용합니다."
+        }
       ]
     ],
     "experiments": {

@@ -7341,6 +7341,20 @@ paths:
       requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelayAction"}}}}
       responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelay"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}
 
+  /exchange/map/config:
+    get:
+      operationId: "davaqMapConfig"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqMapConfig"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"429":{"description":"Rate limited"}}
+
+  /exchange/map/search:
+    post:
+      operationId: "davaqMapSearch"
+      tags: ["davaq-exchange"]
+      security: [{"bearerAuth":[]}]
+      requestBody: {"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqMapSearch"}}}}
+      responses: {"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqMapResults"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"429":{"description":"Rate limited"}}
 components:
   securitySchemes:
     bearerAuth:
@@ -7363,7 +7377,7 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
-    DavaqRelayTerms: {"type":"object","properties":{"legs":{"type":"array","items":{"type":"object","properties":{"listingId":{"type":"string","format":"uuid"},"startsAt":{"type":"string","format":"date-time"},"location":{"type":"string","minLength":2,"maxLength":200}},"required":["listingId","startsAt","location"]},"minItems":3,"maxItems":4},"note":{"type":"string","maxLength":1500},"cancellation":{"type":"string","minLength":5,"maxLength":1000}},"required":["legs","note","cancellation"]}
+    DavaqRelayTerms: {"type":"object","properties":{"legs":{"type":"array","items":{"type":"object","properties":{"listingId":{"type":"string","format":"uuid"},"startsAt":{"type":"string","format":"date-time"},"location":{"type":"string","minLength":2,"maxLength":200},"meetingPoint":{"anyOf":[{"$ref":"#/components/schemas/DavaqMeetingPoint"},{"type":"null"}]}},"required":["listingId","startsAt","location"]},"minItems":3,"maxItems":4},"note":{"type":"string","maxLength":1500},"cancellation":{"type":"string","minLength":5,"maxLength":1000}},"required":["legs","note","cancellation"]}
     DavaqRelayCandidate: {"type":"object","properties":{"id":{"type":"string"},"listings":{"type":"array","items":{"$ref":"#/components/schemas/DavaqListing"}},"reasons":{"type":"array","items":{"type":"string"}},"pending":{"type":"array","items":{"type":"string"}}},"required":["id","listings","reasons","pending"]}
     DavaqRelaySearch: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayCandidate"}},"offersCount":{"type":"integer"},"scannedCount":{"type":"integer"},"limited":{"type":"boolean"}},"required":["items","offersCount","scannedCount","limited"]}
     DavaqRelayMember: {"type":"object","properties":{"user_id":{"type":"string","format":"uuid"},"position":{"type":"integer"},"listing_id":{"type":"string","format":"uuid"},"snapshot":{"$ref":"#/components/schemas/DavaqListing"},"accepted_version":{"type":["integer","null"]},"cancel_accepted":{"type":"boolean"},"provided_at":{"type":["string","null"],"format":"date-time"},"received_at":{"type":["string","null"],"format":"date-time"},"evidence":{"type":"string"}},"required":["user_id","position","listing_id","snapshot","accepted_version","cancel_accepted","provided_at","received_at","evidence"]}
@@ -7372,6 +7386,11 @@ components:
     DavaqRelays: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelay"}}},"required":["items"]}
     DavaqRelayCreate: {"type":"object","properties":{"listingIds":{"type":"array","items":{"type":"string","format":"uuid"},"minItems":3,"maxItems":4},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"requestKey":{"type":"string","minLength":8,"maxLength":100}},"required":["listingIds","terms","requestKey"]}
     DavaqRelayAction: {"type":"object","properties":{"action":{"type":"string","enum":["accept","revise","decline","cancel","approve_cancel","provided","received","dispute"]},"version":{"type":"integer","minimum":1},"requestKey":{"type":"string","minLength":8,"maxLength":100},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"note":{"type":"string","maxLength":1500}},"required":["action","version","requestKey"]}
+    DavaqMeetingPoint: {"type":"object","properties":{"lat":{"type":"number","minimum":-85,"maximum":85},"lng":{"type":"number","minimum":-180,"maximum":180},"label":{"type":"string","minLength":2,"maxLength":80}},"required":["lat","lng","label"]}
+    DavaqListingGeo: {"type":"object","properties":{"lat":{"type":"number","minimum":-85,"maximum":85},"lng":{"type":"number","minimum":-180,"maximum":180},"label":{"type":"string","minLength":2,"maxLength":80},"precision":{"type":"string","enum":["area","place"]}},"required":["lat","lng","label","precision"]}
+    DavaqMapSearch: {"type":"object","properties":{"lat":{"type":"number","minimum":-85,"maximum":85},"lng":{"type":"number","minimum":-180,"maximum":180},"radiusKm":{"type":"number","minimum":1,"maximum":50},"q":{"type":"string","maxLength":80},"kind":{"type":"string","enum":["goods","service","experience"]},"category":{"type":"string","enum":["voice","photo","design","language","tech","music","goods","business","other"]},"mode":{"type":"string","enum":["offer","want"]}},"required":["lat","lng"]}
+    DavaqMapConfig: {"type":"object","properties":{"tileUrl":{"type":"string"},"attribution":{"type":"string"}},"required":["tileUrl","attribution"]}
+    DavaqMapResults: {"type":"object","properties":{"items":{"type":"array","items":{"allOf":[{"$ref":"#/components/schemas/DavaqListing"},{"type":"object","properties":{"distanceKm":{"type":"number"}},"required":["distanceKm"]}]}},"limited":{"type":"boolean"},"center":{"type":"object","properties":{"lat":{"type":"number"},"lng":{"type":"number"}},"required":["lat","lng"]},"radiusKm":{"type":"number"}},"required":["items","limited","center","radiusKm"]}
     DavaqError:
       type: object
       properties:
@@ -7401,6 +7420,7 @@ components:
     DavaqListingInput:
       type: object
       properties:
+        geo: {"anyOf":[{"$ref":"#/components/schemas/DavaqListingGeo"},{"type":"null"}]}
         mode:
           type: string
           enum:
@@ -7503,6 +7523,7 @@ components:
     DavaqListing:
       type: object
       properties:
+        geo: {"anyOf":[{"$ref":"#/components/schemas/DavaqListingGeo"},{"type":"null"}]}
         mode:
           type: string
           enum:
@@ -7648,6 +7669,7 @@ components:
     DavaqTerms:
       type: object
       properties:
+        meetingPoint: {"anyOf":[{"$ref":"#/components/schemas/DavaqMeetingPoint"},{"type":"null"}]}
         offerStartsAt:
           type: string
           format: date-time

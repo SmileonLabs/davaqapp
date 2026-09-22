@@ -1,4 +1,5 @@
 import { pool } from "@workspace/db";
+import {listingGeoDto} from "./geoRules";
 import { randomUUID } from "node:crypto";
 import { publishRealtimeEvent } from "./realtime";
 import {
@@ -65,6 +66,7 @@ export function listingDto(row: any) {
     wantedText: row.wanted_text,
     wantedCategories: row.wanted_categories ?? [],
     location: row.location,
+    geo:listingGeoDto(row),
     delivery: row.delivery,
     durationMinutes: row.duration_minutes,
     availableDays: row.available_days ?? [],

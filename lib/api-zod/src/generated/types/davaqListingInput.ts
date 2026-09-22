@@ -5,6 +5,7 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { DavaqListingGeo } from './davaqListingGeo';
 import type { DavaqListingInputCategory } from './davaqListingInputCategory';
 import type { DavaqListingInputDelivery } from './davaqListingInputDelivery';
 import type { DavaqListingInputKind } from './davaqListingInputKind';
@@ -13,6 +14,7 @@ import type { DavaqListingInputStatus } from './davaqListingInputStatus';
 import type { DavaqListingInputWantedCategoriesItem } from './davaqListingInputWantedCategoriesItem';
 
 export interface DavaqListingInput {
+  geo?: DavaqListingGeo | null;
   mode: DavaqListingInputMode;
   kind: DavaqListingInputKind;
   category: DavaqListingInputCategory;

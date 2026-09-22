@@ -1,5 +1,6 @@
 import {
   boolean,
+  doublePrecision,
   bigserial,
   integer,
   jsonb,
@@ -52,6 +53,7 @@ export const exchangeListingsTable = pgTable("exchange_listings", {
     .notNull()
     .default([]),
   location: text("location").notNull().default(""),
+  mapLat:doublePrecision("map_lat"),mapLng:doublePrecision("map_lng"),mapPrecision:text("map_precision"),mapLabel:text("map_label"),
   delivery: text("delivery").notNull().default("online"),
   durationMinutes: integer("duration_minutes").notNull().default(30),
   availableDays: jsonb("available_days")

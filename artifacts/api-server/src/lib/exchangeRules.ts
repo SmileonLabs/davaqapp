@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import {listingGeoInput,meetingPointInput} from "./geoRules";
 export const categories = [
   "voice",
   "photo",
@@ -20,6 +21,7 @@ export const listingInput = z
     wantedText: z.string().trim().max(500).default(""),
     wantedCategories: z.array(z.enum(categories)).max(9).default([]),
     location: z.string().trim().max(80).default(""),
+    geo:listingGeoInput.nullable().optional(),
     delivery: z.enum(["online", "offline", "either"]).default("online"),
     durationMinutes: z.number().int().min(5).max(1440).default(30),
     availableDays: z.array(z.number().int().min(0).max(6)).max(7).default([]),
@@ -36,6 +38,7 @@ export const termsInput = z
     offerStartsAt: z.iso.datetime({ offset: true }),
     requestedStartsAt: z.iso.datetime({ offset: true }),
     location: z.string().trim().min(2).max(200),
+    meetingPoint:meetingPointInput.nullable().optional(),
     note: z.string().trim().max(1500).default(""),
     cancellation: z.string().trim().min(5).max(1000),
   })

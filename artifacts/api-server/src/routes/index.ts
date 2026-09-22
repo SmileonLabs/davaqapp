@@ -38,6 +38,7 @@ import characterProfilesRouter from "./characterProfiles";
 
 import exchangeRouter from "./exchange";
 import relayRouter from "./relay";
+import locationMapRouter from "./locationMap";
 import agentsRouter from "./agents";
 import agentConversationRouter from "./agentConversation";
 import brandExchangeRouter from "./brandExchange";
@@ -45,6 +46,7 @@ import brandExchangeRouter from "./brandExchange";
 const router: IRouter = Router();
 router.use(exchangeRouter);
 router.use(relayRouter);
+router.use(locationMapRouter);
 router.use(agentsRouter);
 router.use(agentConversationRouter);
 router.use(brandExchangeRouter);

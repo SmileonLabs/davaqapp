@@ -169,6 +169,7 @@ router.post(
         403,
         "내가 올린 사진을 선택해 주세요.",
       );
+    const geo=input.delivery==='online'?null:input.geo;
     const state =
       input.status === "published" && !categoryEligible(input)
         ? "pending"
@@ -189,8 +190,8 @@ router.post(
       }
       const l = (
         await sql.query(
-          `INSERT INTO exchange_listings(owner_id,mode,kind,category,title,description,wanted_text,wanted_categories,location,delivery,duration_minutes,available_days,ev,image_key,status,terms,request_key)
-  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
+          `INSERT INTO exchange_listings(owner_id,mode,kind,category,title,description,wanted_text,wanted_categories,location,delivery,duration_minutes,available_days,ev,image_key,status,terms,request_key,map_lat,map_lng,map_precision,map_label)
+  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING *`,
           [
             user,
             input.mode,
@@ -209,6 +210,7 @@ router.post(
             state,
             input.terms,
             input.requestKey ?? null,
+            geo?.lat??null,geo?.lng??null,geo?.precision??null,geo?.label??null,
           ],
         )
       ).rows[0];
@@ -257,13 +259,14 @@ router.patch(
         409,
         "다른 곳에서 수정했어요. 새로고침해 주세요.",
       );
+      const geo=input.delivery==='online'?null:input.geo===undefined?listingDto(old).geo:input.geo;
       const state =
         input.status === "published" && !categoryEligible(input)
           ? "pending"
           : input.status;
       const l = (
         await sql.query(
-          `UPDATE exchange_listings SET mode=$3,kind=$4,category=$5,title=$6,description=$7,wanted_text=$8,wanted_categories=$9,location=$10,delivery=$11,duration_minutes=$12,available_days=$13,ev=$14,image_key=$15,status=$16,terms=$17,version=version+1,updated_at=now() WHERE id=$1 AND owner_id=$2 RETURNING *`,
+          `UPDATE exchange_listings SET mode=$3,kind=$4,category=$5,title=$6,description=$7,wanted_text=$8,wanted_categories=$9,location=$10,delivery=$11,duration_minutes=$12,available_days=$13,ev=$14,image_key=$15,status=$16,terms=$17,map_lat=$18,map_lng=$19,map_precision=$20,map_label=$21,version=version+1,updated_at=now() WHERE id=$1 AND owner_id=$2 RETURNING *`,
           [
             id,
             user,
@@ -282,6 +285,7 @@ router.patch(
             input.imageKey,
             state,
             input.terms,
+            geo?.lat??null,geo?.lng??null,geo?.precision??null,geo?.label??null,
           ],
         )
       ).rows[0];
