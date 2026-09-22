@@ -593,6 +593,7 @@ function MessageBubbleComponent({
   const Row = longPressHandler ? Pressable : View;
   return (
     <Row
+      testID={"message-"+messageId}
       {...(longPressHandler ? { onLongPress: longPressHandler, delayLongPress: 280 } : {})}
       style={[
         styles.row,

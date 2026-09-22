@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
 import {
   View,
   FlatList,
@@ -6,10 +12,17 @@ import {
   Platform,
   Pressable,
 } from "react-native";
+import { useScreenActive as useIsFocused } from "@/hooks/useScreenActive";
+import { ChatRoomSheets } from "@/components/chat/ChatRoomSheets";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useGetMe,
+  useListRooms,
+  customFetch,
+  sendMessage,
+  createRequestId,
+  getListRoomsQueryKey,
   getFetchRoomMessagesQueryKey,
   type Message,
 } from "@workspace/api-client-react";
@@ -198,15 +211,35 @@ export function AgentConversation() {
     queryClient = useQueryClient(),
     me = useGetMe(),
     { activeProfile } = useCharacterProfiles();
-  const agent = useDavaq<Agent>("/agents/me");
+  const focused = useIsFocused();
+  const agent = useDavaq<Agent>("/agents/me", focused);
+  const [replyTo, setReplyTo] = useState<Message | null>(null),
+    [actionMessage, setActionMessage] = useState<Message | null>(null),
+    [selectedId, setSelectedId] = useState<string | null>(null),
+    [forwardTarget, setForwardTarget] = useState<Message | null>(null),
+    [stickerTarget, setStickerTarget] = useState<Message | null>(null),
+    [actionError, setActionError] = useState("");
+  const busy = useRef(false),
+    forwardIds = useRef(new Map<string, string>());
+  const clearReply = useCallback(() => setReplyTo(null), []);
+  const roomsForForward = useListRooms({
+    query: {
+      queryKey: getListRoomsQueryKey(),
+      enabled: focused && !!forwardTarget,
+    },
+  });
   const roomId = me.data?.id ? agentConversationId(me.data.id) : "";
   const query = useReliableRoomMessages(roomId, {
     userId: me.data?.id,
     profileId: activeProfile?.id,
     pollInterval: 1500,
+    enabled: focused,
   });
-  const messages = query.data ?? [],
-    listMessages = [...messages].reverse();
+  const messages = useMemo(
+    () => (query.data ?? []).filter((m) => !m.metadata?.hidden),
+    [query.data],
+  );
+  const listMessages = useMemo(() => [...messages].reverse(), [messages]);
   const clientKeyRef = useRef(new Map<string, string>());
   const [draft, setDraft] = useState<{ key: number; text: string }>();
   const list = useInvertedChatListController({
@@ -223,8 +256,8 @@ export function AgentConversation() {
     roomId,
     me: me.data,
     senderProfile: activeProfile,
-    replyTo: null,
-    clearReply: noop,
+    replyTo,
+    clearReply,
     clientKeyRef,
     forceStickToBottom: list.forceStickToBottom,
     isDungeon: false,
@@ -241,10 +274,154 @@ export function AgentConversation() {
     for (const id of clientKeyRef.current.keys())
       if (!ids.has(id)) clientKeyRef.current.delete(id);
   }, [messages]);
-  const refreshCards = () =>
+  const refreshCards = useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: getFetchRoomMessagesQueryKey(roomId),
     });
+  }, [queryClient, roomId]);
+  const pin = useQuery({
+    queryKey: ["davaq-agent-pin", me.data?.id],
+    enabled: focused && !!me.data?.id,
+    queryFn: ({ signal }) =>
+      customFetch<Message | null>("/api/agents/me/conversation/pin", {
+        signal,
+      }),
+    refetchInterval: focused ? 30000 : false,
+    refetchIntervalInBackground: false,
+  });
+  const ownerRoom = useRef(roomId);
+  ownerRoom.current = roomId;
+  useEffect(() => {
+    setReplyTo(null);
+    setActionMessage(null);
+    setForwardTarget(null);
+    setStickerTarget(null);
+    setSelectedId(null);
+    setActionError("");
+    forwardIds.current.clear();
+  }, [roomId]);
+  async function action(
+    id: string,
+    kind: "delete" | "pin" | "sticker",
+    body?: unknown,
+  ) {
+    if (busy.current) return;
+    busy.current = true;
+    setActionError("");
+    const captured = roomId;
+    try {
+      const result = await customFetch<Message>(
+        "/api/agents/me/conversation/messages/" + id + "/" + kind,
+        { method: "POST", body: JSON.stringify(body ?? {}) },
+      );
+      if (ownerRoom.current !== captured) return;
+      queryClient.setQueryData<Message[]>(
+        getFetchRoomMessagesQueryKey(captured),
+        (old) =>
+          (old ?? []).map((m) => (m.id === id ? { ...m, ...result } : m)),
+      );
+      if (kind === "delete" && replyTo?.id === id) setReplyTo(null);
+      setActionMessage(null);
+      setStickerTarget(null);
+      await Promise.all([query.refetch(), pin.refetch()]);
+    } catch (e) {
+      if (ownerRoom.current === captured) setActionError(errorText(e));
+    } finally {
+      busy.current = false;
+    }
+  }
+  async function unpin() {
+    try {
+      await customFetch("/api/agents/me/conversation/pin", {
+        method: "DELETE",
+      });
+      await pin.refetch();
+      setActionMessage(null);
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
+  async function copy(message: Message) {
+    try {
+      const Clipboard = await import("expo-clipboard");
+      await Clipboard.setStringAsync(
+        message.type === "text" ? message.content : summarizeMessage(message),
+      );
+      setActionMessage(null);
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
+  async function forward(target: string) {
+    if (!forwardTarget || busy.current) return;
+    busy.current = true;
+    setActionError("");
+    const sourceId = forwardTarget.id,
+      captured = roomId,
+      key = sourceId + ":" + target;
+    try {
+      const source = await customFetch<Message>(
+        "/api/agents/me/conversation/messages/" + sourceId,
+      );
+      if (ownerRoom.current !== captured) return;
+      if (source.deletedAt)
+        throw new Error("삭제된 메시지는 전달할 수 없어요.");
+      let operation = forwardIds.current.get(key);
+      if (!operation) {
+        operation = createRequestId();
+        forwardIds.current.set(key, operation);
+      }
+      await sendMessage(target, {
+        content: source.content,
+        type: source.type as "text" | "image" | "file" | "sticker",
+        clientMessageId: operation,
+        replyToMessageId: null,
+      });
+      if (ownerRoom.current !== captured) return;
+      forwardIds.current.delete(key);
+      setForwardTarget(null);
+      void queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() });
+      void queryClient.invalidateQueries({
+        queryKey: getFetchRoomMessagesQueryKey(target),
+      });
+    } catch (e) {
+      if (ownerRoom.current === captured) setActionError(errorText(e));
+    } finally {
+      busy.current = false;
+    }
+  }
+  async function reveal(id: string) {
+    let rows = messages;
+    try {
+      if (!rows.some((m) => m.id === id)) {
+        const row = await customFetch<Message>(
+          "/api/agents/me/conversation/messages/" + id,
+        );
+        rows = [...rows, row].sort((a, b) => a.roomSeq - b.roomSeq);
+        queryClient.setQueryData(getFetchRoomMessagesQueryKey(roomId), rows);
+      }
+      setSelectedId(id);
+      const index = [...rows].reverse().findIndex((m) => m.id === id);
+      if (index >= 0)
+        requestAnimationFrame(() =>
+          list.listRef.current?.scrollToIndex({ index, animated: true }),
+        );
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
+  const longPress = useCallback(
+    (id: string) => {
+      const m = messages.find((v) => v.id === id);
+      if (
+        m &&
+        !m.clientMessageId?.startsWith("optimistic:") &&
+        !(m as any)._deliveryState
+      )
+        setActionMessage(m);
+    },
+    [messages],
+  );
   const thinking = messages.some(
     (m) =>
       metadata(m).agentRole === "user" &&
@@ -310,6 +487,42 @@ export function AgentConversation() {
           />
         </View>
       </View>
+      {!!actionError && (
+        <View style={{ padding: 10 }}>
+          <Notice error>{actionError}</Notice>
+        </View>
+      )}
+      {pin.data && (
+        <View
+          style={[
+            S.row,
+            {
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              backgroundColor: C.soft,
+            },
+          ]}
+        >
+          <Pressable
+            accessibilityLabel="고정 메시지 보기"
+            style={{ flex: 1 }}
+            onPress={() => void reveal(pin.data!.id)}
+          >
+            <Txt color={C.purple} bold size={12}>
+              고정 메시지
+            </Txt>
+            <Txt lines={1} size={13}>
+              {summarizeMessage(pin.data)}
+            </Txt>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="고정 해제"
+            onPress={() => void unpin()}
+          >
+            <Icon name="x" />
+          </Pressable>
+        </View>
+      )}
       {query.isError && (
         <View style={{ padding: 12 }}>
           <Notice error>
@@ -341,6 +554,12 @@ export function AgentConversation() {
         onLayout={list.onLayout}
         onContentSizeChange={list.onContentSizeChange}
         scrollEventThrottle={32}
+        onScrollToIndexFailed={({ averageItemLength, index }) =>
+          list.listRef.current?.scrollToOffset({
+            offset: averageItemLength * index,
+            animated: true,
+          })
+        }
         ListEmptyComponent={
           <View style={{ alignItems: "center", padding: 28, gap: 16 }}>
             <QueryState query={query} />
@@ -399,7 +618,7 @@ export function AgentConversation() {
                 imageUri={item.type === "image" ? item.content : undefined}
                 isMe={mine}
                 senderName={name}
-              senderAvatarNode={<Cue size={32} />}
+                senderAvatarNode={<Cue size={32} />}
                 senderCharacterType="official_ai"
                 showSender={!mine}
                 time={formatMsgTime(item.createdAt)}
@@ -414,6 +633,12 @@ export function AgentConversation() {
                   delivery === "failed" ? item.clientMessageId : null
                 }
                 onRetryMessage={sender.retryMessage}
+                onLongPress={delivery ? undefined : longPress}
+                selected={selectedId === item.id}
+                deletedAt={item.deletedAt}
+                replyTo={item.replyTo}
+                stickerBadges={item.stickerBadges}
+                onPressReply={(id) => void reveal(id)}
               />
               {!!metadata(item).cards?.length && (
                 <ConversationCards
@@ -454,30 +679,102 @@ export function AgentConversation() {
         onCancelUpload={sender.handleCancelUpload}
         placeholder="큐에게 말해주세요"
         draft={draft}
+        replyPreview={
+          replyTo
+            ? {
+                senderName:
+                  metadata(replyTo).agentRole === "assistant" ? name : "나",
+                content: summarizeMessage(replyTo),
+              }
+            : null
+        }
+        onCancelReply={clearReply}
         onSend={sender.sendText}
         onTyping={noop}
         onPickImage={sender.handlePickImage}
         onPickFile={sender.handlePickFile}
         onSendSticker={sender.handleSendSticker}
       />
+      <ChatRoomSheets
+        roomOptions={{
+          visible: false,
+          title: name,
+          isDirect: false,
+          anotherMeEnabled: false,
+          anotherMeStatusLabel: "",
+          anotherMeUsesOverride: false,
+          anotherMePending: false,
+          onClose: noop,
+          onToggleAnotherMe: noop,
+          onUseGlobalAnotherMe: noop,
+          onLeave: noop,
+        }}
+        messageActions={{
+          message: actionMessage,
+          isDeleted: !!actionMessage?.deletedAt,
+          isMine:
+            !!actionMessage && metadata(actionMessage).agentRole === "user",
+          isPinned: !!actionMessage && pin.data?.id === actionMessage.id,
+          onClose: () => setActionMessage(null),
+          onReply: (m) => {
+            setReplyTo(m);
+            setActionMessage(null);
+          },
+          onCopy: (m) => void copy(m),
+          onSelect: (m) => {
+            setSelectedId(m.id);
+            setActionMessage(null);
+          },
+          onTogglePin: (m) => {
+            if (pin.data?.id === m.id) void unpin();
+            else void action(m.id, "pin");
+          },
+          onForward: (m) => {
+            setForwardTarget(m);
+            setActionMessage(null);
+          },
+          onSticker: (m) => {
+            setStickerTarget(m);
+            setActionMessage(null);
+          },
+          onDelete: (m, scope) => void action(m.id, "delete", { scope }),
+        }}
+        stickerBadge={{
+          target: stickerTarget,
+          onClose: () => setStickerTarget(null),
+          onSelect: (code) => {
+            if (stickerTarget)
+              void action(stickerTarget.id, "sticker", { code });
+          },
+        }}
+        forward={{
+          target: forwardTarget,
+          rooms: roomsForForward.data ?? [],
+          viewerId: me.data?.id,
+          onClose: () => setForwardTarget(null),
+          onForward: (id) => void forward(id),
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
 
 export function PinnedAgentConversation() {
+  const focused = useIsFocused();
   const router = useRouter(),
     me = useGetMe(),
     agent = useDavaq<Agent>("/agents/me");
   const query = useQuery({
     queryKey: ["davaq-agent-preview", me.data?.id],
-    enabled: !!me.data?.id,
+    enabled: focused && !!me.data?.id,
     queryFn: ({ signal }) =>
-      fetchChatMessages(
-        agentConversationId(me.data!.id),
-        { limit: 1 },
+      customFetch<Message[]>(
+        "/api/agents/me/conversation/messages?limit=1&preview=true",
         { signal },
       ),
-    refetchInterval: 15000,
+    staleTime: 15000,
+    refetchInterval: focused ? 30000 : false,
+    refetchIntervalInBackground: false,
   });
   useFocusEffect(
     useCallback(() => {

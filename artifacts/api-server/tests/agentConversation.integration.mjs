@@ -10,6 +10,27 @@ export async function testAgentConversation({ pool, request, ok, users }) {
     (await request(null, endpoint)).status === 401,
     "Q messenger requires authentication",
   );
+  const otherMessage=(await request(b,endpoint,'POST',{type:'sticker',content:'hello',clientMessageId:randomUUID()})).data;
+  ok((await request(a,endpoint+'/'+otherMessage.id)).status===404,'Q source reads enforce owner boundaries');
+  ok((await request(a,endpoint+'/'+otherMessage.id+'/pin','POST',{})).status===404,'Q pin cannot reference another account');
+  ok((await request(a,endpoint,'POST',{type:'text',content:'reply',clientMessageId:randomUUID(),replyToMessageId:otherMessage.id})).status===404,'Q replies cannot reference another account');
+  const mine=(await request(a,endpoint,'POST',{type:'sticker',content:'hello',clientMessageId:randomUUID()})).data;
+  ok((await request(a,endpoint+'/'+mine.id+'/pin','POST',{})).status===200&&(await request(a,'/agents/me/conversation/pin')).data.id===mine.id,'Q pin persists in private settings');
+  ok((await request(b,'/agents/me/conversation/pin')).data===null,'Q pin stays private');
+  const answered=(await request(a,endpoint,'POST',{type:'sticker',content:'thanks',clientMessageId:randomUUID(),replyToMessageId:mine.id})).data;
+  ok((await request(a,endpoint)).data.find(m=>m.id===answered.id).replyTo.id===mine.id,'Q answer previews resolve owned message');
+  ok((await request(a,endpoint+'/'+mine.id+'/sticker','POST',{code:'not-valid-code'})).status===400,'Q reaction validates the sticker catalog');
+  await request(a,endpoint+'/'+mine.id+'/delete','POST',{scope:'everyone'});
+  ok((await request(a,'/agents/me/conversation/pin')).data===null,'deleting a Q message clears its pin');
+  const removed=(await request(a,endpoint)).data.find(m=>m.id===mine.id);
+  ok(removed.deletedAt&&removed.content!=='hello'&&removed.metadata.replyState==='done','deleted queued Q messages are redacted and cancelled');
+  ok((await request(a,endpoint+'/'+mine.id+'/pin','POST',{})).status===404,'deleted Q messages cannot be pinned again');
+  ok((await request(a,endpoint)).data.find(m=>m.id===answered.id).replyTo.deletedAt,'reply preview redacts deleted source');
+  await request(a,endpoint+'/'+answered.id+'/delete','POST',{scope:'me'});
+  ok((await request(a,endpoint)).data.find(m=>m.id===answered.id).metadata.hidden,'private deletion propagates as a tombstone to other devices');
+  ok((await request(a,endpoint+'?limit=1&preview=true')).data.every(m=>!m.metadata.cards),'inbox preview does not resolve recommendation cards');
+  // Remove the completed fixtures from hourly quota accounting for legacy cases.
+  await pool.query("UPDATE agent_messages SET created_at=now()-interval '2 hours',reply_state='done' WHERE id=ANY($1::uuid[])",[[mine.id,answered.id,otherMessage.id]]);
   const operation = randomUUID(),
     input = { type: "sticker", content: "hello", clientMessageId: operation };
   const sends = await Promise.all([

@@ -11,7 +11,7 @@ export const agentSendSchema = z
     content: z.string().trim().min(1).max(3000),
     type: z.enum(["text", "image", "file", "sticker"]).default("text"),
     clientMessageId: z.string().min(8).max(100),
-    replyToMessageId: z.null().optional(),
+    replyToMessageId: z.string().uuid().nullable().optional(),
   })
   .strict();
 const objectPath = z.string().regex(/^\/objects\/[a-zA-Z0-9/_-]+$/);
@@ -53,11 +53,26 @@ export function agentMessageDto(row: any) {
     senderProfile: null,
     authorKind: row.role === "user" ? "user" : "another_me",
     type: row.type,
-    content: row.content,
+    content:
+      row.deleted_at || row.hidden_at ? "삭제된 메시지입니다." : row.content,
+    deletedAt:
+      row.deleted_at || row.hidden_at
+        ? new Date(row.deleted_at || row.hidden_at).toISOString()
+        : null,
+    replyToMessageId: row.reply_to_message_id ?? null,
+    replyTo: row.reply_preview ?? null,
+    stickerBadges:
+      row.deleted_at || row.hidden_at
+        ? []
+        : (row.metadata?.stickerBadges ?? []),
     createdAt: new Date(row.created_at).toISOString(),
     clientMessageId: row.role === "user" ? row.request_key : null,
     readCount: 0,
-    metadata: { agentRole: row.role, replyState: row.reply_state },
+    metadata: {
+      agentRole: row.role,
+      replyState: row.reply_state,
+      hidden: !!row.hidden_at,
+    },
   };
 }
 
@@ -76,7 +91,10 @@ export async function enqueueAgentMessage(
     ).rows[0];
     if (prior) {
       demand(
-        prior.content === input.content && prior.type === input.type,
+        prior.content === input.content &&
+          prior.type === input.type &&
+          (prior.reply_to_message_id ?? null) ===
+            (input.replyToMessageId ?? null),
         409,
         "이미 전송한 메시지와 내용이 달라요.",
       );
@@ -93,6 +111,15 @@ export async function enqueueAgentMessage(
       429,
       "큐와의 대화는 시간당 20회까지 이용할 수 있어요. 잠시 후 다시 보내주세요.",
     );
+    if (input.replyToMessageId) {
+      const target = (
+        await sql.query(
+          "SELECT id FROM agent_messages WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL AND hidden_at IS NULL",
+          [input.replyToMessageId, user],
+        )
+      ).rows[0];
+      demand(target, 404, "답장할 메시지를 찾지 못했어요.");
+    }
     const path = agentAttachmentPath(input.type, input.content);
     if (path) {
       const owned = (
@@ -115,31 +142,128 @@ export async function enqueueAgentMessage(
     }
     const row = (
       await sql.query(
-        "INSERT INTO agent_messages(user_id,role,content,request_key,type,reply_state) VALUES($1,'user',$2,$3,$4,'queued') RETURNING *",
-        [user, input.content, input.clientMessageId, input.type],
+        "INSERT INTO agent_messages(user_id,role,content,request_key,type,reply_state,reply_to_message_id) VALUES($1,'user',$2,$3,$4,'queued',$5) RETURNING *",
+        [
+          user,
+          input.content,
+          input.clientMessageId,
+          input.type,
+          input.replyToMessageId ?? null,
+        ],
       )
     ).rows[0];
     return agentMessageDto(row);
   });
 }
 
+const replyPreviewSql = `CASE WHEN r.id IS NULL THEN NULL ELSE json_build_object('id',r.id,'senderId',r.user_id,'senderName',CASE WHEN r.role='assistant' THEN '큐' ELSE '나' END,'type',r.type,'content',CASE WHEN r.deleted_at IS NOT NULL OR r.hidden_at IS NOT NULL THEN '삭제된 메시지입니다.' ELSE left(r.content,500) END,'deletedAt',COALESCE(r.deleted_at,r.hidden_at)) END AS reply_preview`;
+
+export async function getAgentMessage(user: string, id: string) {
+  const row = (
+    await pool.query(
+      `SELECT m.*, ${replyPreviewSql} FROM agent_messages m LEFT JOIN agent_messages r ON r.id=m.reply_to_message_id AND r.user_id=m.user_id WHERE m.user_id=$1 AND m.id=$2 AND m.hidden_at IS NULL`,
+      [user, id],
+    )
+  ).rows[0];
+  demand(row, 404, "메시지를 찾지 못했어요.");
+  return agentMessageDto(row);
+}
+export async function getAgentPin(user: string) {
+  const row = (
+    await pool.query(
+      "SELECT m.* FROM agent_conversation_settings s JOIN agent_messages m ON m.id=s.pinned_message_id AND m.user_id=s.user_id WHERE s.user_id=$1 AND m.deleted_at IS NULL AND m.hidden_at IS NULL",
+      [user],
+    )
+  ).rows[0];
+  return row ? agentMessageDto(row) : null;
+}
+export async function changeAgentMessage(
+  user: string,
+  id: string,
+  action: "delete" | "pin" | "sticker",
+  value?: string,
+) {
+  return transaction(async (sql) => {
+    await sql.query("SELECT id FROM users WHERE id=$1 FOR UPDATE", [user]);
+    const row = (
+      await sql.query(
+        "SELECT * FROM agent_messages WHERE user_id=$1 AND id=$2 FOR UPDATE",
+        [user, id],
+      )
+    ).rows[0];
+    demand(row, 404, "메시지를 찾지 못했어요.");
+    if (action === "delete") {
+      demand(
+        value === "me" || row.role === "user",
+        403,
+        "큐의 답변은 내 화면에서 삭제할 수 있어요.",
+      );
+      await sql.query(
+        value === "me"
+          ? "UPDATE agent_messages SET hidden_at=COALESCE(hidden_at,now()),reply_state='done',lease_token=NULL WHERE id=$1"
+          : "UPDATE agent_messages SET deleted_at=COALESCE(deleted_at,now()),reply_state='done',lease_token=NULL WHERE id=$1",
+        [id],
+      );
+      await sql.query(
+        "UPDATE agent_conversation_settings SET pinned_message_id=NULL WHERE user_id=$1 AND pinned_message_id=$2",
+        [user, id],
+      );
+    } else {
+      demand(!row.deleted_at && !row.hidden_at, 404, "삭제된 메시지입니다.");
+      if (action === "pin")
+        await sql.query(
+          "INSERT INTO agent_conversation_settings(user_id,pinned_message_id) VALUES($1,$2) ON CONFLICT(user_id) DO UPDATE SET pinned_message_id=EXCLUDED.pinned_message_id",
+          [user, id],
+        );
+      else
+        await sql.query(
+          "UPDATE agent_messages SET metadata=jsonb_set(metadata,'{stickerBadges}',$2::jsonb) WHERE id=$1",
+          [
+            id,
+            JSON.stringify([
+              {
+                id: randomUUID(),
+                code: value,
+                userId: user,
+                createdAt: new Date().toISOString(),
+              },
+            ]),
+          ],
+        );
+    }
+    return agentMessageDto(
+      (await sql.query("SELECT * FROM agent_messages WHERE id=$1", [id]))
+        .rows[0],
+    );
+  });
+}
+export async function clearAgentPin(user: string) {
+  await pool.query(
+    "UPDATE agent_conversation_settings SET pinned_message_id=NULL WHERE user_id=$1",
+    [user],
+  );
+}
+
 export async function listAgentConversation(
   user: string,
   limit: number,
   afterSeq?: number,
+  preview = false,
 ) {
   const rows = (
     await pool.query(
-      `SELECT * FROM agent_messages WHERE user_id=$1 ${afterSeq == null ? "" : "AND seq>$3"} ORDER BY seq ${afterSeq == null ? "DESC" : "ASC"} LIMIT $2`,
+      `SELECT m.*, ${replyPreviewSql} FROM agent_messages m LEFT JOIN agent_messages r ON r.id=m.reply_to_message_id AND r.user_id=m.user_id WHERE m.user_id=$1 ${preview ? "AND m.hidden_at IS NULL" : ""} ${afterSeq == null ? "" : "AND m.seq>$3"} ORDER BY m.seq ${afterSeq == null ? "DESC" : "ASC"} LIMIT $2`,
       afterSeq == null ? [user, limit] : [user, limit, afterSeq],
     )
   ).rows;
   if (afterSeq == null) rows.reverse();
   // Resolve saved IDs against current availability/consent. Never return stale
   // listing snapshots after a block/unpublish, or a rejected/deleted memory.
-  const needsMatches = rows.some((r) => r.metadata?.matchIds?.length);
-  const needsBrands = rows.some((r) => r.metadata?.brandIds?.length);
-  const needsMemories = rows.some((r) => r.metadata?.memoryId);
+  if (preview) return rows.map(agentMessageDto);
+  const visible = rows.filter((r) => !r.deleted_at && !r.hidden_at);
+  const needsMatches = visible.some((r) => r.metadata?.matchIds?.length);
+  const needsBrands = visible.some((r) => r.metadata?.brandIds?.length);
+  const needsMemories = visible.some((r) => r.metadata?.memoryId);
   const [matches, brands, memories] = await Promise.all([
     needsMatches ? findMatches(user) : [],
     needsBrands ? listBrandExchanges(user, true) : { items: [] },
@@ -150,17 +274,21 @@ export async function listAgentConversation(
         )
       : { rows: [] },
   ]);
+  const matchesById = new Map(matches.map((m) => [m.id, m]));
+  const brandsById = new Map(brands.items.map((m: any) => [m.id, m]));
+  const memoriesById = new Map(memories.rows.map((m) => [m.id, m]));
   return rows.map((row) => {
+    if (row.deleted_at || row.hidden_at) return agentMessageDto(row);
     const cards: any[] = [];
     for (const id of (row.metadata?.matchIds ?? []).slice(0, 3)) {
-      const match = matches.find((m) => m.id === id);
+      const match = matchesById.get(id);
       if (match) cards.push({ kind: "match", match });
     }
     for (const id of (row.metadata?.brandIds ?? []).slice(0, 3)) {
-      const campaign = brands.items.find((c: any) => c.id === id);
+      const campaign = brandsById.get(id);
       if (campaign) cards.push({ kind: "brand", campaign });
     }
-    const memory = memories.rows.find((m) => m.id === row.metadata?.memoryId);
+    const memory = memoriesById.get(row.metadata?.memoryId);
     if (memory) cards.push({ kind: "memory", memory });
     if (row.role === "assistant" && row.metadata?.registrationText)
       cards.push({
@@ -177,7 +305,7 @@ export async function processAgentConversationBatch() {
   // restarted/slow worker from committing a second answer after lease recovery.
   const jobs = await transaction(async (sql) => {
     const rows = (
-      await sql.query(`SELECT m.* FROM agent_messages m WHERE m.role='user'
+      await sql.query(`SELECT m.* FROM agent_messages m WHERE m.role='user' AND m.deleted_at IS NULL AND m.hidden_at IS NULL
       AND (m.reply_state='queued' OR (m.reply_state='running' AND m.processing_started_at<now()-interval '2 minutes'))
       AND NOT EXISTS(SELECT 1 FROM agent_messages older WHERE older.user_id=m.user_id AND older.role='user' AND older.reply_state<>'done' AND older.seq<m.seq)
       ORDER BY m.seq LIMIT 3 FOR UPDATE SKIP LOCKED`)
@@ -199,9 +327,22 @@ export async function processAgentConversationBatch() {
       const metadata: Record<string, unknown> = {};
       try {
         if (row.type === "text") {
+          const reference = row.reply_to_message_id
+            ? (
+                await pool.query(
+                  "SELECT content FROM agent_messages WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL AND hidden_at IS NULL",
+                  [row.reply_to_message_id, row.user_id],
+                )
+              ).rows[0]?.content
+            : null;
           answer = await agentReply(
             row.user_id,
-            row.content,
+            reference
+              ? "[답장 대상] " +
+                  String(reference).slice(0, 1000) +
+                  "\n[새 메시지] " +
+                  row.content
+              : row.content,
             true,
             Number(row.seq),
           );

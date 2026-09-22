@@ -3977,7 +3977,16 @@ limit?: number;
  * @minimum 0
  */
 afterSeq?: number;
+preview?: DavaqFetchConversationMessagesPreview;
 };
+
+export type DavaqFetchConversationMessagesPreview = typeof DavaqFetchConversationMessagesPreview[keyof typeof DavaqFetchConversationMessagesPreview];
+
+
+export const DavaqFetchConversationMessagesPreview = {
+  true: 'true',
+  false: 'false',
+} as const;
 
 export type DavaqEnqueueConversationMessageBodyType = typeof DavaqEnqueueConversationMessageBodyType[keyof typeof DavaqEnqueueConversationMessageBodyType];
 
@@ -4002,7 +4011,23 @@ export type DavaqEnqueueConversationMessageBody = {
      */
   clientMessageId: string;
   /** @nullable */
-  replyToMessageId?: null;
+  replyToMessageId?: string | null;
+};
+
+export type DavaqDeleteConversationMessageBodyScope = typeof DavaqDeleteConversationMessageBodyScope[keyof typeof DavaqDeleteConversationMessageBodyScope];
+
+
+export const DavaqDeleteConversationMessageBodyScope = {
+  me: 'me',
+  everyone: 'everyone',
+} as const;
+
+export type DavaqDeleteConversationMessageBody = {
+  scope: DavaqDeleteConversationMessageBodyScope;
+};
+
+export type DavaqReactConversationMessageBody = {
+  code: string;
 };
 
 export type DavaqSendAgentMessageBody = {

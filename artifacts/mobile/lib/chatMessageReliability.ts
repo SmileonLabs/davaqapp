@@ -389,6 +389,10 @@ export interface CatchUpResult<T extends ChatMessageLike> {
  * proves that newer sequences exist; schedule another bounded pass to fill the
  * interval between the two snapshots.
  */
+export function latestWindowCoversCursor<T extends ChatMessageLike>(latest:ReadonlyArray<T>,cursor:number,windowSize:number):boolean {
+ return latest.length<windowSize || latest.some(m=>Number(m.roomSeq)>0&&Number(m.roomSeq)<=cursor);
+}
+
 export function catchUpCoversLatestWindow<T extends ChatMessageLike>(
   catchUp: Pick<CatchUpResult<T>, "lastSeq" | "complete">,
   latest: ReadonlyArray<T>,

@@ -1,5 +1,7 @@
 import { CustomScrollView } from "@/components/CustomScroll";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { clearPendingInvite, inviteLink, parseInviteCode } from "@/lib/inviteLinks";
 import {
   ActivityIndicator,
   Pressable,
@@ -30,11 +32,15 @@ export default function AddFriendScreen() {
   const colors = useColors();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
+  const {code}=useLocalSearchParams<{code?:string}>();
   const [inviteCode, setInviteCode] = useState("");
+  useEffect(()=>{if(code){setInviteCode(parseInviteCode(code)??"");void clearPendingInvite();}},[code]);
   const [requestingId, setRequestingId] = useState<string | null>(null);
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
 
-  const trimmedEmail = email.trim();
+  const [searchText,setSearchText]=useState("");
+  useEffect(()=>{const timer=setTimeout(()=>setSearchText(email.trim()),250);return()=>clearTimeout(timer);},[email]);
+  const trimmedEmail = searchText;
   const shouldSearch = trimmedEmail.length >= 2;
 
   const { data: searchResults = [], isFetching: searching } = useSearchUsers(
@@ -117,7 +123,7 @@ export default function AddFriendScreen() {
   const handleCreateInvite = async () => {
     try {
       const invite = await createInvite.mutateAsync(undefined as any);
-      const link = `todotalk://invite/${invite.inviteCode}`;
+      const link = inviteLink(invite.inviteCode);
       let copied = false;
       try {
         const Clipboard = await import("expo-clipboard");
@@ -134,11 +140,13 @@ export default function AddFriendScreen() {
   };
 
   const handleRedeemInvite = async () => {
-    if (!inviteCode.trim()) return;
+    const normalized=parseInviteCode(inviteCode);
+    if (!normalized || redeemInvite.isPending) { if(!normalized) crossAlert("초대 확인", "초대 코드나 DavaQ 초대 링크를 입력해 주세요."); return; }
     try {
-      await redeemInvite.mutateAsync({ data: { inviteCode: inviteCode.trim() } });
+      await redeemInvite.mutateAsync({ data: { inviteCode: normalized } });
       crossAlert("완료", "친구 요청을 보냈습니다");
       setInviteCode("");
+      await Promise.all([queryClient.invalidateQueries({queryKey:getListFriendsQueryKey()}),queryClient.invalidateQueries({queryKey:getListOutgoingFriendRequestsQueryKey()})]);
     } catch {
       crossAlert("오류", "유효하지 않거나 만료된 초대 코드입니다");
     }
@@ -169,7 +177,7 @@ export default function AddFriendScreen() {
             <Avatar uri={user.profileImageUrl} name={user.nickname} size={44} crop="face" characterType={user.profile?.type} />
             <View style={styles.userInfo}>
               <Text style={[styles.userName, { color: colors.foreground }]}>{user.nickname}</Text>
-              <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>{user.statusMessage || "AnotherMe 사용자"}</Text>
+              <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>{user.statusMessage || "DavaQ 사용자"}</Text>
             </View>
             {renderRequestButton(user.id, user.nickname)}
           </View>
@@ -192,7 +200,7 @@ export default function AddFriendScreen() {
               <Avatar uri={user.profileImageUrl} name={user.nickname} size={44} crop="face" characterType={user.profile?.type} />
               <View style={styles.userInfo}>
                 <Text style={[styles.userName, { color: colors.foreground }]}>{user.nickname}</Text>
-                <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>{user.statusMessage || "AnotherMe 사용자"}</Text>
+                <Text style={[styles.userEmail, { color: colors.mutedForeground }]}>{user.statusMessage || "DavaQ 사용자"}</Text>
               </View>
               {renderRequestButton(user.id, user.nickname)}
             </View>

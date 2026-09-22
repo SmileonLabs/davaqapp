@@ -69,6 +69,9 @@ export function SettingsScreen() {
         label="큐 학습·자동 탐색 설정"
         onPress={() => router.push("/agent/settings")}
       />
+      <Button secondary label="알림 설정" onPress={()=>router.push("/settings/notifications")}/>
+      <Button secondary label="채팅방 AI 소환 설정" onPress={()=>router.push("/settings/another-me")}/>
+      <Button secondary label="친구·초대 관리" onPress={()=>router.push("/friends")}/>
       <Button
         secondary
         label="큐의 기억 관리"

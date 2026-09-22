@@ -100,7 +100,7 @@ export default function AnotherMeSettingsScreen() {
             <Feather name="message-circle" size={22} color={colors.primary} />
           </View>
           <Text style={[styles.heroTitle, { color: colors.foreground }]}>
-            DavaQ 소환
+            AI 소환
           </Text>
           <Text style={[styles.heroBody, { color: colors.mutedForeground }]}>
             답장이 늦어질 때, 내가 허용한 상대가 내 AI 분신을 잠시 소환해 대화를
@@ -110,7 +110,7 @@ export default function AnotherMeSettingsScreen() {
 
         <View style={[styles.section, { backgroundColor: colors.background }]}>
           <SettingSwitch
-            label="DavaQ 소환 허용"
+            label="AI 소환 허용"
             description="꺼져 있으면 어떤 채팅방에서도 소환되지 않습니다"
             value={settings.summonEnabled}
             onChange={(value) => void patch({ summonEnabled: value })}

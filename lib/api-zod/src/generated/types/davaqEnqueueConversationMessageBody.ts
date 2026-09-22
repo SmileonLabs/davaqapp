@@ -20,5 +20,5 @@ export type DavaqEnqueueConversationMessageBody = {
      */
   clientMessageId: string;
   /** @nullable */
-  replyToMessageId?: null;
+  replyToMessageId?: string | null;
 };

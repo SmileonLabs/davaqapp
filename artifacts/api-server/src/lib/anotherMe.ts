@@ -999,6 +999,8 @@ async function postAnotherMeReply(session: AnotherMeSession, latestUserText: str
       await sleep(calculateAnotherMeTypingDelay(content, index));
 
       const message = await db.transaction(async (tx) => {
+        const [live]=await tx.select({status:anotherMeSessionsTable.status}).from(anotherMeSessionsTable).where(eq(anotherMeSessionsTable.id,session.id)).for('update');
+        if(live?.status!=='ACTIVE')return null;
         const created = await insertRoomMessage(tx, {
           roomId: session.roomId,
           senderId: session.ownerUserId,
@@ -1029,6 +1031,7 @@ async function postAnotherMeReply(session: AnotherMeSession, latestUserText: str
         return created;
       });
 
+      if(!message)break;
       lastMessage = message;
       await publishMessageCreated(session.roomId, session.ownerUserId, message);
     }
@@ -1367,13 +1370,17 @@ export async function handleAnotherMeAfterUserMessage(args: {
 }): Promise<void> {
   const log = args.log ?? defaultLogger;
   await expireInactiveAnotherMeSessions(args.roomId, log);
-  const active = (await findActiveSession(args.roomId)) ?? (await maybeStartBibiOfficialAnotherMe({ ...args, log }));
+  const active = (await findActiveSession(args.roomId)) ?? (process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true" ? await maybeStartBibiOfficialAnotherMe({ ...args, log }) : null);
   if (!active) return;
   if (active.ownerUserId === args.senderUserId) {
     await dismissAnotherMeSession(args.senderUserId, active.id, log, { autoOwnerMessage: true });
     return;
   }
   if (active.summonedByUserId !== args.senderUserId) return;
+  const policy=await loadEffectivePolicy(active.ownerUserId,active.summonedByUserId,active.roomId);
+  if (policyBlockReason(policy) || await hasBlockBetween(active.ownerUserId,args.senderUserId)) {
+    await dismissAnotherMeSession(active.ownerUserId,active.id,log); return;
+  }
   await postAnotherMeReply(active, args.content, log);
 }
 

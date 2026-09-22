@@ -16,27 +16,30 @@ let pool,server;let checks=0;
 const ok=(condition,message)=>{assert.ok(condition,message);checks++;console.log("PASS "+message);};
 try{
  await setup.query('CREATE SCHEMA "'+schema+'"');
- for(const table of ["users","chat_rooms","chat_room_members","messages","blocked_users","admin_roles","admin_audit_logs"]){
+ const baseTables=(await setup.query("SELECT tablename FROM pg_tables WHERE schemaname='public' AND NOT(tablename=ANY($1::text[]))",[["exchange_listings","exchange_favorites","exchange_proposals","exchange_proposal_versions","exchange_acceptances","exchange_reservations","exchange_events","exchange_fulfillments","exchange_reviews","agent_settings","agent_memories","agent_growth_events","agent_messages","agent_search_jobs","agent_match_feedback","exchange_media","agent_learning_observations","brand_campaigns","brand_versions","brand_media","brand_units","brand_participations","brand_events","brand_claims","brand_outbox","brand_budget_ledger","brand_preferences","chat_upload_owners","agent_conversation_settings"]])).rows.map(r=>r.tablename);
+ for(const table of baseTables){
+  assert.match(table,/^[a-z_]+$/);
   await setup.query('CREATE TABLE "'+schema+'"."'+table+'" (LIKE public."'+table+'" INCLUDING ALL)');
  }
  const scoped=new URL(base);scoped.searchParams.set("options","-c search_path="+schema);
  process.env.DATABASE_URL=scoped.toString();process.env.DATABASE_POOL_MAX="5";process.env.KNOWLEDGE_ADMIN_USER_IDS="";
  // The build aliases the stable workspace package, preserving the real pool and schema.
  const workspace=await import("@workspace/db");pool=workspace.pool;
- for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql"]){
+ for(const file of ["0029_davaq_exchange.sql","0030_davaq_media_learning.sql","0031_davaq_request_keys.sql","0032_davaq_operational_state.sql","0033_davaq_brand_exchange.sql","0034_davaq_chat_transport.sql","0035_davaq_messenger_actions.sql"]){
   await pool.query(await readFile(new URL("./"+file,import.meta.url),"utf8"));
  }
  const exchange=(await import("../src/routes/exchange.ts")).default;
  const agents=(await import("../src/routes/agents.ts")).default;
  const brand=(await import("../src/routes/brandExchange.ts")).default;
  const conversation=(await import("../src/routes/agentConversation.ts")).default;
- const app=express();app.use(express.json());app.use("/api",exchange,agents,brand,conversation);
+ const friends=(await import('../src/routes/friends.ts')).default,invites=(await import('../src/routes/invites.ts')).default,rooms=(await import('../src/routes/rooms.ts')).default,messages=(await import('../src/routes/messages.ts')).default,summon=(await import('../src/routes/anotherMe.ts')).default;
+ const app=express();app.use(express.json());app.use((req,res,next)=>{req.log={info(){},warn(){},error(){},debug(){}};next();});app.use("/api",exchange,agents,brand,conversation,friends,invites,rooms,messages,summon);
  server=await new Promise(resolve=>{const s=app.listen(0,"127.0.0.1",()=>resolve(s));});
  const origin="http://127.0.0.1:"+server.address().port;
  const users=[];
  for(let n=0;n<4;n++){const id=randomUUID();users.push(id);await pool.query("INSERT INTO users(id,clerk_id,email,nickname) VALUES($1,$2,$3,$4)",[id,"davaq_it_"+id,id+"@example.invalid","검증 사용자 "+n]);}
  const [a,b,c,analyst]=users;
- async function request(user,path,method="GET",body){const r=await fetch(origin+"/api"+path,{method,headers:{"content-type":"application/json",...(user?{"x-test-user":user}:{})},body:body===undefined?undefined:JSON.stringify(body)});const json=await r.json();return {status:r.status,data:json};}
+ async function request(user,path,method="GET",body){const r=await fetch(origin+"/api"+path,{method,headers:{"content-type":"application/json",...(user?{"x-test-user":user}:{})},body:body===undefined?undefined:JSON.stringify(body)});const text=await r.text();let json=null;if(text){try{json=JSON.parse(text);}catch{throw new Error(method+" "+path+" returned "+r.status+" "+text.slice(0,250));}}return {status:r.status,data:json};}
  const listing=(title,category,wantedCategories)=>({mode:"offer",kind:"service",category,title,description:"검증 전용 제공 내용",wantedText:"원하는 경험",wantedCategories,delivery:"online",durationMinutes:30,availableDays:[0,6],status:"published",requestKey:randomUUID()});
  const inputA=listing("발성 연습","voice",["photo"]),inputB=listing("사진 촬영","photo",["voice"]),inputC=listing("추가 발성","voice",["photo"]);
  const la=(await request(a,"/exchange/listings","POST",inputA)).data;
@@ -245,6 +248,7 @@ try{
  const {testAgentConversation}=await import("./agentConversation.integration.mjs");
  await testAgentConversation({pool,request,ok,users});
 
+ await (await import('./messenger.integration.mjs')).testMessenger({pool,request,ok});
  if(process.env.DAVAQ_INTEGRATION_AI==="1"){
   const ai=await import("../src/lib/davaqAgent.ts");
   const draftResult=await ai.registerDraft("영어 회화를 온라인으로 30분 도와줄 수 있어요. 대신 프로필 사진 촬영을 받고 싶어요.");

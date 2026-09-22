@@ -6,7 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import {
   fetchAllMessagesAfter,
-  catchUpCoversLatestWindow,
+  catchUpCoversLatestWindow, latestWindowCoversCursor,
   ConfirmedCatchUpCursor,
   ConfirmedCatchUpCursorRegistry,
   confirmedCatchUpIsCommitted,
@@ -38,7 +38,7 @@ const confirmedCursors = new ConfirmedCatchUpCursorRegistry();
  */
 export function useReliableRoomMessages(
   roomId: string,
-  identity: { userId?: string | null; profileId?: string | null; pollInterval?: number },
+  identity: { userId?: string | null; profileId?: string | null; pollInterval?: number; enabled?: boolean },
 ) {
   const queryClient = useQueryClient();
   const queryKey = getFetchRoomMessagesQueryKey(roomId);
@@ -116,7 +116,7 @@ export function useReliableRoomMessages(
 
   const query = useQuery<Message[]>({
     queryKey,
-    enabled: !!cursorKey && hydratedCursorKey === cursorKey,
+    enabled: identity.enabled !== false && !!cursorKey && hydratedCursorKey === cursorKey,
     refetchOnReconnect: true,
     refetchInterval: identity.pollInterval ? (q) => q.state.data?.some(m => ["queued", "running"].includes(String(m.metadata?.replyState ?? ""))) ? identity.pollInterval! : 15000 : false,
     refetchIntervalInBackground: false,
@@ -138,30 +138,9 @@ export function useReliableRoomMessages(
       }
       const lastSeq = cursorState.cursor.current;
 
-      const latestPromise = fetchRoomMessages(
-        roomId,
-        { limit: LATEST_WINDOW_SIZE },
-        { signal },
-      );
-      const catchUpPromise =
-        lastSeq > 0
-          ? fetchAllMessagesAfter<Message>(
-              lastSeq,
-              (afterSeq, limit) =>
-                fetchRoomMessages(
-                  roomId,
-                  // afterSeq is part of the checked OpenAPI contract. The
-                  // generated type is refreshed by codegen in this change set.
-                  { afterSeq, limit },
-                  { signal },
-                ),
-              { pageSize: CATCH_UP_PAGE_SIZE },
-            )
-          : null;
-      const [latest, catchUp] = await Promise.all([
-        latestPromise,
-        catchUpPromise,
-      ]);
+      const latest = await fetchRoomMessages(roomId,{limit:LATEST_WINDOW_SIZE},{signal});
+      const covered=latestWindowCoversCursor(latest,lastSeq,LATEST_WINDOW_SIZE);
+      const catchUp = lastSeq>0 ? covered ? {messages:latest.filter(m=>Number(m.roomSeq??0)>lastSeq),lastSeq:Math.max(lastSeq,maxConfirmedRoomSeq(latest)),complete:true,pages:0} : await fetchAllMessagesAfter<Message>(lastSeq,(afterSeq,limit)=>fetchRoomMessages(roomId,{afterSeq,limit},{signal}),{pageSize:CATCH_UP_PAGE_SIZE}) : null;
       const reconciledLatest = reconcileLatestMessageWindow(
         current,
         latest,

@@ -58,7 +58,7 @@ export async function agentReply(
   const history = useHistory
     ? (
         await pool.query(
-          `SELECT role,content FROM agent_messages m WHERE user_id=$1 AND type='text' AND ($2::bigint IS NULL OR seq<=$2 OR (role='assistant' AND EXISTS(SELECT 1 FROM agent_messages p WHERE p.user_id=m.user_id AND p.request_key=m.request_key AND p.role='user' AND p.seq<=$2))) ORDER BY seq DESC LIMIT 10`,
+          `SELECT role,content FROM agent_messages m WHERE user_id=$1 AND type='text' AND deleted_at IS NULL AND hidden_at IS NULL AND ($2::bigint IS NULL OR seq<=$2 OR (role='assistant' AND EXISTS(SELECT 1 FROM agent_messages p WHERE p.user_id=m.user_id AND p.request_key=m.request_key AND p.role='user' AND p.seq<=$2))) ORDER BY seq DESC LIMIT 10`,
           [userId, throughSeq ?? null],
         )
       ).rows.reverse()

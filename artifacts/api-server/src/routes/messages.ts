@@ -729,7 +729,7 @@ router.post(
 
     if (
       createdResult.created &&
-      process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true" && room?.type === "direct" &&
+      room?.type === "direct" &&
       input.type === "text"
     ) {
       void handleAnotherMeAfterUserMessage({

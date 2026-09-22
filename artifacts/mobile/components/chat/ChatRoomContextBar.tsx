@@ -99,7 +99,7 @@ export function ChatRoomContextBar({
         <View style={[styles.summonCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.summonCopy}>
             <Text style={[styles.summonTitle, { color: colors.foreground }]}>{otherDisplayName}님이 아직 응답하지 않았어요</Text>
-            <Text style={[styles.summonBody, { color: colors.mutedForeground }]}>DavaQ를 소환해 잠시 대화를 이어갈 수 있어요.</Text>
+            <Text style={[styles.summonBody, { color: colors.mutedForeground }]}>AI를 소환해 잠시 대화를 이어갈 수 있어요.</Text>
           </View>
           <Pressable
             onPress={onSummonAnotherMe}

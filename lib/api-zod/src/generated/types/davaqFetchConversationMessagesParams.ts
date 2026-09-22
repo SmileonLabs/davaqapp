@@ -5,6 +5,7 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+import type { DavaqFetchConversationMessagesPreview } from './davaqFetchConversationMessagesPreview';
 
 export type DavaqFetchConversationMessagesParams = {
 /**
@@ -16,4 +17,5 @@ limit?: number;
  * @minimum 0
  */
 afterSeq?: number;
+preview?: DavaqFetchConversationMessagesPreview;
 };

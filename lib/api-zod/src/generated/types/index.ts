@@ -178,6 +178,8 @@ export * from './davaqAgentJob';
 // DavaqCreateMemoryBody uses the canonical generated Zod export.
 export * from './davaqCreateMemoryBodyKind';
 export * from './davaqCreateProposal';
+// DavaqDeleteConversationMessageBody uses the canonical generated Zod export.
+export * from './davaqDeleteConversationMessageBodyScope';
 export * from './davaqDraft';
 export * from './davaqDraftCategory';
 export * from './davaqDraftDelivery';
@@ -190,6 +192,7 @@ export * from './davaqErrorFieldsItem';
 export * from './davaqEvent';
 export * from './davaqEventData';
 export * from './davaqFetchConversationMessagesParams';
+export * from './davaqFetchConversationMessagesPreview';
 export * from './davaqFulfillment';
 export * from './davaqListing';
 export * from './davaqListingCategory';
@@ -229,6 +232,7 @@ export * from './davaqProposal';
 export * from './davaqProposals';
 export * from './davaqProposalSnapshots';
 export * from './davaqProposalStatus';
+// DavaqReactConversationMessageBody uses the canonical generated Zod export.
 // DavaqRegistrationDraftBody uses the canonical generated Zod export.
 // DavaqResolveReviewBody uses the canonical generated Zod export.
 export * from './davaqResolveReviewBodyAction';

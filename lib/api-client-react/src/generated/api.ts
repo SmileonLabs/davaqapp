@@ -106,6 +106,7 @@ import type {
   DavaqAgent,
   DavaqCreateMemoryBody,
   DavaqCreateProposal,
+  DavaqDeleteConversationMessageBody,
   DavaqDraft,
   DavaqEnqueueConversationMessageBody,
   DavaqError,
@@ -122,6 +123,7 @@ import type {
   DavaqOk,
   DavaqProposal,
   DavaqProposals,
+  DavaqReactConversationMessageBody,
   DavaqRegistrationDraftBody,
   DavaqResolveReviewBody,
   DavaqReviewProposalBody,
@@ -3318,6 +3320,432 @@ export const useDavaqEnqueueConversationMessage = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDavaqEnqueueConversationMessageMutationOptions(options));
+    }
+
+export const getDavaqGetConversationMessageUrl = (messageId: string,) => {
+
+
+
+
+  return `/api/agents/me/conversation/messages/${messageId}`
+}
+
+/**
+ * @summary Manage an owned private Q message
+ */
+export const davaqGetConversationMessage = async (messageId: string, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getDavaqGetConversationMessageUrl(messageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqGetConversationMessageQueryKey = (messageId: string,) => {
+    return [
+    `/api/agents/me/conversation/messages/${messageId}`
+    ] as const;
+    }
+
+
+export const getDavaqGetConversationMessageQueryOptions = <TData = Awaited<ReturnType<typeof davaqGetConversationMessage>>, TError = ErrorType<unknown>>(messageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqGetConversationMessageQueryKey(messageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqGetConversationMessage>>> = ({ signal }) => davaqGetConversationMessage(messageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(messageId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationMessage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqGetConversationMessageQueryResult = NonNullable<Awaited<ReturnType<typeof davaqGetConversationMessage>>>
+export type DavaqGetConversationMessageQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Manage an owned private Q message
+ */
+
+export function useDavaqGetConversationMessage<TData = Awaited<ReturnType<typeof davaqGetConversationMessage>>, TError = ErrorType<unknown>>(
+ messageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqGetConversationMessageQueryOptions(messageId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqDeleteConversationMessageUrl = (messageId: string,) => {
+
+
+
+
+  return `/api/agents/me/conversation/messages/${messageId}/delete`
+}
+
+/**
+ * @summary Manage an owned private Q message
+ */
+export const davaqDeleteConversationMessage = async (messageId: string,
+    davaqDeleteConversationMessageBody: DavaqDeleteConversationMessageBody, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getDavaqDeleteConversationMessageUrl(messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqDeleteConversationMessageBody,)
+  }
+);}
+
+
+
+
+export const getDavaqDeleteConversationMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqDeleteConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqDeleteConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqDeleteConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqDeleteConversationMessageBody>}, TContext> => {
+
+const mutationKey = ['davaqDeleteConversationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqDeleteConversationMessage>>, {messageId: string;data: BodyType<DavaqDeleteConversationMessageBody>}> = (props) => {
+          const {messageId,data} = props ?? {};
+
+          return  davaqDeleteConversationMessage(messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqDeleteConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof davaqDeleteConversationMessage>>>
+    export type DavaqDeleteConversationMessageMutationBody = BodyType<DavaqDeleteConversationMessageBody>
+    export type DavaqDeleteConversationMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manage an owned private Q message
+ */
+export const useDavaqDeleteConversationMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqDeleteConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqDeleteConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqDeleteConversationMessage>>,
+        TError,
+        {messageId: string;data: BodyType<DavaqDeleteConversationMessageBody>},
+        TContext
+      > => {
+      return useMutation(getDavaqDeleteConversationMessageMutationOptions(options));
+    }
+
+export const getDavaqPinConversationMessageUrl = (messageId: string,) => {
+
+
+
+
+  return `/api/agents/me/conversation/messages/${messageId}/pin`
+}
+
+/**
+ * @summary Manage an owned private Q message
+ */
+export const davaqPinConversationMessage = async (messageId: string, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getDavaqPinConversationMessageUrl(messageId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getDavaqPinConversationMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqPinConversationMessage>>, TError,{messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqPinConversationMessage>>, TError,{messageId: string}, TContext> => {
+
+const mutationKey = ['davaqPinConversationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqPinConversationMessage>>, {messageId: string}> = (props) => {
+          const {messageId} = props ?? {};
+
+          return  davaqPinConversationMessage(messageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqPinConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof davaqPinConversationMessage>>>
+
+    export type DavaqPinConversationMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manage an owned private Q message
+ */
+export const useDavaqPinConversationMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqPinConversationMessage>>, TError,{messageId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqPinConversationMessage>>,
+        TError,
+        {messageId: string},
+        TContext
+      > => {
+      return useMutation(getDavaqPinConversationMessageMutationOptions(options));
+    }
+
+export const getDavaqReactConversationMessageUrl = (messageId: string,) => {
+
+
+
+
+  return `/api/agents/me/conversation/messages/${messageId}/sticker`
+}
+
+/**
+ * @summary Manage an owned private Q message
+ */
+export const davaqReactConversationMessage = async (messageId: string,
+    davaqReactConversationMessageBody: DavaqReactConversationMessageBody, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getDavaqReactConversationMessageUrl(messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqReactConversationMessageBody,)
+  }
+);}
+
+
+
+
+export const getDavaqReactConversationMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqReactConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqReactConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqReactConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqReactConversationMessageBody>}, TContext> => {
+
+const mutationKey = ['davaqReactConversationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqReactConversationMessage>>, {messageId: string;data: BodyType<DavaqReactConversationMessageBody>}> = (props) => {
+          const {messageId,data} = props ?? {};
+
+          return  davaqReactConversationMessage(messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqReactConversationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof davaqReactConversationMessage>>>
+    export type DavaqReactConversationMessageMutationBody = BodyType<DavaqReactConversationMessageBody>
+    export type DavaqReactConversationMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manage an owned private Q message
+ */
+export const useDavaqReactConversationMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqReactConversationMessage>>, TError,{messageId: string;data: BodyType<DavaqReactConversationMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqReactConversationMessage>>,
+        TError,
+        {messageId: string;data: BodyType<DavaqReactConversationMessageBody>},
+        TContext
+      > => {
+      return useMutation(getDavaqReactConversationMessageMutationOptions(options));
+    }
+
+export const getDavaqGetConversationPinUrl = () => {
+
+
+
+
+  return `/api/agents/me/conversation/pin`
+}
+
+export const davaqGetConversationPin = async ( options?: RequestInit): Promise<Message | null> => {
+
+  return customFetch<Message | null>(getDavaqGetConversationPinUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqGetConversationPinQueryKey = () => {
+    return [
+    `/api/agents/me/conversation/pin`
+    ] as const;
+    }
+
+
+export const getDavaqGetConversationPinQueryOptions = <TData = Awaited<ReturnType<typeof davaqGetConversationPin>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationPin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqGetConversationPinQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqGetConversationPin>>> = ({ signal }) => davaqGetConversationPin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationPin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqGetConversationPinQueryResult = NonNullable<Awaited<ReturnType<typeof davaqGetConversationPin>>>
+export type DavaqGetConversationPinQueryError = ErrorType<unknown>
+
+
+
+export function useDavaqGetConversationPin<TData = Awaited<ReturnType<typeof davaqGetConversationPin>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetConversationPin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqGetConversationPinQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqClearConversationPinUrl = () => {
+
+
+
+
+  return `/api/agents/me/conversation/pin`
+}
+
+export const davaqClearConversationPin = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDavaqClearConversationPinUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDavaqClearConversationPinMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqClearConversationPin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqClearConversationPin>>, TError,void, TContext> => {
+
+const mutationKey = ['davaqClearConversationPin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqClearConversationPin>>, void> = () => {
+
+
+          return  davaqClearConversationPin(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqClearConversationPinMutationResult = NonNullable<Awaited<ReturnType<typeof davaqClearConversationPin>>>
+
+    export type DavaqClearConversationPinMutationError = ErrorType<unknown>
+
+    export const useDavaqClearConversationPin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqClearConversationPin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqClearConversationPin>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDavaqClearConversationPinMutationOptions(options));
     }
 
 export const getDavaqListAgentMessagesUrl = () => {

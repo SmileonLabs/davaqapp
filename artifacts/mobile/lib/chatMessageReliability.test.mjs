@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  fetchAllMessagesAfter,
+  fetchAllMessagesAfter, latestWindowCoversCursor,
   catchUpCoversLatestWindow,
   confirmedCatchUpIsCommitted,
   ConfirmedCatchUpCursor,
@@ -596,4 +596,13 @@ test("chat latency diagnostics keep only a bounded sample window", () => {
   assert.equal(appendBoundedLatencySample(values, 30, 2), true);
   assert.deepEqual(values, [20, 30]);
   assert.equal(appendBoundedLatencySample(values, Number.NaN, 2), false);
+});
+
+test('one latest-window read covers idle/small updates, but never skips a burst gap',()=>{
+ const window=Array.from({length:50},(_,i)=>({id:String(i+51),roomSeq:i+51}));
+ assert.equal(latestWindowCoversCursor(window,100,50),true);
+ assert.equal(latestWindowCoversCursor(window,75,50),true);
+ assert.equal(latestWindowCoversCursor(window,20,50),false);
+ assert.equal(latestWindowCoversCursor([{id:'new',roomSeq:700}],1,50),true);
+ assert.equal(latestWindowCoversCursor(Array.from({length:50},(_,i)=>({id:String(i)})),20,50),false);
 });

@@ -80,7 +80,7 @@ export function ChatRoomSheets({
                   <Feather name="cpu" size={17} color={colors.primary} />
                 </View>
                 <View style={styles.roomSettingText}>
-                  <Text style={[styles.roomSettingTitle, { color: colors.foreground }]}>DavaQ 소환</Text>
+                  <Text style={[styles.roomSettingTitle, { color: colors.foreground }]}>AI 소환</Text>
                   <Text style={[styles.roomSettingSub, { color: colors.mutedForeground }]}>현재 상태: {roomOptions.anotherMeStatusLabel}</Text>
                 </View>
                 {roomOptions.isDirect ? (
@@ -97,7 +97,7 @@ export function ChatRoomSheets({
               {roomOptions.isDirect ? (
                 <>
                   <Text style={[styles.roomSettingHelp, { color: colors.mutedForeground }]}>
-                    켜면 이 방에서는 전역 설정과 별개로 상대가 내 DavaQ를 소환할 수 있습니다. 끄면 이 방에서는 소환되지 않습니다.
+                    켜면 이 방에서는 전역 설정과 별개로 상대가 내 AI를 소환할 수 있습니다. 끄면 이 방에서는 소환되지 않습니다.
                   </Text>
                   {roomOptions.anotherMeUsesOverride ? (
                     <Pressable
@@ -111,7 +111,7 @@ export function ChatRoomSheets({
                   ) : null}
                 </>
               ) : (
-                <Text style={[styles.roomSettingHelp, { color: colors.mutedForeground }]}>MVP에서는 1:1 채팅방에서만 DavaQ 소환을 지원합니다.</Text>
+                <Text style={[styles.roomSettingHelp, { color: colors.mutedForeground }]}>MVP에서는 1:1 채팅방에서만 AI 소환을 지원합니다.</Text>
               )}
             </View>
 
