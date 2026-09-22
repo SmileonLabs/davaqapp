@@ -346,8 +346,9 @@ export async function reserveProposal(sql: Sql, p: any) {
         [listing.id, participants, slot.from, slot.to, p.id, listing.kind],
       )
     ).rows[0];
+    const relayOverlap=(await sql.query(`SELECT 1 FROM exchange_relay_reservations r WHERE r.active AND ((r.listing_id=$1 AND ($5='goods' OR r.kind='goods')) OR ($2::uuid[] && ARRAY[r.provider_id,r.receiver_id] AND r.starts_at<$4 AND r.ends_at>$3)) LIMIT 1`,[listing.id,participants,slot.from,slot.to,listing.kind])).rows[0];
     demand(
-      !overlap,
+      !overlap && !relayOverlap,
       409,
       "이미 예약된 물건이나 시간이에요. 다른 일정을 선택해 주세요.",
     );

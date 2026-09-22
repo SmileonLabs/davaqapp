@@ -37,6 +37,7 @@ import {
   PairCard,
   Icon,
 } from "./UI";
+import { RelayEntry } from "./RelayScreens";
 export { AgentConversation as AgentChatScreen } from "./AgentConversation";
 function MemoryRow({
   memory: m,
@@ -415,6 +416,7 @@ export function SearchesScreen() {
         </Txt>
       )}
       <QueryState query={query} />
+      <RelayEntry compact />
       {query.data?.items.map((m) => (
         <PairCard key={m.id} match={m} />
       ))}

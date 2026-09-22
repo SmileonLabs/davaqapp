@@ -5,6 +5,250 @@
  * DavaQ exchange and messenger API
  * OpenAPI spec version: 0.1.0
  */
+export type DavaqRelayTermsLegsItem = {
+  listingId: string;
+  startsAt: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  location: string;
+};
+
+export interface DavaqRelayTerms {
+  /**
+     * @minItems 3
+     * @maxItems 4
+     */
+  legs: DavaqRelayTermsLegsItem[];
+  /** @maxLength 1500 */
+  note: string;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  cancellation: string;
+}
+
+export type DavaqListingMode = typeof DavaqListingMode[keyof typeof DavaqListingMode];
+
+
+export const DavaqListingMode = {
+  offer: 'offer',
+  want: 'want',
+} as const;
+
+export type DavaqListingKind = typeof DavaqListingKind[keyof typeof DavaqListingKind];
+
+
+export const DavaqListingKind = {
+  goods: 'goods',
+  service: 'service',
+  experience: 'experience',
+} as const;
+
+export type DavaqListingCategory = typeof DavaqListingCategory[keyof typeof DavaqListingCategory];
+
+
+export const DavaqListingCategory = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export type DavaqListingWantedCategoriesItem = typeof DavaqListingWantedCategoriesItem[keyof typeof DavaqListingWantedCategoriesItem];
+
+
+export const DavaqListingWantedCategoriesItem = {
+  voice: 'voice',
+  photo: 'photo',
+  design: 'design',
+  language: 'language',
+  tech: 'tech',
+  music: 'music',
+  goods: 'goods',
+  business: 'business',
+  other: 'other',
+} as const;
+
+export type DavaqListingDelivery = typeof DavaqListingDelivery[keyof typeof DavaqListingDelivery];
+
+
+export const DavaqListingDelivery = {
+  online: 'online',
+  offline: 'offline',
+  either: 'either',
+} as const;
+
+export interface DavaqListing {
+  mode: DavaqListingMode;
+  kind: DavaqListingKind;
+  category: DavaqListingCategory;
+  /**
+     * @minLength 2
+     * @maxLength 80
+     */
+  title: string;
+  /** @maxLength 3000 */
+  description: string;
+  /** @maxLength 500 */
+  wantedText: string;
+  wantedCategories: DavaqListingWantedCategoriesItem[];
+  /** @maxLength 80 */
+  location: string;
+  delivery: DavaqListingDelivery;
+  /**
+     * @minimum 5
+     * @maximum 1440
+     */
+  durationMinutes: number;
+  availableDays: number[];
+  /**
+     * @minimum 1
+     * @maximum 100000
+     * @nullable
+     */
+  ev: number | null;
+  /** @nullable */
+  imageKey: string | null;
+  /** @maxLength 1500 */
+  terms: string;
+  status: string;
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  requestKey?: string;
+  id: string;
+  ownerId: string;
+  ownerName: string;
+  reviewNote?: string;
+  favorite: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DavaqRelayCandidate {
+  id: string;
+  listings: DavaqListing[];
+  reasons: string[];
+  pending: string[];
+}
+
+export interface DavaqRelaySearch {
+  items: DavaqRelayCandidate[];
+  offersCount: number;
+  scannedCount: number;
+  limited: boolean;
+}
+
+export interface DavaqRelayMember {
+  user_id: string;
+  position: number;
+  listing_id: string;
+  snapshot: DavaqListing;
+  /** @nullable */
+  accepted_version: number | null;
+  cancel_accepted: boolean;
+  /** @nullable */
+  provided_at: string | null;
+  /** @nullable */
+  received_at: string | null;
+  evidence: string;
+}
+
+export type DavaqRelayEventData = { [key: string]: unknown };
+
+export interface DavaqRelayEvent {
+  id: string;
+  actor_id: string;
+  kind: string;
+  data: DavaqRelayEventData;
+  created_at: string;
+}
+
+export type DavaqRelayStatus = typeof DavaqRelayStatus[keyof typeof DavaqRelayStatus];
+
+
+export const DavaqRelayStatus = {
+  negotiating: 'negotiating',
+  reserved: 'reserved',
+  in_progress: 'in_progress',
+  cancel_requested: 'cancel_requested',
+  cancelled: 'cancelled',
+  declined: 'declined',
+  expired: 'expired',
+  disputed: 'disputed',
+  completed: 'completed',
+} as const;
+
+export interface DavaqRelay {
+  id: string;
+  creator_id: string;
+  room_id: string;
+  status: DavaqRelayStatus;
+  version: number;
+  terms: DavaqRelayTerms;
+  expires_at: string;
+  updated_at: string;
+  members: DavaqRelayMember[];
+  events: DavaqRelayEvent[];
+}
+
+export interface DavaqRelays {
+  items: DavaqRelay[];
+}
+
+export interface DavaqRelayCreate {
+  /**
+     * @minItems 3
+     * @maxItems 4
+     */
+  listingIds: string[];
+  terms: DavaqRelayTerms;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  requestKey: string;
+}
+
+export type DavaqRelayActionAction = typeof DavaqRelayActionAction[keyof typeof DavaqRelayActionAction];
+
+
+export const DavaqRelayActionAction = {
+  accept: 'accept',
+  revise: 'revise',
+  decline: 'decline',
+  cancel: 'cancel',
+  approve_cancel: 'approve_cancel',
+  provided: 'provided',
+  received: 'received',
+  dispute: 'dispute',
+} as const;
+
+export interface DavaqRelayAction {
+  action: DavaqRelayActionAction;
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 100
+     */
+  requestKey: string;
+  terms?: DavaqRelayTerms;
+  /** @maxLength 1500 */
+  note?: string;
+}
+
 export type DavaqErrorFieldsItem = {
   path?: string;
   message?: string;
@@ -127,112 +371,6 @@ export interface DavaqListingInput {
      * @maxLength 100
      */
   requestKey?: string;
-}
-
-export type DavaqListingMode = typeof DavaqListingMode[keyof typeof DavaqListingMode];
-
-
-export const DavaqListingMode = {
-  offer: 'offer',
-  want: 'want',
-} as const;
-
-export type DavaqListingKind = typeof DavaqListingKind[keyof typeof DavaqListingKind];
-
-
-export const DavaqListingKind = {
-  goods: 'goods',
-  service: 'service',
-  experience: 'experience',
-} as const;
-
-export type DavaqListingCategory = typeof DavaqListingCategory[keyof typeof DavaqListingCategory];
-
-
-export const DavaqListingCategory = {
-  voice: 'voice',
-  photo: 'photo',
-  design: 'design',
-  language: 'language',
-  tech: 'tech',
-  music: 'music',
-  goods: 'goods',
-  business: 'business',
-  other: 'other',
-} as const;
-
-export type DavaqListingWantedCategoriesItem = typeof DavaqListingWantedCategoriesItem[keyof typeof DavaqListingWantedCategoriesItem];
-
-
-export const DavaqListingWantedCategoriesItem = {
-  voice: 'voice',
-  photo: 'photo',
-  design: 'design',
-  language: 'language',
-  tech: 'tech',
-  music: 'music',
-  goods: 'goods',
-  business: 'business',
-  other: 'other',
-} as const;
-
-export type DavaqListingDelivery = typeof DavaqListingDelivery[keyof typeof DavaqListingDelivery];
-
-
-export const DavaqListingDelivery = {
-  online: 'online',
-  offline: 'offline',
-  either: 'either',
-} as const;
-
-export interface DavaqListing {
-  mode: DavaqListingMode;
-  kind: DavaqListingKind;
-  category: DavaqListingCategory;
-  /**
-     * @minLength 2
-     * @maxLength 80
-     */
-  title: string;
-  /** @maxLength 3000 */
-  description: string;
-  /** @maxLength 500 */
-  wantedText: string;
-  wantedCategories: DavaqListingWantedCategoriesItem[];
-  /** @maxLength 80 */
-  location: string;
-  delivery: DavaqListingDelivery;
-  /**
-     * @minimum 5
-     * @maximum 1440
-     */
-  durationMinutes: number;
-  availableDays: number[];
-  /**
-     * @minimum 1
-     * @maximum 100000
-     * @nullable
-     */
-  ev: number | null;
-  /** @nullable */
-  imageKey: string | null;
-  /** @maxLength 1500 */
-  terms: string;
-  status: string;
-  /** @minimum 1 */
-  version: number;
-  /**
-     * @minLength 8
-     * @maxLength 100
-     */
-  requestKey?: string;
-  id: string;
-  ownerId: string;
-  ownerName: string;
-  reviewNote?: string;
-  favorite: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface DavaqListings {
@@ -578,6 +716,7 @@ export interface DavaqDraft {
 }
 
 export interface DavaqAdmin {
+  relays?: DavaqRelay[];
   listings: DavaqListing[];
   disputes: DavaqProposal[];
 }
@@ -3906,7 +4045,7 @@ export type DavaqResolveReviewBodyKind = typeof DavaqResolveReviewBodyKind[keyof
 
 export const DavaqResolveReviewBodyKind = {
   listing: 'listing',
-  proposal: 'proposal',
+  'proposal_-_relay': 'proposal - relay',
 } as const;
 
 export type DavaqResolveReviewBodyAction = typeof DavaqResolveReviewBodyAction[keyof typeof DavaqResolveReviewBodyAction];
@@ -4599,4 +4738,8 @@ export type UpdateAdminCharacterProfileStatusBody = {
      * @maxLength 300
      */
   reason: string;
+};
+
+export type DavaqListRelaysParams = {
+roomId?: string;
 };

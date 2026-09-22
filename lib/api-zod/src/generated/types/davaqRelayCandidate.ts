@@ -6,11 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DavaqListing } from './davaqListing';
-import type { DavaqProposal } from './davaqProposal';
-import type { DavaqRelay } from './davaqRelay';
 
-export interface DavaqAdmin {
-  relays?: DavaqRelay[];
+export interface DavaqRelayCandidate {
+  id: string;
   listings: DavaqListing[];
-  disputes: DavaqProposal[];
+  reasons: string[];
+  pending: string[];
 }

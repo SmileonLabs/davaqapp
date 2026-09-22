@@ -1699,6 +1699,7 @@ paths:
                   enum:
                     - listing
                     - proposal
+                      - relay
                 action:
                   type: string
                   enum:
@@ -7297,6 +7298,14 @@ paths:
         "403": { description: Administrator permission required }
         "404": { description: Character profile not found }
 
+  /exchange/relays/candidates: {"get":{"operationId":"davaqRelayCandidates","tags":["davaq-exchange"],"summary":"davaqRelayCandidates","security":[{"bearerAuth":[]}],"responses":{"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelaySearch"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}}}
+
+  /exchange/relays: {"get":{"operationId":"davaqListRelays","tags":["davaq-exchange"],"summary":"davaqListRelays","security":[{"bearerAuth":[]}],"parameters":[{"name":"roomId","in":"query","required":false,"schema":{"type":"string","format":"uuid"}}],"responses":{"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelays"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}},"post":{"operationId":"davaqCreateRelay","tags":["davaq-exchange"],"summary":"davaqCreateRelay","security":[{"bearerAuth":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelayCreate"}}}},"responses":{"201":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelay"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}}}
+
+  /exchange/relays/{id}: {"get":{"operationId":"davaqGetRelay","tags":["davaq-exchange"],"summary":"davaqGetRelay","security":[{"bearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}],"responses":{"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelay"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}}}
+
+  /exchange/relays/{id}/actions: {"post":{"operationId":"davaqActOnRelay","tags":["davaq-exchange"],"summary":"davaqActOnRelay","security":[{"bearerAuth":[]}],"parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelayAction"}}}},"responses":{"200":{"description":"Success","content":{"application/json":{"schema":{"$ref":"#/components/schemas/DavaqRelay"}}}},"400":{"description":"Invalid input"},"401":{"description":"Authentication required"},"403":{"description":"Not permitted"},"404":{"description":"Not found"},"409":{"description":"Terms or availability changed"},"429":{"description":"Rate limited"}}}}
+
 components:
   securitySchemes:
     bearerAuth:
@@ -7319,6 +7328,15 @@ components:
       schema: { type: string, format: uuid }
 
   schemas:
+    DavaqRelayTerms: {"type":"object","properties":{"legs":{"type":"array","items":{"type":"object","properties":{"listingId":{"type":"string","format":"uuid"},"startsAt":{"type":"string","format":"date-time"},"location":{"type":"string","minLength":2,"maxLength":200}},"required":["listingId","startsAt","location"]},"minItems":3,"maxItems":4},"note":{"type":"string","maxLength":1500},"cancellation":{"type":"string","minLength":5,"maxLength":1000}},"required":["legs","note","cancellation"]}
+    DavaqRelayCandidate: {"type":"object","properties":{"id":{"type":"string"},"listings":{"type":"array","items":{"$ref":"#/components/schemas/DavaqListing"}},"reasons":{"type":"array","items":{"type":"string"}},"pending":{"type":"array","items":{"type":"string"}}},"required":["id","listings","reasons","pending"]}
+    DavaqRelaySearch: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayCandidate"}},"offersCount":{"type":"integer"},"scannedCount":{"type":"integer"},"limited":{"type":"boolean"}},"required":["items","offersCount","scannedCount","limited"]}
+    DavaqRelayMember: {"type":"object","properties":{"user_id":{"type":"string","format":"uuid"},"position":{"type":"integer"},"listing_id":{"type":"string","format":"uuid"},"snapshot":{"$ref":"#/components/schemas/DavaqListing"},"accepted_version":{"type":["integer","null"]},"cancel_accepted":{"type":"boolean"},"provided_at":{"type":["string","null"],"format":"date-time"},"received_at":{"type":["string","null"],"format":"date-time"},"evidence":{"type":"string"}},"required":["user_id","position","listing_id","snapshot","accepted_version","cancel_accepted","provided_at","received_at","evidence"]}
+    DavaqRelayEvent: {"type":"object","properties":{"id":{"type":"string","format":"uuid"},"actor_id":{"type":"string","format":"uuid"},"kind":{"type":"string"},"data":{"type":"object","additionalProperties":true},"created_at":{"type":"string","format":"date-time"}},"required":["id","actor_id","kind","data","created_at"]}
+    DavaqRelay: {"type":"object","properties":{"id":{"type":"string","format":"uuid"},"creator_id":{"type":"string","format":"uuid"},"room_id":{"type":"string","format":"uuid"},"status":{"type":"string","enum":["negotiating","reserved","in_progress","cancel_requested","cancelled","declined","expired","disputed","completed"]},"version":{"type":"integer"},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"expires_at":{"type":"string","format":"date-time"},"updated_at":{"type":"string","format":"date-time"},"members":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayMember"}},"events":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelayEvent"}}},"required":["id","creator_id","room_id","status","version","terms","expires_at","updated_at","members","events"]}
+    DavaqRelays: {"type":"object","properties":{"items":{"type":"array","items":{"$ref":"#/components/schemas/DavaqRelay"}}},"required":["items"]}
+    DavaqRelayCreate: {"type":"object","properties":{"listingIds":{"type":"array","items":{"type":"string","format":"uuid"},"minItems":3,"maxItems":4},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"requestKey":{"type":"string","minLength":8,"maxLength":100}},"required":["listingIds","terms","requestKey"]}
+    DavaqRelayAction: {"type":"object","properties":{"action":{"type":"string","enum":["accept","revise","decline","cancel","approve_cancel","provided","received","dispute"]},"version":{"type":"integer","minimum":1},"requestKey":{"type":"string","minLength":8,"maxLength":100},"terms":{"$ref":"#/components/schemas/DavaqRelayTerms"},"note":{"type":"string","maxLength":1500}},"required":["action","version","requestKey"]}
     DavaqError:
       type: object
       properties:
@@ -8176,6 +8194,10 @@ components:
     DavaqAdmin:
       type: object
       properties:
+        relays:
+          type: array
+          items:
+            $ref: "#/components/schemas/DavaqRelay"
         listings:
           type: array
           items:

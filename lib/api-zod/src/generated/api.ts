@@ -1493,6 +1493,40 @@ export const DavaqReviewProposalResponse = zod.object({
 /**
  * @summary AdminQueue
  */
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMin = 2;
+export const davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMax = 200;
+
+export const davaqAdminQueueResponseRelaysItemTermsLegsMin = 3;
+export const davaqAdminQueueResponseRelaysItemTermsLegsMax = 4;
+
+export const davaqAdminQueueResponseRelaysItemTermsNoteMax = 1500;
+
+export const davaqAdminQueueResponseRelaysItemTermsCancellationMin = 5;
+export const davaqAdminQueueResponseRelaysItemTermsCancellationMax = 1000;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMin = 2;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMax = 80;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotDescriptionMax = 3000;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotWantedTextMax = 500;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotLocationMax = 80;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotDurationMinutesMin = 5;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotDurationMinutesMax = 1440;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotAvailableDaysItemMin = 0;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotAvailableDaysItemMax = 6;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotEvMax = 100000;
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotTermsMax = 1500;
+
+
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMin = 8;
+export const davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMax = 100;
+
 export const davaqAdminQueueResponseListingsItemTitleMin = 2;
 export const davaqAdminQueueResponseListingsItemTitleMax = 80;
 
@@ -1575,6 +1609,67 @@ export const davaqAdminQueueResponseDisputesItemSnapshotsRequestedRequestKeyMax 
 
 
 export const DavaqAdminQueueResponse = zod.object({
+  "relays": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "creator_id": zod.string().uuid(),
+  "room_id": zod.string().uuid(),
+  "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed', 'completed']),
+  "version": zod.number(),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMin).max(davaqAdminQueueResponseRelaysItemTermsLegsItemLocationMax)
+})).min(davaqAdminQueueResponseRelaysItemTermsLegsMin).max(davaqAdminQueueResponseRelaysItemTermsLegsMax),
+  "note": zod.string().max(davaqAdminQueueResponseRelaysItemTermsNoteMax),
+  "cancellation": zod.string().min(davaqAdminQueueResponseRelaysItemTermsCancellationMin).max(davaqAdminQueueResponseRelaysItemTermsCancellationMax)
+}),
+  "expires_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "members": zod.array(zod.object({
+  "user_id": zod.string().uuid(),
+  "position": zod.number(),
+  "listing_id": zod.string().uuid(),
+  "snapshot": zod.object({
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotTitleMax),
+  "description": zod.string().max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotDescriptionMax),
+  "wantedText": zod.string().max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotDurationMinutesMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotAvailableDaysItemMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMin).max(davaqAdminQueueResponseRelaysItemMembersItemSnapshotRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "accepted_version": zod.number().nullable(),
+  "cancel_accepted": zod.boolean(),
+  "provided_at": zod.coerce.date().nullable(),
+  "received_at": zod.coerce.date().nullable(),
+  "evidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actor_id": zod.string().uuid(),
+  "kind": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()),
+  "created_at": zod.coerce.date()
+}))
+})).optional(),
   "listings": zod.array(zod.object({
   "mode": zod.enum(['offer', 'want']),
   "kind": zod.enum(['goods', 'service', 'experience']),
@@ -1719,7 +1814,7 @@ export const davaqResolveReviewBodyReasonMax = 1000;
 
 
 export const DavaqResolveReviewBody = zod.object({
-  "kind": zod.enum(['listing', 'proposal']),
+  "kind": zod.enum(['listing', 'proposal - relay']),
   "action": zod.enum(['approve', 'reject', 'cancel', 'resume']),
   "reason": zod.string().min(davaqResolveReviewBodyReasonMin).max(davaqResolveReviewBodyReasonMax)
 })
@@ -8518,3 +8613,461 @@ export const UpdateAdminCharacterProfileStatusResponse = zod.object({
   "metadata": zod.record(zod.string(), zod.unknown()),
   "isActive": zod.boolean()
 }))
+
+
+/**
+ * @summary davaqRelayCandidates
+ */
+export const davaqRelayCandidatesResponseItemsItemListingsItemTitleMin = 2;
+export const davaqRelayCandidatesResponseItemsItemListingsItemTitleMax = 80;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemDescriptionMax = 3000;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemWantedTextMax = 500;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemLocationMax = 80;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemDurationMinutesMin = 5;
+export const davaqRelayCandidatesResponseItemsItemListingsItemDurationMinutesMax = 1440;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemAvailableDaysItemMin = 0;
+export const davaqRelayCandidatesResponseItemsItemListingsItemAvailableDaysItemMax = 6;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemEvMax = 100000;
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemTermsMax = 1500;
+
+
+export const davaqRelayCandidatesResponseItemsItemListingsItemRequestKeyMin = 8;
+export const davaqRelayCandidatesResponseItemsItemListingsItemRequestKeyMax = 100;
+
+
+
+export const DavaqRelayCandidatesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "listings": zod.array(zod.object({
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqRelayCandidatesResponseItemsItemListingsItemTitleMin).max(davaqRelayCandidatesResponseItemsItemListingsItemTitleMax),
+  "description": zod.string().max(davaqRelayCandidatesResponseItemsItemListingsItemDescriptionMax),
+  "wantedText": zod.string().max(davaqRelayCandidatesResponseItemsItemListingsItemWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqRelayCandidatesResponseItemsItemListingsItemLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqRelayCandidatesResponseItemsItemListingsItemDurationMinutesMin).max(davaqRelayCandidatesResponseItemsItemListingsItemDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqRelayCandidatesResponseItemsItemListingsItemAvailableDaysItemMin).max(davaqRelayCandidatesResponseItemsItemListingsItemAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqRelayCandidatesResponseItemsItemListingsItemEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqRelayCandidatesResponseItemsItemListingsItemTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqRelayCandidatesResponseItemsItemListingsItemRequestKeyMin).max(davaqRelayCandidatesResponseItemsItemListingsItemRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})),
+  "reasons": zod.array(zod.string()),
+  "pending": zod.array(zod.string())
+})),
+  "offersCount": zod.number(),
+  "scannedCount": zod.number(),
+  "limited": zod.boolean()
+})
+
+
+/**
+ * @summary davaqListRelays
+ */
+export const DavaqListRelaysQueryParams = zod.object({
+  "roomId": zod.coerce.string().uuid().optional()
+})
+
+export const davaqListRelaysResponseItemsItemTermsLegsItemLocationMin = 2;
+export const davaqListRelaysResponseItemsItemTermsLegsItemLocationMax = 200;
+
+export const davaqListRelaysResponseItemsItemTermsLegsMin = 3;
+export const davaqListRelaysResponseItemsItemTermsLegsMax = 4;
+
+export const davaqListRelaysResponseItemsItemTermsNoteMax = 1500;
+
+export const davaqListRelaysResponseItemsItemTermsCancellationMin = 5;
+export const davaqListRelaysResponseItemsItemTermsCancellationMax = 1000;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMin = 2;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMax = 80;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotDescriptionMax = 3000;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotWantedTextMax = 500;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotLocationMax = 80;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotDurationMinutesMin = 5;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotDurationMinutesMax = 1440;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotAvailableDaysItemMin = 0;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotAvailableDaysItemMax = 6;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotEvMax = 100000;
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotTermsMax = 1500;
+
+
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotRequestKeyMin = 8;
+export const davaqListRelaysResponseItemsItemMembersItemSnapshotRequestKeyMax = 100;
+
+
+
+export const DavaqListRelaysResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "creator_id": zod.string().uuid(),
+  "room_id": zod.string().uuid(),
+  "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed', 'completed']),
+  "version": zod.number(),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqListRelaysResponseItemsItemTermsLegsItemLocationMin).max(davaqListRelaysResponseItemsItemTermsLegsItemLocationMax)
+})).min(davaqListRelaysResponseItemsItemTermsLegsMin).max(davaqListRelaysResponseItemsItemTermsLegsMax),
+  "note": zod.string().max(davaqListRelaysResponseItemsItemTermsNoteMax),
+  "cancellation": zod.string().min(davaqListRelaysResponseItemsItemTermsCancellationMin).max(davaqListRelaysResponseItemsItemTermsCancellationMax)
+}),
+  "expires_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "members": zod.array(zod.object({
+  "user_id": zod.string().uuid(),
+  "position": zod.number(),
+  "listing_id": zod.string().uuid(),
+  "snapshot": zod.object({
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotTitleMax),
+  "description": zod.string().max(davaqListRelaysResponseItemsItemMembersItemSnapshotDescriptionMax),
+  "wantedText": zod.string().max(davaqListRelaysResponseItemsItemMembersItemSnapshotWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqListRelaysResponseItemsItemMembersItemSnapshotLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqListRelaysResponseItemsItemMembersItemSnapshotDurationMinutesMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqListRelaysResponseItemsItemMembersItemSnapshotAvailableDaysItemMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqListRelaysResponseItemsItemMembersItemSnapshotEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqListRelaysResponseItemsItemMembersItemSnapshotTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqListRelaysResponseItemsItemMembersItemSnapshotRequestKeyMin).max(davaqListRelaysResponseItemsItemMembersItemSnapshotRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "accepted_version": zod.number().nullable(),
+  "cancel_accepted": zod.boolean(),
+  "provided_at": zod.coerce.date().nullable(),
+  "received_at": zod.coerce.date().nullable(),
+  "evidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actor_id": zod.string().uuid(),
+  "kind": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()),
+  "created_at": zod.coerce.date()
+}))
+}))
+})
+
+
+/**
+ * @summary davaqCreateRelay
+ */
+export const davaqCreateRelayBodyListingIdsMin = 3;
+export const davaqCreateRelayBodyListingIdsMax = 4;
+
+export const davaqCreateRelayBodyTermsLegsItemLocationMin = 2;
+export const davaqCreateRelayBodyTermsLegsItemLocationMax = 200;
+
+export const davaqCreateRelayBodyTermsLegsMin = 3;
+export const davaqCreateRelayBodyTermsLegsMax = 4;
+
+export const davaqCreateRelayBodyTermsNoteMax = 1500;
+
+export const davaqCreateRelayBodyTermsCancellationMin = 5;
+export const davaqCreateRelayBodyTermsCancellationMax = 1000;
+
+export const davaqCreateRelayBodyRequestKeyMin = 8;
+export const davaqCreateRelayBodyRequestKeyMax = 100;
+
+
+
+export const DavaqCreateRelayBody = zod.object({
+  "listingIds": zod.array(zod.string().uuid()).min(davaqCreateRelayBodyListingIdsMin).max(davaqCreateRelayBodyListingIdsMax),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqCreateRelayBodyTermsLegsItemLocationMin).max(davaqCreateRelayBodyTermsLegsItemLocationMax)
+})).min(davaqCreateRelayBodyTermsLegsMin).max(davaqCreateRelayBodyTermsLegsMax),
+  "note": zod.string().max(davaqCreateRelayBodyTermsNoteMax),
+  "cancellation": zod.string().min(davaqCreateRelayBodyTermsCancellationMin).max(davaqCreateRelayBodyTermsCancellationMax)
+}),
+  "requestKey": zod.string().min(davaqCreateRelayBodyRequestKeyMin).max(davaqCreateRelayBodyRequestKeyMax)
+})
+
+
+/**
+ * @summary davaqGetRelay
+ */
+export const DavaqGetRelayParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const davaqGetRelayResponseTermsLegsItemLocationMin = 2;
+export const davaqGetRelayResponseTermsLegsItemLocationMax = 200;
+
+export const davaqGetRelayResponseTermsLegsMin = 3;
+export const davaqGetRelayResponseTermsLegsMax = 4;
+
+export const davaqGetRelayResponseTermsNoteMax = 1500;
+
+export const davaqGetRelayResponseTermsCancellationMin = 5;
+export const davaqGetRelayResponseTermsCancellationMax = 1000;
+
+export const davaqGetRelayResponseMembersItemSnapshotTitleMin = 2;
+export const davaqGetRelayResponseMembersItemSnapshotTitleMax = 80;
+
+export const davaqGetRelayResponseMembersItemSnapshotDescriptionMax = 3000;
+
+export const davaqGetRelayResponseMembersItemSnapshotWantedTextMax = 500;
+
+export const davaqGetRelayResponseMembersItemSnapshotLocationMax = 80;
+
+export const davaqGetRelayResponseMembersItemSnapshotDurationMinutesMin = 5;
+export const davaqGetRelayResponseMembersItemSnapshotDurationMinutesMax = 1440;
+
+export const davaqGetRelayResponseMembersItemSnapshotAvailableDaysItemMin = 0;
+export const davaqGetRelayResponseMembersItemSnapshotAvailableDaysItemMax = 6;
+
+export const davaqGetRelayResponseMembersItemSnapshotEvMax = 100000;
+
+export const davaqGetRelayResponseMembersItemSnapshotTermsMax = 1500;
+
+
+export const davaqGetRelayResponseMembersItemSnapshotRequestKeyMin = 8;
+export const davaqGetRelayResponseMembersItemSnapshotRequestKeyMax = 100;
+
+
+
+export const DavaqGetRelayResponse = zod.object({
+  "id": zod.string().uuid(),
+  "creator_id": zod.string().uuid(),
+  "room_id": zod.string().uuid(),
+  "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed', 'completed']),
+  "version": zod.number(),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqGetRelayResponseTermsLegsItemLocationMin).max(davaqGetRelayResponseTermsLegsItemLocationMax)
+})).min(davaqGetRelayResponseTermsLegsMin).max(davaqGetRelayResponseTermsLegsMax),
+  "note": zod.string().max(davaqGetRelayResponseTermsNoteMax),
+  "cancellation": zod.string().min(davaqGetRelayResponseTermsCancellationMin).max(davaqGetRelayResponseTermsCancellationMax)
+}),
+  "expires_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "members": zod.array(zod.object({
+  "user_id": zod.string().uuid(),
+  "position": zod.number(),
+  "listing_id": zod.string().uuid(),
+  "snapshot": zod.object({
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqGetRelayResponseMembersItemSnapshotTitleMin).max(davaqGetRelayResponseMembersItemSnapshotTitleMax),
+  "description": zod.string().max(davaqGetRelayResponseMembersItemSnapshotDescriptionMax),
+  "wantedText": zod.string().max(davaqGetRelayResponseMembersItemSnapshotWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqGetRelayResponseMembersItemSnapshotLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqGetRelayResponseMembersItemSnapshotDurationMinutesMin).max(davaqGetRelayResponseMembersItemSnapshotDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqGetRelayResponseMembersItemSnapshotAvailableDaysItemMin).max(davaqGetRelayResponseMembersItemSnapshotAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqGetRelayResponseMembersItemSnapshotEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqGetRelayResponseMembersItemSnapshotTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqGetRelayResponseMembersItemSnapshotRequestKeyMin).max(davaqGetRelayResponseMembersItemSnapshotRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "accepted_version": zod.number().nullable(),
+  "cancel_accepted": zod.boolean(),
+  "provided_at": zod.coerce.date().nullable(),
+  "received_at": zod.coerce.date().nullable(),
+  "evidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actor_id": zod.string().uuid(),
+  "kind": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()),
+  "created_at": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary davaqActOnRelay
+ */
+export const DavaqActOnRelayParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const davaqActOnRelayBodyRequestKeyMin = 8;
+export const davaqActOnRelayBodyRequestKeyMax = 100;
+
+export const davaqActOnRelayBodyTermsLegsItemLocationMin = 2;
+export const davaqActOnRelayBodyTermsLegsItemLocationMax = 200;
+
+export const davaqActOnRelayBodyTermsLegsMin = 3;
+export const davaqActOnRelayBodyTermsLegsMax = 4;
+
+export const davaqActOnRelayBodyTermsNoteMax = 1500;
+
+export const davaqActOnRelayBodyTermsCancellationMin = 5;
+export const davaqActOnRelayBodyTermsCancellationMax = 1000;
+
+export const davaqActOnRelayBodyNoteMax = 1500;
+
+
+
+export const DavaqActOnRelayBody = zod.object({
+  "action": zod.enum(['accept', 'revise', 'decline', 'cancel', 'approve_cancel', 'provided', 'received', 'dispute']),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqActOnRelayBodyRequestKeyMin).max(davaqActOnRelayBodyRequestKeyMax),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqActOnRelayBodyTermsLegsItemLocationMin).max(davaqActOnRelayBodyTermsLegsItemLocationMax)
+})).min(davaqActOnRelayBodyTermsLegsMin).max(davaqActOnRelayBodyTermsLegsMax),
+  "note": zod.string().max(davaqActOnRelayBodyTermsNoteMax),
+  "cancellation": zod.string().min(davaqActOnRelayBodyTermsCancellationMin).max(davaqActOnRelayBodyTermsCancellationMax)
+}).optional(),
+  "note": zod.string().max(davaqActOnRelayBodyNoteMax).optional()
+})
+
+export const davaqActOnRelayResponseTermsLegsItemLocationMin = 2;
+export const davaqActOnRelayResponseTermsLegsItemLocationMax = 200;
+
+export const davaqActOnRelayResponseTermsLegsMin = 3;
+export const davaqActOnRelayResponseTermsLegsMax = 4;
+
+export const davaqActOnRelayResponseTermsNoteMax = 1500;
+
+export const davaqActOnRelayResponseTermsCancellationMin = 5;
+export const davaqActOnRelayResponseTermsCancellationMax = 1000;
+
+export const davaqActOnRelayResponseMembersItemSnapshotTitleMin = 2;
+export const davaqActOnRelayResponseMembersItemSnapshotTitleMax = 80;
+
+export const davaqActOnRelayResponseMembersItemSnapshotDescriptionMax = 3000;
+
+export const davaqActOnRelayResponseMembersItemSnapshotWantedTextMax = 500;
+
+export const davaqActOnRelayResponseMembersItemSnapshotLocationMax = 80;
+
+export const davaqActOnRelayResponseMembersItemSnapshotDurationMinutesMin = 5;
+export const davaqActOnRelayResponseMembersItemSnapshotDurationMinutesMax = 1440;
+
+export const davaqActOnRelayResponseMembersItemSnapshotAvailableDaysItemMin = 0;
+export const davaqActOnRelayResponseMembersItemSnapshotAvailableDaysItemMax = 6;
+
+export const davaqActOnRelayResponseMembersItemSnapshotEvMax = 100000;
+
+export const davaqActOnRelayResponseMembersItemSnapshotTermsMax = 1500;
+
+
+export const davaqActOnRelayResponseMembersItemSnapshotRequestKeyMin = 8;
+export const davaqActOnRelayResponseMembersItemSnapshotRequestKeyMax = 100;
+
+
+
+export const DavaqActOnRelayResponse = zod.object({
+  "id": zod.string().uuid(),
+  "creator_id": zod.string().uuid(),
+  "room_id": zod.string().uuid(),
+  "status": zod.enum(['negotiating', 'reserved', 'in_progress', 'cancel_requested', 'cancelled', 'declined', 'expired', 'disputed', 'completed']),
+  "version": zod.number(),
+  "terms": zod.object({
+  "legs": zod.array(zod.object({
+  "listingId": zod.string().uuid(),
+  "startsAt": zod.coerce.date(),
+  "location": zod.string().min(davaqActOnRelayResponseTermsLegsItemLocationMin).max(davaqActOnRelayResponseTermsLegsItemLocationMax)
+})).min(davaqActOnRelayResponseTermsLegsMin).max(davaqActOnRelayResponseTermsLegsMax),
+  "note": zod.string().max(davaqActOnRelayResponseTermsNoteMax),
+  "cancellation": zod.string().min(davaqActOnRelayResponseTermsCancellationMin).max(davaqActOnRelayResponseTermsCancellationMax)
+}),
+  "expires_at": zod.coerce.date(),
+  "updated_at": zod.coerce.date(),
+  "members": zod.array(zod.object({
+  "user_id": zod.string().uuid(),
+  "position": zod.number(),
+  "listing_id": zod.string().uuid(),
+  "snapshot": zod.object({
+  "mode": zod.enum(['offer', 'want']),
+  "kind": zod.enum(['goods', 'service', 'experience']),
+  "category": zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other']),
+  "title": zod.string().min(davaqActOnRelayResponseMembersItemSnapshotTitleMin).max(davaqActOnRelayResponseMembersItemSnapshotTitleMax),
+  "description": zod.string().max(davaqActOnRelayResponseMembersItemSnapshotDescriptionMax),
+  "wantedText": zod.string().max(davaqActOnRelayResponseMembersItemSnapshotWantedTextMax),
+  "wantedCategories": zod.array(zod.enum(['voice', 'photo', 'design', 'language', 'tech', 'music', 'goods', 'business', 'other'])),
+  "location": zod.string().max(davaqActOnRelayResponseMembersItemSnapshotLocationMax),
+  "delivery": zod.enum(['online', 'offline', 'either']),
+  "durationMinutes": zod.number().min(davaqActOnRelayResponseMembersItemSnapshotDurationMinutesMin).max(davaqActOnRelayResponseMembersItemSnapshotDurationMinutesMax),
+  "availableDays": zod.array(zod.number().min(davaqActOnRelayResponseMembersItemSnapshotAvailableDaysItemMin).max(davaqActOnRelayResponseMembersItemSnapshotAvailableDaysItemMax)),
+  "ev": zod.number().min(1).max(davaqActOnRelayResponseMembersItemSnapshotEvMax).nullable(),
+  "imageKey": zod.string().nullable(),
+  "terms": zod.string().max(davaqActOnRelayResponseMembersItemSnapshotTermsMax),
+  "status": zod.string(),
+  "version": zod.number().min(1),
+  "requestKey": zod.string().min(davaqActOnRelayResponseMembersItemSnapshotRequestKeyMin).max(davaqActOnRelayResponseMembersItemSnapshotRequestKeyMax).optional(),
+  "id": zod.string().uuid(),
+  "ownerId": zod.string().uuid(),
+  "ownerName": zod.string(),
+  "reviewNote": zod.string().optional(),
+  "favorite": zod.boolean(),
+  "createdAt": zod.coerce.date().optional(),
+  "updatedAt": zod.coerce.date().optional()
+}),
+  "accepted_version": zod.number().nullable(),
+  "cancel_accepted": zod.boolean(),
+  "provided_at": zod.coerce.date().nullable(),
+  "received_at": zod.coerce.date().nullable(),
+  "evidence": zod.string()
+})),
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actor_id": zod.string().uuid(),
+  "kind": zod.string(),
+  "data": zod.record(zod.string(), zod.unknown()),
+  "created_at": zod.coerce.date()
+}))
+})

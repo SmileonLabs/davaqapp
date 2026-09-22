@@ -32,6 +32,7 @@ import {
   growth,
   enqueueSearch,
 } from "../lib/exchangeService";
+import { resolveRelay, notifyRelay } from "../lib/relayService";
 const router: IRouter = Router();
 router.use("/exchange", requireAuth);
 const idInput = z.uuid();
@@ -250,6 +251,7 @@ router.patch(
         )
       ).rows[0];
       demand(old, 404, "항목을 찾을 수 없어요.");
+      demand(!(await sql.query("SELECT 1 FROM exchange_relay_reservations WHERE listing_id=$1 AND active LIMIT 1",[id])).rows.length,409,"확정된 이어 바꾸기에 참여 중이에요. 교환을 마친 뒤 수정해 주세요.");
       demand(
         old.version === input.version,
         409,
@@ -504,7 +506,8 @@ router.get(
         "SELECT p.*,(SELECT coalesce(jsonb_agg(e),'[]'::jsonb) FROM exchange_events e WHERE e.proposal_id=p.id) events,(SELECT coalesce(jsonb_agg(f),'[]'::jsonb) FROM exchange_fulfillments f WHERE f.proposal_id=p.id) fulfillments,a.nickname proposer_name,b.nickname recipient_name FROM exchange_proposals p JOIN users a ON a.id=p.proposer_id JOIN users b ON b.id=p.recipient_id WHERE p.status IN('disputed','cancel_requested') ORDER BY p.updated_at DESC LIMIT 50",
       )
     ).rows;
-    res.json({ listings: listings.map(listingDto), disputes });
+    const relays=(await pool.query("SELECT r.*,(SELECT coalesce(jsonb_agg(m ORDER BY m.position),'[]'::jsonb) FROM exchange_relay_members m WHERE m.relay_id=r.id) members,(SELECT coalesce(jsonb_agg(e ORDER BY e.created_at DESC),'[]'::jsonb) FROM exchange_relay_events e WHERE e.relay_id=r.id) events FROM exchange_relays r WHERE r.status IN('disputed','cancel_requested') ORDER BY r.updated_at DESC LIMIT 50")).rows;
+    res.json({ listings: listings.map(listingDto), disputes, relays });
   }),
 );
 router.post(
@@ -523,14 +526,16 @@ router.post(
     const id = idInput.parse(req.params.id),
       input = z
         .object({
-          kind: z.enum(["listing", "proposal"]),
+          kind: z.enum(["listing", "proposal", "relay"]),
           action: z.enum(["approve", "reject", "cancel", "resume"]),
           reason: z.string().trim().min(5).max(1000),
         })
         .strict()
         .parse(req.body);
     await transaction(async (sql) => {
-      if (input.kind === "listing") {
+      if(input.kind === "relay") {
+        await resolveRelay(sql,id,req.dbUser!.id,input.action,input.reason);
+      } else if (input.kind === "listing") {
         demand(
           ["approve", "reject"].includes(input.action),
           400,
@@ -616,6 +621,7 @@ router.post(
       );
       await enqueueSearch(undefined, sql);
     });
+    if(input.kind==='relay') await notifyRelay({id},req.dbUser!.id);
     res.json({ ok: true });
   }),
 );

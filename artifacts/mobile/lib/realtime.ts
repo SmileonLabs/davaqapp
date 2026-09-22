@@ -132,7 +132,7 @@ export function useRealtimeInvalidation(): void {
     };
 
     const handleEvent = (event: RealtimeEvent) => {
-      if(event.data?.exchangeProposalId){void queryClient.invalidateQueries({queryKey:["davaq"]});if(event.roomId)invalidateRoomMessages(event.roomId);}
+      if(event.data?.exchangeProposalId || event.data?.relayId){void queryClient.invalidateQueries({queryKey:["davaq"]});if(event.roomId)invalidateRoomMessages(event.roomId);}
       if (event.type === "message.created") {
         noteChatRealtimeDeliveryAge(event.createdAt);
       }

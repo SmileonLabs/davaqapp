@@ -113,6 +113,7 @@ import type {
   DavaqFetchConversationMessagesParams,
   DavaqListListingsParams,
   DavaqListProposalsParams,
+  DavaqListRelaysParams,
   DavaqListing,
   DavaqListingInput,
   DavaqListings,
@@ -125,6 +126,11 @@ import type {
   DavaqProposals,
   DavaqReactConversationMessageBody,
   DavaqRegistrationDraftBody,
+  DavaqRelay,
+  DavaqRelayAction,
+  DavaqRelayCreate,
+  DavaqRelaySearch,
+  DavaqRelays,
   DavaqResolveReviewBody,
   DavaqReviewProposalBody,
   DavaqSendAgentMessageBody,
@@ -18937,4 +18943,385 @@ export const useUpdateAdminCharacterProfileStatus = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateAdminCharacterProfileStatusMutationOptions(options));
+    }
+
+export const getDavaqRelayCandidatesUrl = () => {
+
+
+
+
+  return `/api/exchange/relays/candidates`
+}
+
+/**
+ * @summary davaqRelayCandidates
+ */
+export const davaqRelayCandidates = async ( options?: RequestInit): Promise<DavaqRelaySearch> => {
+
+  return customFetch<DavaqRelaySearch>(getDavaqRelayCandidatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqRelayCandidatesQueryKey = () => {
+    return [
+    `/api/exchange/relays/candidates`
+    ] as const;
+    }
+
+
+export const getDavaqRelayCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof davaqRelayCandidates>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqRelayCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqRelayCandidatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqRelayCandidates>>> = ({ signal }) => davaqRelayCandidates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqRelayCandidates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqRelayCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof davaqRelayCandidates>>>
+export type DavaqRelayCandidatesQueryError = ErrorType<void>
+
+
+/**
+ * @summary davaqRelayCandidates
+ */
+
+export function useDavaqRelayCandidates<TData = Awaited<ReturnType<typeof davaqRelayCandidates>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqRelayCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqRelayCandidatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqListRelaysUrl = (params?: DavaqListRelaysParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/exchange/relays?${stringifiedParams}` : `/api/exchange/relays`
+}
+
+/**
+ * @summary davaqListRelays
+ */
+export const davaqListRelays = async (params?: DavaqListRelaysParams, options?: RequestInit): Promise<DavaqRelays> => {
+
+  return customFetch<DavaqRelays>(getDavaqListRelaysUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqListRelaysQueryKey = (params?: DavaqListRelaysParams,) => {
+    return [
+    `/api/exchange/relays`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDavaqListRelaysQueryOptions = <TData = Awaited<ReturnType<typeof davaqListRelays>>, TError = ErrorType<void>>(params?: DavaqListRelaysParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqListRelays>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqListRelaysQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqListRelays>>> = ({ signal }) => davaqListRelays(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqListRelays>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqListRelaysQueryResult = NonNullable<Awaited<ReturnType<typeof davaqListRelays>>>
+export type DavaqListRelaysQueryError = ErrorType<void>
+
+
+/**
+ * @summary davaqListRelays
+ */
+
+export function useDavaqListRelays<TData = Awaited<ReturnType<typeof davaqListRelays>>, TError = ErrorType<void>>(
+ params?: DavaqListRelaysParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqListRelays>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqListRelaysQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqCreateRelayUrl = () => {
+
+
+
+
+  return `/api/exchange/relays`
+}
+
+/**
+ * @summary davaqCreateRelay
+ */
+export const davaqCreateRelay = async (davaqRelayCreate: DavaqRelayCreate, options?: RequestInit): Promise<DavaqRelay> => {
+
+  return customFetch<DavaqRelay>(getDavaqCreateRelayUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqRelayCreate,)
+  }
+);}
+
+
+
+
+export const getDavaqCreateRelayMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqCreateRelay>>, TError,{data: BodyType<DavaqRelayCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqCreateRelay>>, TError,{data: BodyType<DavaqRelayCreate>}, TContext> => {
+
+const mutationKey = ['davaqCreateRelay'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqCreateRelay>>, {data: BodyType<DavaqRelayCreate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  davaqCreateRelay(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqCreateRelayMutationResult = NonNullable<Awaited<ReturnType<typeof davaqCreateRelay>>>
+    export type DavaqCreateRelayMutationBody = BodyType<DavaqRelayCreate>
+    export type DavaqCreateRelayMutationError = ErrorType<void>
+
+    /**
+ * @summary davaqCreateRelay
+ */
+export const useDavaqCreateRelay = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqCreateRelay>>, TError,{data: BodyType<DavaqRelayCreate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqCreateRelay>>,
+        TError,
+        {data: BodyType<DavaqRelayCreate>},
+        TContext
+      > => {
+      return useMutation(getDavaqCreateRelayMutationOptions(options));
+    }
+
+export const getDavaqGetRelayUrl = (id: string,) => {
+
+
+
+
+  return `/api/exchange/relays/${id}`
+}
+
+/**
+ * @summary davaqGetRelay
+ */
+export const davaqGetRelay = async (id: string, options?: RequestInit): Promise<DavaqRelay> => {
+
+  return customFetch<DavaqRelay>(getDavaqGetRelayUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDavaqGetRelayQueryKey = (id: string,) => {
+    return [
+    `/api/exchange/relays/${id}`
+    ] as const;
+    }
+
+
+export const getDavaqGetRelayQueryOptions = <TData = Awaited<ReturnType<typeof davaqGetRelay>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetRelay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDavaqGetRelayQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof davaqGetRelay>>> = ({ signal }) => davaqGetRelay(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof davaqGetRelay>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DavaqGetRelayQueryResult = NonNullable<Awaited<ReturnType<typeof davaqGetRelay>>>
+export type DavaqGetRelayQueryError = ErrorType<void>
+
+
+/**
+ * @summary davaqGetRelay
+ */
+
+export function useDavaqGetRelay<TData = Awaited<ReturnType<typeof davaqGetRelay>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof davaqGetRelay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDavaqGetRelayQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDavaqActOnRelayUrl = (id: string,) => {
+
+
+
+
+  return `/api/exchange/relays/${id}/actions`
+}
+
+/**
+ * @summary davaqActOnRelay
+ */
+export const davaqActOnRelay = async (id: string,
+    davaqRelayAction: DavaqRelayAction, options?: RequestInit): Promise<DavaqRelay> => {
+
+  return customFetch<DavaqRelay>(getDavaqActOnRelayUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      davaqRelayAction,)
+  }
+);}
+
+
+
+
+export const getDavaqActOnRelayMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqActOnRelay>>, TError,{id: string;data: BodyType<DavaqRelayAction>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof davaqActOnRelay>>, TError,{id: string;data: BodyType<DavaqRelayAction>}, TContext> => {
+
+const mutationKey = ['davaqActOnRelay'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof davaqActOnRelay>>, {id: string;data: BodyType<DavaqRelayAction>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  davaqActOnRelay(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DavaqActOnRelayMutationResult = NonNullable<Awaited<ReturnType<typeof davaqActOnRelay>>>
+    export type DavaqActOnRelayMutationBody = BodyType<DavaqRelayAction>
+    export type DavaqActOnRelayMutationError = ErrorType<void>
+
+    /**
+ * @summary davaqActOnRelay
+ */
+export const useDavaqActOnRelay = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof davaqActOnRelay>>, TError,{id: string;data: BodyType<DavaqRelayAction>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof davaqActOnRelay>>,
+        TError,
+        {id: string;data: BodyType<DavaqRelayAction>},
+        TContext
+      > => {
+      return useMutation(getDavaqActOnRelayMutationOptions(options));
     }

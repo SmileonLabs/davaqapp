@@ -11,5 +11,5 @@ export type DavaqResolveReviewBodyKind = typeof DavaqResolveReviewBodyKind[keyof
 
 export const DavaqResolveReviewBodyKind = {
   listing: 'listing',
-  proposal: 'proposal',
+  'proposal_-_relay': 'proposal - relay',
 } as const;

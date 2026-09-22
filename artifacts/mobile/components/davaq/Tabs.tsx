@@ -35,6 +35,7 @@ import {
 
 import { PinnedAgentConversation } from "./AgentConversation";
 import { BrandHomeSection } from "./BrandExchangeScreens";
+import { RelayEntry } from "./RelayScreens";
 
 export function HomeScreen() {
   const router = useRouter(),
@@ -120,6 +121,7 @@ export function HomeScreen() {
           onPress={() => router.push("/exchange/new?mode=want")}
         />
       </View>
+      <RelayEntry />
       <BrandHomeSection />
       <Section
         title="나에게 맞는 교환"
@@ -571,6 +573,7 @@ export function MyExchangesScreen() {
         label="받은 혜택 · 브랜드 교환 기록"
         onPress={() => router.push("/brand-rewards" as any)}
       />
+      <RelayEntry compact />
       {tab === "listings" ? (
         <>
           <Button

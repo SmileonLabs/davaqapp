@@ -97,6 +97,7 @@
     { "idx": 32, "version": "7", "when": 1789171200003, "tag": "0032_davaq_operational_state", "breakpoints": true },
     { "idx": 33, "version": "7", "when": 1789171200004, "tag": "0033_davaq_brand_exchange", "breakpoints": true },
     { "idx": 34, "version": "7", "when": 1790025600000, "tag": "0034_davaq_chat_transport", "breakpoints": true },
-    {"idx":35,"version":"7","when":1790025600001,"tag":"0035_davaq_messenger_actions","breakpoints":true}
+    {"idx":35,"version":"7","when":1790025600001,"tag":"0035_davaq_messenger_actions","breakpoints":true},
+    {"idx":36,"version":"7","when":1790025600002,"tag":"0036_davaq_relay_exchange","breakpoints":true}
   ]
 }

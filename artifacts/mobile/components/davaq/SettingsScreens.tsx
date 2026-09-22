@@ -161,8 +161,9 @@ export function ProfileEditor() {
     </Frame>
   );
 }
+import type { Relay } from "@/lib/relay";
 export function ExchangeAdminScreen() {
-  const query = useDavaq<{ listings: Listing[]; disputes: Proposal[] }>(
+  const query = useDavaq<{ listings: Listing[]; disputes: Proposal[]; relays?:Relay[] }>(
       "/exchange/admin",
     ),
     mutation = useDavaqMutation(),
@@ -217,6 +218,8 @@ export function ExchangeAdminScreen() {
               </View>
             </View>
           ))}
+          <Section title={"이어 바꾸기 검토 · " + (query.data.relays?.length??0)} />
+          {query.data.relays?.map(r=><View key={r.id} style={S.card}><Txt bold>{r.members.map(m=>m.snapshot.ownerName).join(' → ')}</Txt>{r.members.map(m=><Txt key={m.user_id} size={13}>{m.snapshot.title} · {m.provided_at?'전달 완료':'전달 전'} · {m.received_at?'받기 확인 완료':'받기 대기'}</Txt>)}{r.events.filter(e=>e.data.note).map(e=><Txt key={e.id} size={12}>{e.data.note}</Txt>)}<Notice>취소 처리 전 참여자 모두의 전달·반환 상황을 확인해 주세요.</Notice><View style={S.row}><Button small label="교환 재개" busy={mutation.isPending} disabled={reason.trim().length<5} onPress={()=>void resolve(r.id,'relay','resume')}/><Button small secondary label="취소 처리" busy={mutation.isPending} disabled={reason.trim().length<5} onPress={()=>void resolve(r.id,'relay','cancel')}/></View></View>)}
           <Section title={"교환 검토 · " + query.data.disputes.length} />
           {query.data.disputes.map((p) => (
             <View key={p.id} style={S.card}>

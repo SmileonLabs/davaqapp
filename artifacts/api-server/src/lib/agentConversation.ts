@@ -3,6 +3,7 @@ import { pool } from "@workspace/db";
 import { z } from "zod/v4";
 import { transaction, demand, findMatches } from "./exchangeService";
 import { agentReply } from "./davaqAgent";
+import { findRelayCandidates } from "./relayService";
 import { listBrandExchanges } from "./brandExchange";
 import { logger } from "./logger";
 
@@ -264,7 +265,7 @@ export async function listAgentConversation(
   const needsMatches = visible.some((r) => r.metadata?.matchIds?.length);
   const needsBrands = visible.some((r) => r.metadata?.brandIds?.length);
   const needsMemories = visible.some((r) => r.metadata?.memoryId);
-  const [matches, brands, memories] = await Promise.all([
+  const [matches, brands, memories, relays] = await Promise.all([
     needsMatches ? findMatches(user) : [],
     needsBrands ? listBrandExchanges(user, true) : { items: [] },
     needsMemories
@@ -273,6 +274,7 @@ export async function listAgentConversation(
           [user],
         )
       : { rows: [] },
+    visible.some(r=>r.metadata?.relayIds?.length) ? findRelayCandidates(user) : {items:[] as Awaited<ReturnType<typeof findRelayCandidates>>["items"]},
   ]);
   const matchesById = new Map(matches.map((m) => [m.id, m]));
   const brandsById = new Map(brands.items.map((m: any) => [m.id, m]));
@@ -280,6 +282,7 @@ export async function listAgentConversation(
   return rows.map((row) => {
     if (row.deleted_at || row.hidden_at) return agentMessageDto(row);
     const cards: any[] = [];
+    for(const id of (row.metadata?.relayIds??[]).slice(0,2)){const candidate=relays.items.find(r=>r.id===id);if(candidate)cards.push({kind:"relay",candidate});}
     for (const id of (row.metadata?.matchIds ?? []).slice(0, 3)) {
       const match = matchesById.get(id);
       if (match) cards.push({ kind: "match", match });
@@ -349,6 +352,7 @@ export async function processAgentConversationBatch() {
           content = answer.data.reply;
           metadata.matchIds = answer.matchIds;
           metadata.brandIds = answer.brandIds;
+          metadata.relayIds = answer.relayIds;
           if (
             !/쿠폰|브랜드|1분|리워드/.test(row.content) &&
             /줄 수|해줄|해주|제공|등록|대신|받고 싶|바꾸고|바꿀/.test(

@@ -35,3 +35,5 @@ export * from "./adminRoles";
 export * from "./characterProfiles";
 export * from "./exchange";
 export * from "./brandExchange";
+
+export * from "./relay";

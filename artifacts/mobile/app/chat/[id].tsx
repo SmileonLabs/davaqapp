@@ -108,6 +108,8 @@ function getIsIOSStandalonePwa() {
   return isIOS && standalone;
 }
 
+import { RelayRoomBanner } from "@/components/davaq/RelayScreens";
+
 export default function ChatScreen({roomId,onBack,embedded=false}:{roomId?:string;onBack?:()=>void;embedded?:boolean}={}) {
   const params = useLocalSearchParams<{ id: string }>();
   const id=roomId??params.id;
@@ -991,6 +993,7 @@ export default function ChatScreen({roomId,onBack,embedded=false}:{roomId?:strin
         onOpenOptions={() => setRoomOptionsVisible(true)}
       />
 
+      <RelayRoomBanner roomId={id} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

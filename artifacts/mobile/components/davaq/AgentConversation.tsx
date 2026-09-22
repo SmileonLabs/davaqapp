@@ -122,8 +122,11 @@ function Button(props: React.ComponentProps<typeof BaseButton>) {
 }
 
 const noop = () => {};
+import { RelayCandidateCard } from "./RelayScreens";
+import type { RelayCandidate } from "@/lib/relay";
 const qReadState = { unreadCount: 0 };
 type Card =
+  | { kind: "relay"; candidate: RelayCandidate }
   | { kind: "match"; match: Match }
   | { kind: "brand"; campaign: BrandCampaign }
   | { kind: "memory"; memory: { id: string; label: string; status: string } }
@@ -166,6 +169,7 @@ function ConversationCards({
       }}
     >
       {cards.map((card, i) => {
+        if (card.kind === "relay") return <RelayCandidateCard key={card.candidate.id} candidate={card.candidate}/>;
         if (card.kind === "match")
           return (
             <View
@@ -575,6 +579,7 @@ export function AgentConversation({
         }}
       >
         <View style={S.wrap}>
+          <Chip label="이어 바꾸기" onPress={() => router.push("/relay" as any)} />
           <Chip
             label="교환 추천"
             onPress={() =>

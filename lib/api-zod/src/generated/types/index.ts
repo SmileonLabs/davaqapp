@@ -217,6 +217,7 @@ export * from './davaqListListingsParams';
 export * from './davaqListListingsShort';
 export * from './davaqListListingsToday';
 export * from './davaqListProposalsParams';
+export * from './davaqListRelaysParams';
 export * from './davaqMatch';
 export * from './davaqMatches';
 // DavaqMatchFeedbackBody uses the canonical generated Zod export.
@@ -234,6 +235,19 @@ export * from './davaqProposalSnapshots';
 export * from './davaqProposalStatus';
 // DavaqReactConversationMessageBody uses the canonical generated Zod export.
 // DavaqRegistrationDraftBody uses the canonical generated Zod export.
+export * from './davaqRelay';
+export * from './davaqRelayAction';
+export * from './davaqRelayActionAction';
+export * from './davaqRelayCandidate';
+export * from './davaqRelayCreate';
+export * from './davaqRelayEvent';
+export * from './davaqRelayEventData';
+export * from './davaqRelayMember';
+export * from './davaqRelays';
+export * from './davaqRelaySearch';
+export * from './davaqRelayStatus';
+export * from './davaqRelayTerms';
+export * from './davaqRelayTermsLegsItem';
 // DavaqResolveReviewBody uses the canonical generated Zod export.
 export * from './davaqResolveReviewBodyAction';
 export * from './davaqResolveReviewBodyKind';
