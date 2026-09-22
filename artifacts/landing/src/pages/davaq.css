@@ -236,25 +236,21 @@ body {
   color: #867b96;
   font-size: 10px;
 }
+.dq-product-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
 .dq-headphones {
   height: 220px;
   display: grid;
   place-items: center;
-  position: relative;
-  color: #494154;
 }
-.dq-headphones:before {
-  content: "";
-  width: 192px;
-  height: 174px;
-  border-radius: 50% 47% 50% 40%;
-  background: #f2f0f4;
-  position: absolute;
-  transform: rotate(-17deg);
-}
-.dq-headphones > svg {
-  position: relative;
-  filter: drop-shadow(5px 10px 3px #41335413);
+.dq-headphones .dq-product-photo {
+  width: auto;
+  max-width: 100%;
 }
 .dq-product-name {
   display: flex;
@@ -293,8 +289,11 @@ body {
   margin: 12px 0 20px;
   color: #635570;
 }
-.dq-preview-question > svg {
-  color: #7c6c93;
+.dq-preview-question > .dq-product-photo {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 8px;
 }
 .dq-q {
   display: inline-flex;
@@ -510,14 +509,10 @@ body {
   padding: 2px 6px;
   white-space: nowrap;
 }
-.dq-item-icon {
-  height: 79px;
-  display: grid;
-  place-items: center;
-  color: #71677d;
-}
-.dq-person-me .dq-item-icon {
-  color: var(--purple);
+.dq-item-photo {
+  height: 150px;
+  max-width: 150px;
+  margin: 8px auto 12px;
 }
 .dq-person > small {
   display: block;
@@ -687,6 +682,13 @@ body {
   font-size: 12px;
   font-weight: 650;
   position: absolute;
+}
+.dq-map-pin .dq-product-photo {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: white;
+  mix-blend-mode: normal;
 }
 .dq-map-pin:after {
   content: "";
@@ -1056,14 +1058,6 @@ body {
   .dq-headphones {
     height: 190px;
   }
-  .dq-headphones > svg {
-    width: 132px;
-    height: 132px;
-  }
-  .dq-headphones:before {
-    width: 174px;
-    height: 150px;
-  }
   .dq-product-name strong {
     font-size: 21px;
   }
@@ -1153,7 +1147,7 @@ body {
   }
   .dq-person {
     display: grid;
-    grid-template-columns: 55px 1fr;
+    grid-template-columns: 85px 1fr;
     grid-template-rows: auto auto auto;
     padding: 17px 18px;
     text-align: left;
@@ -1165,10 +1159,12 @@ body {
     gap: 8px;
     font-size: 11px;
   }
-  .dq-item-icon {
+  .dq-item-photo {
     grid-column: 1;
     grid-row: 1/4;
-    height: auto;
+    width: 85px;
+    height: 85px;
+    margin: 0;
     align-self: center;
   }
   .dq-person > small {

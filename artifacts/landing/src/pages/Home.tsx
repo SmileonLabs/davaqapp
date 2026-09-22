@@ -3,22 +3,61 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  Camera,
+  PackagePlus,
   Check,
   ChevronDown,
-  Headphones,
   ImagePlus,
   MapPin,
   MessageCircle,
   Repeat2,
   ScanLine,
   ShieldCheck,
-  Armchair,
   WandSparkles,
 } from "lucide-react";
+import headphones160 from "../assets/products/headphones-160.webp";
+import headphones320 from "../assets/products/headphones-320.webp";
+import headphones640 from "../assets/products/headphones-640.webp";
+import camera160 from "../assets/products/camera-160.webp";
+import camera320 from "../assets/products/camera-320.webp";
+import camera640 from "../assets/products/camera-640.webp";
+import campingchair160 from "../assets/products/camping-chair-160.webp";
+import campingchair320 from "../assets/products/camping-chair-320.webp";
+import campingchair640 from "../assets/products/camping-chair-640.webp";
 import "./davaq.css";
 
 const start = "/app/wishes/new";
+
+const productPhotos = {
+  headphones: [headphones160, headphones320, headphones640],
+  camera: [camera160, camera320, camera640],
+  chair: [campingchair160, campingchair320, campingchair640],
+} as const;
+
+function ProductPhoto({
+  product,
+  sizes = "44px",
+  priority = false,
+}: {
+  product: keyof typeof productPhotos;
+  sizes?: string;
+  priority?: boolean;
+}) {
+  const [small, medium, large] = productPhotos[product];
+  return (
+    <img
+      className="dq-product-photo"
+      src={medium}
+      srcSet={`${small} 160w, ${medium} 320w, ${large} 640w`}
+      sizes={sizes}
+      width={640}
+      height={640}
+      alt=""
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : undefined}
+      decoding="async"
+    />
+  );
+}
 
 function QAvatar({ small = false }: { small?: boolean }) {
   return (
@@ -38,7 +77,7 @@ function WishPreview() {
         <span>
           <ScanLine size={17} /> 갖고 싶은 것에서 시작
         </span>
-        <span className="dq-example">화면 예시</span>
+        <span className="dq-example">AI 생성 제품 · 화면 예시</span>
       </div>
       <div className="dq-product">
         <div className="dq-product-caption">
@@ -48,7 +87,11 @@ function WishPreview() {
           </span>
         </div>
         <div className="dq-headphones">
-          <Headphones size={144} strokeWidth={1.15} aria-hidden="true" />
+          <ProductPhoto
+            product="headphones"
+            sizes="(max-width: 950px) 190px, 220px"
+            priority
+          />
         </div>
         <div className="dq-product-name">
           <div>
@@ -59,7 +102,7 @@ function WishPreview() {
         </div>
       </div>
       <div className="dq-preview-question">
-        <Camera size={22} />
+        <ProductPhoto product="camera" />
         <span>
           안 쓰는 <strong>카메라</strong>로 바꿀 수 있을까?
         </span>
@@ -85,23 +128,38 @@ function ExchangeDemo() {
   const [relay, setRelay] = useState(true);
   const people = relay
     ? [
-        { name: "나", give: "카메라", receive: "헤드폰", icon: Camera },
+        {
+          name: "나",
+          give: "카메라",
+          receive: "헤드폰",
+          product: "camera" as const,
+        },
         {
           name: "이웃 A",
           give: "캠핑 의자",
           receive: "카메라",
-          icon: Armchair,
+          product: "chair" as const,
         },
         {
           name: "이웃 B",
           give: "헤드폰",
           receive: "캠핑 의자",
-          icon: Headphones,
+          product: "headphones" as const,
         },
       ]
     : [
-        { name: "나", give: "카메라", receive: "헤드폰", icon: Camera },
-        { name: "이웃", give: "헤드폰", receive: "카메라", icon: Headphones },
+        {
+          name: "나",
+          give: "카메라",
+          receive: "헤드폰",
+          product: "camera" as const,
+        },
+        {
+          name: "이웃",
+          give: "헤드폰",
+          receive: "카메라",
+          product: "headphones" as const,
+        },
       ];
   return (
     <div className="dq-exchange-demo">
@@ -135,15 +193,18 @@ function ExchangeDemo() {
             : "서로 원하는 것이 맞으면, 두 사람이 바로 바꿔요."}
         </p>
         <div className={"dq-chain" + (!relay ? " dq-chain-direct" : "")}>
-          {people.map(({ name, give, receive, icon: Icon }, i) => (
+          {people.map(({ name, give, receive, product }, i) => (
             <div className="dq-chain-part" key={name}>
               <div className={"dq-person" + (i === 0 ? " dq-person-me" : "")}>
                 <div className="dq-person-name">
                   <span>{name}</span>
                   {i === 0 && <span className="dq-you">내 교환</span>}
                 </div>
-                <div className="dq-item-icon">
-                  <Icon size={42} strokeWidth={1.5} aria-hidden="true" />
+                <div className="dq-item-photo">
+                  <ProductPhoto
+                    product={product}
+                    sizes="(max-width: 760px) 85px, 150px"
+                  />
                 </div>
                 <small>주는 것</small>
                 <strong>{give}</strong>
@@ -191,10 +252,10 @@ function MapPreview() {
       <div className="dq-road dq-road-b" />
       <div className="dq-road dq-road-c" />
       <span className="dq-map-pin dq-pin-camera">
-        <Camera size={19} /> 카메라
+        <ProductPhoto product="camera" /> 카메라
       </span>
       <span className="dq-map-pin dq-pin-headphones">
-        <Headphones size={19} /> 헤드폰
+        <ProductPhoto product="headphones" /> 헤드폰
       </span>
       <span className="dq-map-meet">
         <MapPin size={16} /> 만날 장소 함께 정하기
@@ -308,7 +369,7 @@ export default function Home() {
                 body: "상품 캡처나 사진, 짧은 설명을 보내세요. Q가 정리한 초안을 확인하고 내 소원함에 저장해요.",
               },
               {
-                icon: Camera,
+                icon: PackagePlus,
                 title: "내가 줄 수 있는 것을 등록해요",
                 body: "안 쓰는 물건, 자신 있는 재능, 나눌 수 있는 경험. 내가 제공할 수 있는 것이 교환의 출발점이에요.",
               },
