@@ -44,7 +44,8 @@ as an absolute path, with one Metro worker to keep memory usage bounded.
   signing key or private user records are included on the Pages branch.
 - Deletion requests currently go to the operating team's mailbox for manual owner
   verification and processing. This is not an automated deletion endpoint.
-- Android settings links to both public pages; iOS settings behavior is unchanged.
+- Android settings, sign-in and signup link to both public pages; iOS behavior is unchanged.
+- Government-app and health-feature declarations are saved as not applicable.
 
 At this checkpoint the signed build/upload and rollout are still pending. A tester
 link is not evidence of an active release until Play Console confirms rollout.

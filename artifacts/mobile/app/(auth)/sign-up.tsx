@@ -1,3 +1,4 @@
+import { LegalLinks } from "@/components/davaq/LegalLinks";
 import { CustomScrollView } from "@/components/CustomScroll";
 import { useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
@@ -109,7 +110,8 @@ export default function SignUpScreen() {
           <Pressable onPress={handleEditEmail} disabled={fetchStatus === "fetching"}>
             <Text style={[styles.resend, { color: colors.mutedForeground }]}>← 이메일 주소 수정하기</Text>
           </Pressable>
-        </CustomScrollView>
+          <LegalLinks color={colors.primary} />
+      </CustomScrollView>
       </KeyboardAvoidingView>
     );
   }
@@ -191,6 +193,7 @@ export default function SignUpScreen() {
           </Link>
         </View>
         <View nativeID="clerk-captcha" />
+        <LegalLinks color={colors.primary} />
       </CustomScrollView>
     </KeyboardAvoidingView>
   );

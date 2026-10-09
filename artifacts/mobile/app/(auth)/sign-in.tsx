@@ -1,3 +1,4 @@
+import { LegalLinks } from "@/components/davaq/LegalLinks";
 import { CustomScrollView } from "@/components/CustomScroll";
 import { useSignIn } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
@@ -256,6 +257,7 @@ export default function SignInScreen() {
             </Pressable>
           </Link>
         </View>
+        <LegalLinks color={colors.primary} />
       </CustomScrollView>
     </KeyboardAvoidingView>
   );
