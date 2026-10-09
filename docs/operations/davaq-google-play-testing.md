@@ -30,7 +30,7 @@ as an absolute path, with one Metro worker to keep memory usage bounded.
 - Developer account: SmileOn Labs, ID `5339000452196792538`.
 - App: DavaQ (다바꿔), ID `4975101285636395490`, Korean default language, free app.
 - Internal track: `4700858542884065904`.
-- Draft release: `1.0.0 (9) - Android internal test`.
+- Active release: `1.0.0 (9) - Android internal test`.
 - One DavaQ tester list is selected. Six submitted addresses were accepted;
   two were rejected as nonexistent Google accounts. Personal emails stay out of Git.
 - Ads declaration: contains ads (brand exchange); advertising ID: not used.
@@ -47,8 +47,33 @@ as an absolute path, with one Metro worker to keep memory usage bounded.
 - Android settings, sign-in and signup link to both public pages; iOS behavior is unchanged.
 - Government-app and health-feature declarations are saved as not applicable.
 
-At this checkpoint the signed build/upload and rollout are still pending. A tester
-link is not evidence of an active release until Play Console confirms rollout.
+The signed AAB is processed and the internal release is active. Play Console confirms
+it is available to internal testers (unreviewed). The invite page was opened with
+an accepted tester account and displayed the invitation; acceptance is left to each tester.
+Tester URL: https://play.google.com/apps/internaltest/4700858542884065904
+Google notes that distribution normally appears within an hour but can take longer.
+The sole nonblocking release warning concerns the absent R8/ProGuard mapping file;
+release minification is disabled in this build. No release validation errors were shown.
+
+## Artifact validation
+
+Source commit: `f775bb6`. Local Android regression tests: 18 passed; mobile type
+check and GitHub Quality/OpenAPI workflows passed. The first release build passed
+in 45m42s and the final incremental build passed in 3m50s (30 tasks executed,
+1215 up to date). Release lint checks were not skipped.
+
+- APK: 96,346,893 bytes, package `app.davaq.mobile`, version `1.0.0 (9)`.
+- AAB: 71,945,953 bytes; SHA-256
+  `076ECB25752EADA0AC56C5A478EF099CA6A6BA28AD309C54AA0513A820717B1C`.
+- APK signature valid, debug certificate absent, debuggable false, target API 36.
+- Telecom/foreground classes and their package registration are present.
+- Standalone Hermes bundle includes the remote DavaQ API and both legal links.
+- APK ZIP alignment and all 29 ARM64 ELF libraries' LOAD alignment pass 16 KB checks.
+- AAB JAR signature verified. The upload certificate is intentionally self-signed;
+  Google Play uses its separately managed signing key for store installations.
+- The final release has not yet been installed or exercised on a device. Earlier
+  authenticated S20 verification used the debug build. Two-party call/FCM acceptance
+  remains pending; do not claim complete runtime or store-review approval.
 
 ## Review and wider release gates
 
