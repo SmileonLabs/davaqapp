@@ -8,12 +8,31 @@ function fail(message) {
 }
 
 function run(command, args) {
+  // Invoke Java tools directly on Windows; avoid shell quoting and .bat spawning.
+  if (process.platform === "win32" && command.endsWith(".jar")) {
+    const java = process.env.JAVA_HOME
+      ? path.join(process.env.JAVA_HOME, "bin", "java.exe")
+      : "java";
+    args =
+      path.basename(command) === "apksigner.jar"
+        ? ["-jar", command, ...args]
+        : [
+            `-Dcom.android.sdklib.toolsdir=${path.dirname(path.dirname(command))}`,
+            "-classpath",
+            command,
+            "com.android.tools.apk.analyzer.ApkAnalyzerCli",
+            ...args,
+          ];
+    command = java;
+  }
   const result = spawnSync(command, args, {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });
   if (result.status !== 0) {
-    fail(`${path.basename(command)} ${args.slice(0, 2).join(" ")} exited with ${result.status}`);
+    fail(
+      `${path.basename(command)} exited with ${result.status}: ${result.error?.message || result.stderr?.trim().slice(-2000) || "no diagnostics"}`,
+    );
   }
   return result.stdout;
 }
@@ -29,7 +48,11 @@ function latestTool(buildToolsRoot, name) {
     const candidate = path.join(
       buildToolsRoot,
       version,
-      process.platform === "win32" ? `${name}.exe` : name,
+      process.platform === "win32"
+        ? name === "apksigner"
+          ? "lib/apksigner.jar"
+          : `${name}.exe`
+        : name,
     );
     if (fs.existsSync(candidate)) return candidate;
   }
@@ -48,11 +71,33 @@ const buildToolsRoot = path.join(androidHome, "build-tools");
 const aapt = latestTool(buildToolsRoot, "aapt");
 const apksigner = latestTool(buildToolsRoot, "apksigner");
 const apkanalyzerCandidates = [
-  path.join(androidHome, "cmdline-tools", "latest", "bin", process.platform === "win32" ? "apkanalyzer.bat" : "apkanalyzer"),
-  path.join(androidHome, "tools", "bin", process.platform === "win32" ? "apkanalyzer.bat" : "apkanalyzer"),
+  path.join(
+    androidHome,
+    "cmdline-tools",
+    "latest",
+    "bin",
+    process.platform === "win32" ? "apkanalyzer.bat" : "apkanalyzer",
+  ),
+  path.join(
+    androidHome,
+    "tools",
+    "bin",
+    process.platform === "win32" ? "apkanalyzer.bat" : "apkanalyzer",
+  ),
 ];
+if (process.platform === "win32") {
+  const cmdline = path.join(androidHome, "cmdline-tools");
+  for (const version of fs.existsSync(cmdline)
+    ? fs.readdirSync(cmdline).sort().reverse()
+    : []) {
+    apkanalyzerCandidates.unshift(
+      path.join(cmdline, version, "lib", "apkanalyzer-classpath.jar"),
+    );
+  }
+}
 const apkanalyzer = apkanalyzerCandidates.find(fs.existsSync);
-if (!aapt || !apksigner || !apkanalyzer) fail("Android APK analysis tools are unavailable");
+if (!aapt || !apksigner || !apkanalyzer)
+  fail("Android APK analysis tools are unavailable");
 
 const badging = run(aapt, ["dump", "badging", apkPath]);
 const packageMatch = badging.match(
@@ -61,13 +106,21 @@ const packageMatch = badging.match(
 if (!packageMatch) fail("package metadata is unreadable");
 const [, androidPackage, versionCodeRaw, versionName] = packageMatch;
 const versionCode = Number(versionCodeRaw);
-if (androidPackage !== "com.anotherme.app") fail(`unexpected package ${androidPackage}`);
+if (androidPackage !== "app.davaq.mobile")
+  fail(`unexpected package ${androidPackage}`);
 if (minimumVersionCode > 0 && versionCode < minimumVersionCode) {
-  fail(`versionCode ${versionCode} is lower than required ${minimumVersionCode}`);
+  fail(
+    `versionCode ${versionCode} is lower than required ${minimumVersionCode}`,
+  );
 }
 
 const manifest = run(aapt, ["dump", "xmltree", apkPath, "AndroidManifest.xml"]);
 const requiredManifestEntries = [
+  "android.permission.MANAGE_OWN_CALLS",
+  "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
+  ".telecom.DavaqCallService",
+  ".telecom.DavaqCallReceiver",
+  ".telecom.DavaqCallActionActivity",
   "android.permission.RECORD_AUDIO",
   "android.permission.CAMERA",
   "android.permission.POST_NOTIFICATIONS",
@@ -79,13 +132,17 @@ for (const entry of requiredManifestEntries) {
   if (!manifest.includes(entry)) fail(`manifest entry missing: ${entry}`);
 }
 
-const packages = run(apkanalyzer, ["dex", "packages", "--defined-only", apkPath]);
 for (const className of [
+  `${androidPackage}.telecom.DavaqCallService`,
+  `${androidPackage}.telecom.DavaqTelecomModule`,
+  `${androidPackage}.telecom.DavaqTelecomPackage`,
   `${androidPackage}.call.CallForegroundService`,
   `${androidPackage}.call.CallForegroundModule`,
   `${androidPackage}.call.CallForegroundPackage`,
 ]) {
-  if (!packages.includes(className)) fail(`DEX class missing: ${className}`);
+  const code = run(apkanalyzer, ["dex", "code", "--class", className, apkPath]);
+  if (!code.includes(`L${className.replaceAll(".", "/")};`))
+    fail(`DEX class missing: ${className}`);
 }
 
 const packageHostClass = `${androidPackage}.MainApplication$reactNativeHost$1`;
@@ -96,16 +153,19 @@ const packageHostCode = run(apkanalyzer, [
   packageHostClass,
   apkPath,
 ]);
+if (!packageHostCode.includes("DavaqTelecomPackage"))
+  fail("MainApplication does not register DavaqTelecomPackage");
 if (!packageHostCode.includes("CallForegroundPackage")) {
   fail("MainApplication.getPackages does not register CallForegroundPackage");
 }
 
 const files = run(apkanalyzer, ["files", "list", apkPath]);
-if (!files.includes("/lib/arm64-v8a/")) fail("arm64-v8a native libraries are missing");
+if (!files.includes("/lib/arm64-v8a/"))
+  fail("arm64-v8a native libraries are missing");
 
 run(apksigner, ["verify", "--verbose", apkPath]);
 
 console.log(
   `APK verification passed: package=${androidPackage} versionName=${versionName} ` +
-    `versionCode=${versionCode} foregroundModule=registered signature=valid arm64=present`,
+    `versionCode=${versionCode} telecomModule=registered foregroundModule=registered signature=valid arm64=present`,
 );

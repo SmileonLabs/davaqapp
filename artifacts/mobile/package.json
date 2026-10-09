@@ -11,7 +11,9 @@
     "test:reliability": "node --experimental-strip-types --test lib/chatMessageReliability.test.mjs lib/chatOutboxStorageSweep.test.mjs lib/nativePushOwnerPolicy.test.mjs lib/realtimeConnectionPolicy.test.mjs lib/callAttemptPolicy.test.ts lib/callRecoveryPolicy.test.ts lib/pushRegistrationCoordinator.test.ts && node --test public/sw-cache-policy.test.js public/sw-push-owner-policy.test.js",
     "verify:android-apk": "node scripts/verify-android-apk.js",
     "serve": "node server/serve.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "android": "expo run:android",
+    "test:android-native": "node --experimental-strip-types --test lib/androidCallPolicy.test.mjs && node --test plugins/withAndroidTelecom.test.js"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
