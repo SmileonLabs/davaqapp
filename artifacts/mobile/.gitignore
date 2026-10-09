@@ -40,3 +40,6 @@ yarn-error.*
 .vercel
 
 .env
+
+# Local Android upload signing credentials
+.local-signing/

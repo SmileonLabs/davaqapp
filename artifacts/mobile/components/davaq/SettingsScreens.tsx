@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, Linking, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import { useGetMe } from "@workspace/api-client-react";
@@ -100,6 +100,16 @@ export function SettingsScreen() {
         DavaQ는 AnotherMe와 로그인 계정만 함께 사용해요. 프로필·메시지·교환·큐의
         기억은 DavaQ에 별도로 저장돼요.
       </Notice>
+      {Platform.OS === "android" && (
+        <>
+          <Button secondary label="개인정보처리방침" onPress={() => {
+            void Linking.openURL("https://smileonlabs.github.io/davaqapp/privacy.html").catch(() => setError("안내 페이지를 열지 못했어요. 잠시 후 다시 시도해 주세요."));
+          }} />
+          <Button secondary label="계정·데이터 삭제 요청" onPress={() => {
+            void Linking.openURL("https://smileonlabs.github.io/davaqapp/delete-account.html").catch(() => setError("안내 페이지를 열지 못했어요. contact@smileon.app으로 문의해 주세요."));
+          }} />
+        </>
+      )}
       <Button
         secondary
         label="로그아웃"

@@ -23,7 +23,7 @@ module.exports = ({ config }) => {
   }
   config.android = {
     ...config.android,
-    versionCode: Math.max(config.android?.versionCode ?? 0, 8),
+    versionCode: Math.max(config.android?.versionCode ?? 0, 9),
   };
   config.plugins = config.plugins.map((plugin) =>
     Array.isArray(plugin) && plugin[0] === "expo-build-properties"
@@ -31,11 +31,20 @@ module.exports = ({ config }) => {
           plugin[0],
           {
             ...plugin[1],
-            android: { ...plugin[1].android, minSdkVersion: 26 },
+            android: {
+              ...plugin[1].android,
+              minSdkVersion: 26,
+              compileSdkVersion: 36,
+              targetSdkVersion: 36,
+            },
           },
         ]
       : plugin,
   );
-  config.plugins = [...config.plugins, "./plugins/withAndroidTelecom"];
+  config.plugins = [
+    ...config.plugins,
+    "./plugins/withAndroidTelecom",
+    "./plugins/withAndroidUploadSigning",
+  ];
   return config;
 };

@@ -163,7 +163,18 @@ const files = run(apkanalyzer, ["files", "list", apkPath]);
 if (!files.includes("/lib/arm64-v8a/"))
   fail("arm64-v8a native libraries are missing");
 
-run(apksigner, ["verify", "--verbose", apkPath]);
+const signature = run(apksigner, ["verify", "--verbose", "--print-certs", apkPath]);
+if (process.argv.includes("--release")) {
+  if (/application-debuggable/.test(badging)) fail("release APK is debuggable");
+  const targetSdk = Number(badging.match(/targetSdkVersion:'(\d+)'/)?.[1] || 0);
+  if (targetSdk < 36) fail("release targetSdk must be at least 36");
+  if (!files.includes("/assets/index.android.bundle")) fail("standalone JavaScript bundle is missing");
+  if (/CN=Android Debug/i.test(signature)) fail("release uses the Android debug certificate");
+  const zipalign = latestTool(buildToolsRoot, "zipalign");
+  if (!zipalign) fail("zipalign is required for release verification");
+  run(zipalign, ["-c", "-P", "16", "4", apkPath]);
+  console.log("Release checks passed: standaloneBundle=present debuggable=false targetSdk=" + targetSdk + " debugCertificate=false zipAlignment=16KB");
+}
 
 console.log(
   `APK verification passed: package=${androidPackage} versionName=${versionName} ` +
