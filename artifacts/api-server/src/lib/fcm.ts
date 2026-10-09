@@ -1,3 +1,4 @@
+import { buildFcmNotificationMessage, type FcmNotificationPayload } from "./fcmNotificationMessage";
 import { asc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { logger } from "./logger";
@@ -281,17 +282,6 @@ export async function sendFcmCallToUser(userId: string, payload: FcmCallPayload)
   }
 }
 
-export interface FcmNotificationPayload {
-  title: string;
-  body: string;
-  /** Optional structured data for tap-routing (all values stringified). */
-  data?: Record<string, string>;
-  /** Android notification channel id. The native app creates this at startup. */
-  channelId?: string;
-  /** Notification collapse/dedup key. */
-  tag?: string;
-}
-
 /**
  * Send a regular (non-call) notification to all of a user's native devices.
  * Unlike the call path this includes a `notification` block so Android displays
@@ -330,18 +320,7 @@ export async function sendFcmNotificationToUser(
     await Promise.allSettled(
       tokens.map(async (token) => {
         try {
-          const androidNotification: { tag?: string; channelId?: string } = {};
-          if (payload.tag) androidNotification.tag = payload.tag;
-          if (payload.channelId) androidNotification.channelId = payload.channelId;
-          await msg.send({
-            token,
-            notification: { title: payload.title, body: payload.body },
-            data: { ...(payload.data ?? {}), recipientUserId: userId },
-            android: {
-              priority: "high",
-              notification: androidNotification,
-            },
-          });
+          await msg.send(buildFcmNotificationMessage(userId, token, payload));
           sent += 1;
         } catch (err: unknown) {
           const code =

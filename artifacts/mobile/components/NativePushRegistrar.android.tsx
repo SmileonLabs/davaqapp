@@ -1,7 +1,7 @@
 import { endSystemCall } from "@/lib/androidTelecom";
 import { useEffect, useRef } from "react";
 import { useAuth } from "@clerk/expo";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { AppState } from "react-native";
 import {
   getCall,
@@ -29,7 +29,7 @@ import {
   subscribeForegroundIncomingCall,
   subscribeNotificationOpen,
   subscribePushTokenRefresh,
-} from "@/lib/nativePush";
+} from "@/lib/nativePush.android";
 import {
   clearCurrentNativePushOwner,
   NATIVE_PUSH_OWNER_REFRESH_INTERVAL_MS,
@@ -46,7 +46,12 @@ import { pushRegistrationCoordinator } from "@/lib/pushRegistrationCoordinator";
 export function NativePushRegistrar() {
   const { isSignedIn, getToken, userId: clerkUserId } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const { data: me } = useGetMe();
+  const notificationContext = useRef({ pathname, enabled: me?.notificationEnabled !== false });
+  notificationContext.current = { pathname, enabled: me?.notificationEnabled !== false };
   // A profile switch temporarily evicts /users/me from React Query. Preserve
   // the backend owner through that same-Clerk-account gap, but discard it
   // immediately when the Clerk account itself changes.
@@ -98,9 +103,10 @@ export function NativePushRegistrar() {
       void cancelIncomingCallNotification();
       return;
     }
-    const effectOwnerToken = ownerTokenRef.current;
-    if (!effectOwnerToken || effectOwnerToken.ownerId !== ownerId) return;
-    const capturedBearer = getToken().catch(() => null);
+    const effectOwnerToken = pushRegistrationCoordinator.setOwner(ownerId);
+    ownerTokenRef.current = effectOwnerToken;
+    if (!effectOwnerToken) return;
+    const capturedBearer = getTokenRef.current().catch(() => null);
     const refreshOwnerLease = () => void setCurrentNativePushOwner(ownerId);
     refreshOwnerLease();
     const ownerLeaseTimer = setInterval(
@@ -130,7 +136,7 @@ export function NativePushRegistrar() {
         })
         .catch(() => undefined);
     };
-  }, [getToken, ownerId]);
+  }, [ownerId]);
 
   // Reset the registration guard so a later sign-in / re-enable re-registers.
   useEffect(() => {
@@ -178,7 +184,10 @@ export function NativePushRegistrar() {
         if (!mounted || !registered) return;
         done.current = true;
         lastRegistrationAt.current = Date.now();
-      } catch {
+        console.info("[push] Android device registration confirmed");
+      } catch (error) {
+        const status = (error as { status?: unknown })?.status;
+        console.warn("[push] Server registration failed", typeof status === "number" ? status : "unavailable");
         done.current = false;
       } finally {
         registrationInFlight = false;
@@ -277,7 +286,7 @@ export function NativePushRegistrar() {
           await displayIncomingCallNotification(intent);
         }
       })();
-    });
+    }, () => notificationContext.current);
 
     // Android can display a notification while this JS runtime is suspended.
     // Reconcile its persisted per-call IDs against the authenticated API whenever

@@ -9,8 +9,7 @@ import { endSystemCall } from "./androidTelecom";
 
 import messaging from "@react-native-firebase/messaging";
 import notifee, {
-  AndroidImportance,
-  AndroidVisibility,
+  EventType,
   AuthorizationStatus,
 } from "@notifee/react-native";
 import { PermissionsAndroid, Platform } from "react-native";
@@ -23,7 +22,11 @@ import {
 import { nativePushMatchesCurrentOwner } from "@/lib/nativePushOwner";
 
 export const nativePushSupported = getApps().length > 0;
-export const GENERAL_NOTIFICATION_CHANNEL_ID = "general-notifications";
+import {
+  displayForegroundMessage, ensureMessageNotificationChannel,
+  notificationUrlFromData, type ForegroundNotificationContext,
+} from "./androidMessageNotifications";
+export { GENERAL_NOTIFICATION_CHANNEL_ID } from "./androidMessageNotifications";
 
 export type NativePushState = {
   supported: boolean;
@@ -48,18 +51,9 @@ async function requestAndroidPostNotificationsPermission(): Promise<boolean> {
 }
 
 export function setupNotificationHandler(): void {
-  void (async () => {
-    try {
-      await notifee.createChannel({
-        id: GENERAL_NOTIFICATION_CHANNEL_ID,
-        name: "일반 알림",
-        importance: AndroidImportance.HIGH,
-        visibility: AndroidVisibility.PUBLIC,
-        sound: "default",
-        vibration: true,
-      });
-    } catch {}
-  })();
+  void ensureMessageNotificationChannel().catch(() => {
+    console.warn("[push] Android notification channel setup failed");
+  });
 }
 
 export async function registerForPushTokenAsync(): Promise<string | null> {
@@ -83,7 +77,9 @@ export async function registerForPushTokenAsync(): Promise<string | null> {
     }
     const token = await messaging().getToken();
     return token || null;
-  } catch {
+  } catch (error) {
+    const code = String((error as { code?: unknown })?.code ?? "unknown");
+    console.warn("[push] Token registration failed", /^[a-zA-Z0-9_/-]{1,100}$/.test(code) ? code : "unknown");
     return null;
   }
 }
@@ -145,19 +141,11 @@ function intentFromData(
   };
 }
 
-function notificationUrlFromData(
-  data: Record<string, string | object> | undefined,
-): string | null {
-  const url = data?.url;
-  if (typeof url !== "string") return null;
-  // Only route in-app paths. External URLs should not be opened from push data.
-  return url.startsWith("/") ? url : null;
-}
-
 // Foreground-only: messages that arrive while the app is open. Killed/background
 // delivery is handled by lib/fcmBackground.ts.
 export function subscribeForegroundIncomingCall(
   handler: (intent: IncomingCallIntent) => void,
+  getContext: () => ForegroundNotificationContext = () => ({ pathname: "", enabled: true }),
 ): () => void {
   if (!nativePushSupported) return () => {};
   return messaging().onMessage(async (remoteMessage) => {
@@ -176,7 +164,13 @@ export function subscribeForegroundIncomingCall(
     }
     const expiresAt = incomingCallExpiry(remoteMessage.sentTime);
     const intent = intentFromData(remoteMessage.data);
-    if (intent && expiresAt) handler({ ...intent, expiresAt });
+    if (intent) {
+      if (expiresAt) handler({ ...intent, expiresAt });
+      return;
+    }
+    await displayForegroundMessage(remoteMessage, getContext).catch(() => {
+      console.warn("[push] Foreground notification display failed");
+    });
   });
 }
 
@@ -189,33 +183,35 @@ export function subscribePushTokenRefresh(
   });
 }
 
-export function subscribeNotificationOpen(
-  handler: (url: string) => void,
-): () => void {
+export function subscribeNotificationOpen(handler: (url: string) => void): () => void {
   if (!nativePushSupported) return () => {};
-  return messaging().onNotificationOpenedApp(async (remoteMessage) => {
-    if (
-      !(await nativePushMatchesCurrentOwner(
-        remoteMessage.data?.recipientUserId,
-      ))
-    )
-      return;
-    const url = notificationUrlFromData(remoteMessage.data);
-    if (url) handler(url);
+  let disposed = false;
+  let lastUrl = "";
+  let lastOpenedAt = 0;
+  const open = async (data?: Record<string, unknown>) => {
+    if (!(await nativePushMatchesCurrentOwner(data?.recipientUserId)) || disposed) return;
+    const url = notificationUrlFromData(data);
+    if (!url || (lastUrl === url && Date.now() - lastOpenedAt < 1_000)) return;
+    lastUrl = url;
+    lastOpenedAt = Date.now();
+    handler(url);
+  };
+  const unsubscribeFcm = messaging().onNotificationOpenedApp((message) => open(message.data));
+  const unsubscribeNotifee = notifee.onForegroundEvent(({ type, detail }) => {
+    if (type === EventType.PRESS) void open(detail.notification?.data).catch(() => {});
   });
+  return () => { disposed = true; unsubscribeFcm(); unsubscribeNotifee(); };
 }
-
 export async function getInitialNotificationUrl(): Promise<string | null> {
   try {
-    const remoteMessage = await messaging().getInitialNotification();
-    if (
-      !(await nativePushMatchesCurrentOwner(
-        remoteMessage?.data?.recipientUserId,
-      ))
-    ) {
-      return null;
+    const local = await notifee.getInitialNotification();
+    if (local && await nativePushMatchesCurrentOwner(local.notification.data?.recipientUserId)) {
+      const url = notificationUrlFromData(local.notification.data);
+      if (url) return url;
     }
-    return notificationUrlFromData(remoteMessage?.data);
+    const remote = await messaging().getInitialNotification();
+    if (!(await nativePushMatchesCurrentOwner(remote?.data?.recipientUserId))) return null;
+    return notificationUrlFromData(remote?.data);
   } catch {
     return null;
   }
