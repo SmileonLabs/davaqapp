@@ -48,6 +48,8 @@ export default function SignUpScreen() {
       await signUp.finalize({
         navigate: ({ session, decorateUrl }) => {
           if (session?.currentTask) return;
+          // Android auth layout redirects after the authenticated navigator mounts.
+          if (Platform.OS === "android") return;
           const url = decorateUrl("/");
           if (url.startsWith("http")) {
             if (typeof window !== "undefined") window.location.href = url;

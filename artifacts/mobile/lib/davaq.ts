@@ -153,13 +153,14 @@ export function errorText(error: unknown): string {
 export function api<T>(path: string, method = "GET", body?: unknown) {
   return customFetch<T>("/api" + path, {
     method,
+    responseType: "json",
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 }
 export function useDavaq<T>(path: string, enabled = true) {
   const query = useQuery({
     queryKey: ["davaq", path],
-    queryFn: ({ signal }) => customFetch<T>("/api" + path, { signal }),
+    queryFn: ({ signal }) => customFetch<T>("/api" + path, { signal, responseType: "json" }),
     enabled,
     staleTime: 15000,
   });

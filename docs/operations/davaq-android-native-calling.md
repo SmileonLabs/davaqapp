@@ -87,7 +87,7 @@ logs. Login, account consent and peer-call verification are performed by the use
 ## Validation
 
 - Mobile TypeScript check passed.
-- Android call policy and prebuild tests: 7 passed.
+- Android call policy, runtime environment, API host and prebuild tests: 14 passed.
 - Existing foreground-service plugin tests: 4 passed.
 - Existing message/call/ownership/reconnect tests: 60 passed.
 - Existing PWA cache/push tests: 7 passed.
@@ -100,10 +100,33 @@ logs. Login, account consent and peer-call verification are performed by the use
   completed in 1,332 ms; this measures activity launch, not JavaScript/UI readiness.
 - Metro Android bundle succeeded (3,341 modules); the application JavaScript and
   Firebase background handler initialized on the S20 without an observed JS error.
-  Authenticated UI and two-party call checks remain pending user verification.
+  After the login runtime correction below, the authenticated home screen was
+  directly verified on the S20. The system notification permission prompt is
+  awaiting the user's choice. Two-party call checks remain pending.
 - The local public Clerk key matches the currently deployed DavaQ web bundle. Both
   use a development instance; a production Clerk deployment is still required for
   release. No secret key or Firebase client configuration is committed.
+
+## Login runtime correction
+
+The first signed-in S20 session exposed a shared call-outbox startup bug: React
+Native defines `window` but does not provide DOM event listeners. The flush trigger
+now checks the event APIs before subscribing; its initial flush and native AppState
+resume behavior remain intact. A regression test runs the actual call module with
+a native-style window, no window and a browser event target.
+
+Android authentication now redirects from the authenticated auth layout after the
+root navigator remounts, rather than dispatching a replace action from the stale
+login navigator. This applies to password login, email verification and signup.
+Existing web and iOS navigation callbacks are preserved.
+
+The same window-is-browser assumption also affected API host resolution. Native
+clients now use the configured remote API even when a Metro window/location is
+present; web remains same-origin. DavaQ requests explicitly expect JSON so an HTML
+fallback response becomes a query error instead of successful domain data.
+The corrected bundle loaded on the S20 with the existing login session; the home
+screen rendered behind the Android notification permission dialog, and no new
+ReactNativeJS/AndroidRuntime errors were observed for that app process.
 
 ## Remaining acceptance work
 

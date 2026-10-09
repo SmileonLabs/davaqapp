@@ -13,7 +13,7 @@
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "android": "expo run:android",
-    "test:android-native": "node --experimental-strip-types --test lib/androidCallPolicy.test.mjs && node --test plugins/withAndroidTelecom.test.js"
+    "test:android-native": "node --experimental-strip-types --test lib/androidCallPolicy.test.mjs lib/callReliabilityEnvironment.test.mjs lib/apiBase.test.mjs && node --test plugins/withAndroidTelecom.test.js"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

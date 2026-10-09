@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 /**
  * Resolve the API host. On native we talk to the remote API server via an
  * absolute URL (mirrors setBaseUrl in _layout.tsx); on web requests are
@@ -6,8 +8,8 @@
 export function getApiBase(): string {
   // The PWA is served behind the same Caddy origin that proxies /api. Keeping
   // browser requests same-origin removes a second DNS/TLS/CORS failure surface.
-  // Native builds have no window and continue to use the explicit API host.
-  if (typeof window !== "undefined") {
+  // Native exposes window too; it must still use the explicit remote API host.
+  if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
 

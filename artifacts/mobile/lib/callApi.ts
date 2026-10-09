@@ -608,9 +608,16 @@ export function installCallReliabilityFlushTriggers(): () => void {
   };
   flush();
   const onOnline = () => flush();
-  if (typeof window !== "undefined") window.addEventListener("online", onOnline);
+  // React Native exposes window, but it is not a DOM event target.
+  const browserWindow =
+    typeof window !== "undefined" &&
+    typeof window.addEventListener === "function" &&
+    typeof window.removeEventListener === "function"
+      ? window
+      : null;
+  browserWindow?.addEventListener("online", onOnline);
   return () => {
-    if (typeof window !== "undefined") window.removeEventListener("online", onOnline);
+    browserWindow?.removeEventListener("online", onOnline);
   };
 }
 
