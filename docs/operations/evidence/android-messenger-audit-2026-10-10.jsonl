@@ -1,0 +1,10 @@
+{"case":"background_android_mounted_chat_timer_tick","messagePolls":1,"typingPolls":1,"intervals":[30000,5000]}
+{"case":"15_minute_old_background_incoming","expectedStarts":0,"actualStarts":1,"renewedExpirySeconds":45}
+{"case":"background_terminal","expectedNativeEnd":1,"actualNativeEnd":0,"dismissOnly":1}
+{"case":"signed_in_app_not_opened_for_25_hours","ownerValid":false}
+{"case":"foreground_control_15_minute_old","expiry":null}
+{"case":"account_A_cleanup_after_token_refresh","latestTokenBeforeSwitch":"bearer-2","usedForCleanup":"bearer-1","staleTokenUsed":true}
+{"case":"pending_message_added_after_empty_app_drain_then_room_closed","timerTicks":6,"subsequentOutboxReads":0,"sends":0}
+{"case":"same_message_after_foreground_resume","sends":1}
+{"case":"single_invite_concurrent_redemption","environment":"isolated-local-postgresql","waitingUpdates":2,"statuses":[200,200],"createdFriendRequests":2}
+{"kind":"physical_device_baseline","observedAt":"2026-10-10T13:52:38.2984968+09:00","model":"SM-G981N","versionCode":12,"installer":"com.android.vending","microphonePermission":true,"notificationPermission":true,"cameraPermission":false,"ringerMode":"SILENT","dnd":false,"messageChannelImportance":4,"telecomChannelImportance":4,"backgroundExecution":"default allow","standbyBucket":10,"telecomServicePresent":false,"microphoneRunning":false,"cameraRunning":false,"audioMode":"MODE_NORMAL","newPairedCallObserved":false}
