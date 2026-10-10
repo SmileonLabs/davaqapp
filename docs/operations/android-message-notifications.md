@@ -75,5 +75,24 @@ versionCode 12, upload signature, native modules and ARM64 packaging. AAB SHA-25
 Version 12 was published to internal testing on 2026-10-10 at 12:47 KST.
 The connected phone still has official Play version 11; it must update through Play.
 Audible device verification and two-way media remain pending. The existing Firebase
-project/account was recovered through the console project list; generating the
-server credential is awaiting action-time owner approval.
+project/account was recovered through the console project list. Credential approval and application are recorded below.
+
+## Firebase production credential correction
+
+On 2026-10-10, the owner approved generating and applying a credential for the
+DavaQ Firebase project. The DavaQ API environment was backed up with restricted
+permissions, updated through encrypted SSH input, and only the API container was
+recreated. The public API health check returned `ok`. AnotherMe credentials and
+services were not changed; no credential was added to the app or repository.
+
+The running DavaQ container successfully obtained an OAuth access token. Firebase
+Admin dry-run validation accepted both the high-priority data-only call payload
+and audible message-notification payload for both registered devices: 2/2 call
+validations, 2/2 notification validations, zero Firebase errors. These checks did
+not deliver notifications and do not prove lock-screen ringing or two-way media.
+
+The connected phone still showed Play-installed version 11 after the server fix.
+Version 12 remains available in internal testing for the ringback correction.
+The user was asked to update through Play, open the app on both devices, and test
+an incoming call with the recipient's phone locked. Actual audible delivery and
+voice/video behavior remain pending that test.
