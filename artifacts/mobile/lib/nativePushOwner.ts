@@ -30,10 +30,12 @@ export function clearCurrentNativePushOwner(ownerId: string): Promise<boolean> {
   );
 }
 
-export function getCurrentNativePushOwner(now = Date.now()): Promise<string | null> {
+export function getCurrentNativePushOwner(now?: number): Promise<string | null> {
+  // Read the clock inside the queue: an earlier queued write may create a
+  // newer lease. A timestamp captured by the caller would invalidate and erase it.
   return withOwnerStorageQueue(async () => {
     try {
-      return (await readNativePushOwnerLease(AsyncStorage, now))?.ownerId ?? null;
+      return (await readNativePushOwnerLease(AsyncStorage, now ?? Date.now()))?.ownerId ?? null;
     } catch {
       return null;
     }
@@ -42,7 +44,7 @@ export function getCurrentNativePushOwner(now = Date.now()): Promise<string | nu
 
 export async function nativePushMatchesCurrentOwner(
   recipientUserId: unknown,
-  now = Date.now(),
+  now?: number,
 ): Promise<boolean> {
   if (typeof recipientUserId !== "string") return false;
   return (await getCurrentNativePushOwner(now)) === recipientUserId;

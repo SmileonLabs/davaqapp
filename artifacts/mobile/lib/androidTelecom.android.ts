@@ -36,7 +36,7 @@ type Telecom = {
 export const telecom = NativeModules.DavaqTelecom as Telecom | undefined;
 export const systemCallingSupported = Boolean(telecom);
 function required(): Telecom {
-  if (!telecom) throw new Error("새 Android 앱으로 업데이트해 주세요.");
+  if (!telecom) throw new Error("android_telecom_unavailable");
   return telecom;
 }
 export async function registerSystemCall(
@@ -44,7 +44,7 @@ export async function registerSystemCall(
   name: string,
 ): Promise<void> {
   const ownerId = await getCurrentNativePushOwner();
-  if (!ownerId) throw new Error("로그인 상태를 확인한 후 다시 통화해 주세요.");
+  if (!ownerId) throw new Error("call_owner_unavailable");
   await required().startCall(
     JSON.stringify({
       callId: call.id,

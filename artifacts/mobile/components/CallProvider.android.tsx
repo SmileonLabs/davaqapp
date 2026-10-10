@@ -289,6 +289,9 @@ function counterDelta(
 
 function callFailureCode(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
+  if (message === "call_owner_unavailable" || message === "android_telecom_unavailable") return message;
+  const nativeCode = (err as { code?: unknown })?.code;
+  if (nativeCode === "ANDROID_CALL") return "android_system_call_failed";
   if (message === "call_foreground_service_unavailable")
     return "native_module_unavailable";
   if (message === "microphone_permission_denied")
@@ -1338,12 +1341,22 @@ function CallManager({ children }: { children: React.ReactNode }) {
         if (generation !== sessionGenerationRef.current) return;
         reportCallDiagnostic(null, {
           attemptId,
-          phase: "create_call_api_failed",
+          phase: createdCallId ? "system_call_registration_failed" : "create_call_api_failed",
           platform: Platform.OS,
           role: "caller",
-          details: { errorName: err instanceof Error ? err.name : "unknown" },
+          details: { errorName: err instanceof Error ? err.name : "unknown", failureCode: callFailureCode(err) },
         });
-        await reset(generation);
+        const didReset = await reset(generation);
+        if (didReset) {
+          const code = callFailureCode(err);
+          console.warn("[call] Outgoing setup failed", code);
+          crossAlert("통화를 시작하지 못했어요",
+            code === "call_owner_unavailable"
+              ? "로그인 정보를 준비하지 못했어요. 앱을 다시 열고 시도해 주세요."
+              : code === "android_telecom_unavailable"
+                ? "통화 기능을 사용할 수 없어요. 앱을 최신 버전으로 업데이트해 주세요."
+                : "통화 초기화에 실패했어요. 잠시 후 다시 시도해 주세요. (" + code + ")");
+        }
       }
     },
     [reset],

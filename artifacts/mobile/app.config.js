@@ -23,7 +23,7 @@ module.exports = ({ config }) => {
   }
   config.android = {
     ...config.android,
-    versionCode: Math.max(config.android?.versionCode ?? 0, 10),
+    versionCode: Math.max(config.android?.versionCode ?? 0, 11),
   };
   config.plugins = config.plugins.map((plugin) =>
     Array.isArray(plugin) && plugin[0] === "expo-build-properties"
