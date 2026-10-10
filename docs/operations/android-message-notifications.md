@@ -47,6 +47,6 @@ show a user-visible error with a sanitized diagnostic code.
 
 Version 11 signed AAB/APK build succeeded (3m54s), and standalone APK validation passed. AAB SHA-256: `5DE85AF4B45D0944BD081EA9CBB81FF3BAE4B2F4761461C6DA0C97D20EF57111`.
 
-Version 11 was published to internal testing on 2026-10-10 at 10:29 KST. The Play-signed universal APK was downloaded and its package, version and signing certificate were verified against the installed Play app. The USB device disconnected before the update could run; the last confirmed device version remains 10. Data has not been cleared. Real two-party voice/video verification is pending.
+Version 11 was published to internal testing on 2026-10-10 at 10:29 KST. The Play-signed universal APK was downloaded and its package, version and signing certificate were verified against the installed Play app. After USB reconnection, the Play-signed version 11 APK was installed successfully with adb install -r and versionCode 11 was confirmed. App data was not cleared. Launch was blocked by the Google Play installer check (LicenseClient: wrong installer), followed by EXIT_SELF. The user must complete the official Play installation prompt; do not spoof the installer or disable protection. Real two-party voice/video verification is pending.
 The reproduced code defect is a candidate for the reported immediate cancellation;
 end-to-end resolution is not yet confirmed.
