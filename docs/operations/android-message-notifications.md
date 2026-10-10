@@ -68,5 +68,12 @@ Incoming ringing continues to respect the device's ring/silent settings.
 Recent production FCM sends failed with messaging/mismatched-credential. Correct
 server credentials are required separately; installing version 12 alone does not
 fix background delivery. No production credentials belong in the app or repository.
-Mobile typecheck and all 30 existing Android regression tests passed. Release build,
-Play rollout and audible device verification are pending at this checkpoint.
+Mobile typecheck and all 30 existing Android regression tests passed. The final
+release build succeeded (2m11s), and standalone APK verification passed for
+versionCode 12, upload signature, native modules and ARM64 packaging. AAB SHA-256:
+`DF2A007786961D23095AD129AD99A21D7A79A258E5E0E3251002E7170C264D19`.
+Version 12 was published to internal testing on 2026-10-10 at 12:47 KST.
+The connected phone still has official Play version 11; it must update through Play.
+Audible device verification and two-way media remain pending. The existing Firebase
+project/account was recovered through the console project list; generating the
+server credential is awaiting action-time owner approval.
