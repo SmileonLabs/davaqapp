@@ -9,11 +9,6 @@ import {
 import { Room, RoomEvent, Track, type LocalVideoTrack } from "livekit-client";
 import { telecom } from "./androidTelecom.android";
 import { PermissionsAndroid, Platform } from "react-native";
-import {
-  createAudioPlayer,
-  setAudioModeAsync,
-  type AudioPlayer,
-} from "expo-audio";
 
 // Patch the global WebRTC objects (RTCPeerConnection, mediaDevices, …) onto the
 // JS runtime so livekit-client's browser code paths work on React Native. Must
@@ -45,12 +40,8 @@ let audioSessionActive = false;
 let audioSessionGeneration: number | null = null;
 let foregroundServiceGeneration: number | null = null;
 let nativeResourceOperations: Promise<void> = Promise.resolve();
-let audioModeReady = false;
 let cameraFacingMode: "user" | "environment" = "user";
 let videoPreparePromise: Promise<void> | null = null;
-
-let ringbackPlayer: AudioPlayer | null = null;
-let ringtonePlayer: AudioPlayer | null = null;
 
 const ROOM_DISCONNECT_TIMEOUT_MS = 4_000;
 
@@ -271,71 +262,14 @@ async function stopOwnedForegroundService(
   });
 }
 
-// Allow the ring/ringback tones to sound even when the phone's hardware silent
-// switch is on — an incoming or outgoing call must be audible. Best-effort and
-// idempotent; we don't block the call on it.
-async function ensureAudioMode(): Promise<void> {
-  if (audioModeReady) return;
-  audioModeReady = true;
-  try {
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: "duckOthers",
-    });
-  } catch {
-    audioModeReady = false;
-  }
-}
-
-function startLoop(asset: number): AudioPlayer | null {
-  try {
-    void ensureAudioMode();
-    const player = createAudioPlayer(asset);
-    player.loop = true;
-    player.play();
-    return player;
-  } catch {
-    return null;
-  }
-}
-
-function stopLoop(player: AudioPlayer | null): null {
-  if (player) {
-    try {
-      player.pause();
-    } catch {}
-    try {
-      player.remove();
-    } catch {}
-  }
-  return null;
-}
-
-export function primeAudioPlayback(): void {
-  // No-op on native. Mobile browsers gate audio playback behind a user gesture
-  // (the web build's primeAudioPlayback unlocks the AudioContext on that
-  // gesture); native has no such autoplay restriction, so there is nothing to
-  // unlock. Kept for interface parity with voiceCall.web.ts.
-  void ensureAudioMode();
-}
-
-export function startRingback(): void {
-  stopRingback();
-  ringbackPlayer = startLoop(require("../assets/sounds/ringback.wav"));
-}
-
-export function stopRingback(): void {
-  ringbackPlayer = stopLoop(ringbackPlayer);
-}
-
-export function startRingtone(): void {
-  /* System CallStyle notification owns incoming ringing. */
-}
-
-export function stopRingtone(): void {
-  ringtonePlayer = stopLoop(ringtonePlayer);
-}
+// Core-Telecom owns both tones for the lifetime of the native call. Ringback
+// uses Android call volume and ends on activation, cancellation or service teardown.
+// Do not create a second media player/audio focus owner here.
+export function primeAudioPlayback(): void {}
+export function startRingback(): void {}
+export function stopRingback(): void {}
+export function startRingtone(): void {}
+export function stopRingtone(): void {}
 
 function cameraOptions() {
   return { facingMode: cameraFacingMode };
@@ -460,7 +394,6 @@ export async function joinCall(
   diagnostic("native_join_start", { media, platform: Platform.OS });
   let r: Room | null = null;
   try {
-    await ensureAudioMode();
     if (generation !== roomGeneration) throw new Error("stale_join_attempt");
     // The shared UI starts camera preparation without blocking the web join.
     // Android's native permission dialogs must still be serialized.
@@ -640,9 +573,6 @@ export async function ensureCallKeepAlive(
     reason,
     ...localMicrophoneDetails(r),
   });
-  try {
-    await ensureAudioMode();
-  } catch {}
   if (!isCurrent()) return;
   await configureNativeAudio(
     media,

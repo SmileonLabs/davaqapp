@@ -50,3 +50,23 @@ Version 11 signed AAB/APK build succeeded (3m54s), and standalone APK validation
 Version 11 was published to internal testing on 2026-10-10 at 10:29 KST. The Play-signed universal APK was downloaded and its package, version and signing certificate were verified against the installed Play app. After USB reconnection, the Play-signed version 11 APK was installed successfully with adb install -r and versionCode 11 was confirmed. App data was not cleared. Launch was blocked by the Google Play installer check (LicenseClient: wrong installer), followed by EXIT_SELF. The user must complete the official Play installation prompt; do not spoof the installer or disable protection. Real two-party voice/video verification is pending.
 The reproduced code defect is a candidate for the reported immediate cancellation;
 end-to-end resolution is not yet confirmed.
+
+## Android ringback and incoming push investigation (version 12)
+
+The connected Play-installed Android app registered its device successfully.
+The user reports outgoing calls no longer cancel immediately. Two-way media is
+not yet verified. An official Play installation was confirmed after the installer
+check blocked the earlier USB update.
+
+Outgoing ringback used an Expo media player, so a phone with media volume at zero
+could make ordinary calls audibly while DavaQ's ringback was silent. Core-Telecom
+now owns a native ToneGenerator on STREAM_VOICE_CALL. It starts after Telecom
+registration and releases the tone on activation, termination and service teardown.
+The Android JS layer no longer creates a competing media player/audio focus owner.
+Incoming ringing continues to respect the device's ring/silent settings.
+
+Recent production FCM sends failed with messaging/mismatched-credential. Correct
+server credentials are required separately; installing version 12 alone does not
+fix background delivery. No production credentials belong in the app or repository.
+Mobile typecheck and all 30 existing Android regression tests passed. Release build,
+Play rollout and audible device verification are pending at this checkpoint.

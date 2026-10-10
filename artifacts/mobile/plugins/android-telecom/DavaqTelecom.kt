@@ -6,6 +6,9 @@ import android.content.*
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.media.Ringtone
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.util.Log
 import android.media.RingtoneManager
 import android.graphics.Color
 import android.view.Gravity
@@ -87,6 +90,7 @@ class DavaqCallService : Service() {
     private var mediaStarted = false
     private var videoStarted = false
     private var ringtone: Ringtone? = null
+    private var ringback: ToneGenerator? = null
     private var expiry: Job? = null
     private var callJob: Job? = null
     private val id: String get() = descriptor?.optString("callId") ?: ""
@@ -161,6 +165,7 @@ class DavaqCallService : Service() {
                     onSetInactive = { throw IllegalStateException("Hold is not supported") }
                 ) {
                     control = this
+                    showNotification()
                     CallStore.ready[nextId]?.complete(Unit)
                     launch { availableEndpoints.collect { endpoints = it; CallStore.emit("endpoints", nextId) } }
                     launch { currentCallEndpoint.collect { currentEndpoint = it.identifier.toString(); CallStore.emit("endpoints", nextId) } }
@@ -179,6 +184,7 @@ class DavaqCallService : Service() {
         check(id == target) { "stale_call" }
         CallStore.ready[target]?.await()
         if (active) return
+        stopRingback()
         val ctl = checkNotNull(control)
         val result = if (descriptor?.optString("direction") == "incoming") ctl.answer(callType) else ctl.setActive()
         check(result is CallControlResult.Success) { "system_call_activation_failed" }
@@ -249,8 +255,34 @@ class DavaqCallService : Service() {
         }
         return PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
+    private fun stopRingback() {
+        val tone = ringback ?: return
+        ringback = null
+        runCatching { tone.stopTone() }
+        runCatching { tone.release() }
+    }
+    private fun syncRingback() {
+        val desc = descriptor
+        val waiting = desc != null && desc.optString("direction") == "outgoing" &&
+            !active && !desc.optBoolean("joining") && control != null
+        if (!waiting) { stopRingback(); return }
+        if (ringback != null) return
+        // Telecom owns routing/focus; supervisory audio follows call volume, not
+        // media volume (which may be zero while ordinary calls remain audible).
+        var created: ToneGenerator? = null
+        try {
+            created = ToneGenerator(AudioManager.STREAM_VOICE_CALL, 70)
+            check(created.startTone(ToneGenerator.TONE_SUP_RINGTONE)) { "ringback_start_failed" }
+            ringback = created
+        } catch (error: Exception) {
+            runCatching { created?.release() }
+            Log.w("DavaqTelecom", "Ringback could not start: ${error.javaClass.simpleName}")
+            CallStore.emit("tone_error", id, "ringback_start_failed")
+        }
+    }
     private fun showNotification() {
         val desc = descriptor ?: return
+        syncRingback()
         val person = Person.Builder().setName(desc.optString("callerName", "DavaQ")).setImportant(true).build()
         val ringing = !active && !desc.optBoolean("joining") && desc.optString("direction") == "incoming"
         if (ringing && ringtone == null) {
@@ -284,6 +316,7 @@ class DavaqCallService : Service() {
         CallStore.tombstone(this, target)
         CallStore.ready.remove(target)?.let { if (!it.isCompleted) it.completeExceptionally(IllegalStateException("call_ended")) }
         ringtone?.stop(); ringtone = null
+        stopRingback()
         expiry?.cancel(); expiry = null
         descriptor = null; control = null; endpoints = emptyList(); active = false
         mediaStarted = false; videoStarted = false; currentEndpoint = ""
@@ -291,6 +324,7 @@ class DavaqCallService : Service() {
         CallStore.emit("ended", target)
     }
     override fun onDestroy() {
+        stopRingback()
         val target = id
         descriptor?.let { runCatching { CallStore.action(this, it, "end") } }
         if (target.isNotEmpty()) finishCall(target)
