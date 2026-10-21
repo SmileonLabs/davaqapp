@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -61,6 +64,9 @@ function FeedMediaImage({
 }
 
 function MediaGrid({ post }: { post: StarFeedPost }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const images = (post.media ?? []).filter((item) => item.mediaType === "image").slice(0, 4);
   if (!images.length) return null;
   return (
@@ -84,6 +90,9 @@ function MediaGrid({ post }: { post: StarFeedPost }) {
 }
 
 function ProfileRail({ posts, onOpen }: { posts: StarFeedPost[]; onOpen: (author: StarFeedAuthor) => void }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const authors = React.useMemo(() => {
     const map = new Map<string, StarFeedAuthor>();
     for (const post of posts) {
@@ -126,6 +135,9 @@ function Composer({
   onClose: () => void;
   onPublished: (xp: number) => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const { createPost, isCreatingPost } = useStarFeed("recommended");
   const [body, setBody] = React.useState("");
   const [media, setMedia] = React.useState<UploadedImage[]>([]);
@@ -167,7 +179,7 @@ function Composer({
   };
 
   return (
-    <LinearGradient colors={["rgba(27,22,55,0.98)", "rgba(8,8,22,0.99)"]} style={styles.composer}>
+    <LinearGradient colors={[styleColors.card, styleColors.card]} style={styles.composer}>
       <View style={styles.composerIdentity}>
         <Avatar
           uri={activeProfile?.profileImageUrl}
@@ -186,12 +198,12 @@ function Composer({
           multiline
           maxLength={500}
           placeholder="오늘 당신의 이야기를 들려주세요."
-          placeholderTextColor="#777283"
+          placeholderTextColor={styleColors.mutedForeground}
           style={styles.composerInput}
         />
         <View style={styles.composerMediaRow}>
           <Pressable onPress={() => void addImages()} disabled={uploading || media.length >= 4} style={styles.photoButton}>
-            {uploading ? <ActivityIndicator color="#E7DEEF" /> : <Feather name="image" size={18} color="#E7DEEF" />}
+            {uploading ? <ActivityIndicator color={styleColors.foreground} /> : <Feather name="image" size={18} color={styleColors.foreground} />}
             <Text style={styles.photoText}>사진 {media.length}/4</Text>
           </Pressable>
           {media.map((item) => (
@@ -206,7 +218,7 @@ function Composer({
           <Text style={styles.supportTitle}>응원 대상 선택 <Text style={styles.optional}>(선택사항)</Text></Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.supportRail}>
             <Pressable onPress={() => setTargetId(null)} style={styles.supportItem}>
-              <View style={[styles.supportAvatar, targetId === null && styles.supportSelected]}><Feather name="user-plus" size={27} color="#F2EDF7" /></View>
+              <View style={[styles.supportAvatar, targetId === null && styles.supportSelected]}><Feather name="user-plus" size={27} color={styleColors.foreground} /></View>
               <Text style={styles.supportName}>선택 안함</Text>
             </Pressable>
             {supportTargets.map((author) => {
@@ -232,7 +244,7 @@ function Composer({
       ) : null}
       <Pressable disabled={!canPost} onPress={() => void publish()} style={[styles.publishButton, !canPost && styles.disabled]}>
         <LinearGradient colors={["#7D36F6", "#A14EFF"]} style={styles.publishGradient}>
-          {isCreatingPost ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.publishText}>게시하기</Text>}
+          {isCreatingPost ? <ActivityIndicator color={styleColors.foreground} /> : <Text style={styles.publishText}>게시하기</Text>}
         </LinearGradient>
       </Pressable>
     </LinearGradient>
@@ -252,10 +264,13 @@ function FeedCard({
   onToggleReaction: (post: StarFeedPost) => void;
   onReport: (id: string) => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const share = async () => {
     const url = Platform.OS === "web" && typeof window !== "undefined"
       ? `${window.location.origin}/app/feed?postId=${post.id}`
-      : `https://davaq.anothermeai.app/app/feed?postId=${post.id}`;
+      : `https://davaq.app/app/feed?postId=${post.id}`;
     try {
       await Share.share({ title: `${displayNameOf(post.author)}님의 게시물`, message: `${post.body}\n${url}`, url });
     } catch {
@@ -289,7 +304,7 @@ function FeedCard({
           accessibilityRole="button"
           accessibilityLabel={`${displayNameOf(post.author)} 게시물 더보기`}
         >
-          <Feather name="more-vertical" size={21} color="#AAA5B2" />
+          <Feather name="more-vertical" size={21} color={styleColors.mutedForeground} />
         </Pressable>
       </View>
       <Pressable
@@ -307,14 +322,17 @@ function FeedCard({
           <Feather name="heart" size={22} color={post.reactedByMe ? "#D44DFF" : "#AAA5B2"} />
           <Text style={styles.actionText}>{compactNumber(post.reactionCount)}</Text>
         </Pressable>
-        <View style={styles.action}><Feather name="message-circle" size={21} color="#AAA5B2" /><Text style={styles.actionText}>{compactNumber(post.commentCount)}</Text></View>
-        <Pressable onPress={() => void share()} style={styles.action}><Feather name="share-2" size={20} color="#AAA5B2" /><Text style={styles.actionText}>공유</Text></Pressable>
+        <View style={styles.action}><Feather name="message-circle" size={21} color={styleColors.mutedForeground} /><Text style={styles.actionText}>{compactNumber(post.commentCount)}</Text></View>
+        <Pressable onPress={() => void share()} style={styles.action}><Feather name="share-2" size={20} color={styleColors.mutedForeground} /><Text style={styles.actionText}>공유</Text></Pressable>
       </View>
     </View>
   );
 }
 
 export default function FeedScreenV2() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { compose } = useLocalSearchParams<{ compose?: string }>();
@@ -379,8 +397,8 @@ export default function FeedScreenV2() {
         >
           {writing ? <Composer activeProfile={activeProfile} supportTargets={supportTargets} onClose={() => setWriting(false)} onPublished={(xp) => setFeedback(xp ? `FAN 글을 게시했고 FAN XP ${xp}를 획득했어요.` : "게시물을 등록했습니다.")} /> : null}
           {!writing ? <ProfileRail posts={feed.posts} onOpen={openProfile} /> : null}
-          {feedback ? <Pressable onPress={() => setFeedback(null)} style={styles.feedback}><Feather name="volume-2" size={19} color="#C85CFF" /><Text style={styles.feedbackText}>{feedback}</Text><Feather name="chevron-right" size={20} color="#A94BEE" /></Pressable> : null}
-          {feed.isLoading ? <View style={styles.state}><ActivityIndicator color="#A54EFF" /><Text style={styles.stateText}>피드를 불러오는 중이에요.</Text></View> : null}
+          {feedback ? <Pressable onPress={() => setFeedback(null)} style={styles.feedback}><Feather name="volume-2" size={19} color={styleColors.primary} /><Text style={styles.feedbackText}>{feedback}</Text><Feather name="chevron-right" size={20} color={styleColors.primary} /></Pressable> : null}
+          {feed.isLoading ? <View style={styles.state}><ActivityIndicator color={styleColors.primary} /><Text style={styles.stateText}>피드를 불러오는 중이에요.</Text></View> : null}
           {!feed.isLoading && feed.error ? <Pressable onPress={() => void feed.refetch()} style={styles.state}><Text style={styles.stateTitle}>피드를 불러오지 못했어요.</Text><Text style={styles.stateText}>눌러서 다시 시도해 주세요.</Text></Pressable> : null}
           {!feed.isLoading && !feed.error && !feed.posts.length ? <View style={styles.state}><Text style={styles.stateTitle}>{scope === "following" ? "팔로잉 피드가 비어 있어요." : "아직 게시물이 없어요."}</Text><Text style={styles.stateText}>관심 있는 프로필을 팔로우하거나 첫 이야기를 남겨보세요.</Text></View> : null}
           {feed.posts.map((post) => (
@@ -393,7 +411,7 @@ export default function FeedScreenV2() {
               onToggleReaction={(item) => void feed.toggleReaction({ postId: item.id, reacted: item.reactedByMe }).catch(() => setFeedback("반응을 변경하지 못했습니다."))}
             />
           ))}
-          {feed.isFetchingNextPage ? <ActivityIndicator style={styles.moreLoader} color="#A54EFF" /> : null}
+          {feed.isFetchingNextPage ? <ActivityIndicator style={styles.moreLoader} color={styleColors.primary} /> : null}
         </ScrollView>
         <Modal
           visible={menuPostId !== null}
@@ -433,8 +451,8 @@ export default function FeedScreenV2() {
                 >
                   <Text style={styles.menuItemText}>{label}</Text>
                   {feed.isReportingPost
-                    ? <ActivityIndicator size="small" color="#B85CFF" />
-                    : <Feather name="chevron-right" size={19} color="#80798B" />}
+                    ? <ActivityIndicator size="small" color={styleColors.primary} />
+                    : <Feather name="chevron-right" size={19} color={styleColors.mutedForeground} />}
                 </Pressable>
               ))}
               <Pressable
@@ -453,77 +471,77 @@ export default function FeedScreenV2() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#020208" },
-  shell: { flex: 1, width: "100%", maxWidth: 520, alignSelf: "center", backgroundColor: "#03030A" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: styleColors.background },
+  shell: { flex: 1, width: "100%", maxWidth: 520, alignSelf: "center", backgroundColor: styleColors.card },
   header: { minHeight: 64, paddingHorizontal: 15, paddingBottom: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 14 },
-  tabs: { flex: 1, maxWidth: 290, height: 46, padding: 4, borderRadius: 25, borderWidth: 1, borderColor: "#44256D", backgroundColor: "#090815", flexDirection: "row" },
+  tabs: { flex: 1, maxWidth: 290, height: 46, padding: 4, borderRadius: 25, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, flexDirection: "row" },
   tab: { flex: 1, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  tabActive: { backgroundColor: "#6023B7", borderWidth: 1, borderColor: "#A94AFF" },
-  tabText: { color: "#C0BAC9", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  tabTextActive: { color: "#FFFFFF" },
-  write: { minWidth: 104, height: 46, paddingHorizontal: 15, borderRadius: 24, borderWidth: 1, borderColor: "#6D3E94", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, shadowColor: "#C04FFF", shadowOpacity: 0.65, shadowRadius: 10 },
+  tabActive: { backgroundColor: styleColors.primary, borderWidth: 1, borderColor: styleColors.primary },
+  tabText: { color: styleColors.mutedForeground, fontSize: fontSizes.body, fontFamily: fonts.semibold },
+  tabTextActive: { color: styleColors.primaryForeground },
+  write: { minWidth: 104, height: 46, paddingHorizontal: 15, borderRadius: 24, borderWidth: 1, borderColor: styleColors.border, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, shadowColor: styleColors.primary, shadowOpacity: 0.65, shadowRadius: 10 },
   close: { shadowOpacity: 0 },
-  writeText: { color: "#F5F1F8", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  writeText: { color: styleColors.foreground, fontSize: fontSizes.body, fontFamily: fonts.semibold },
   content: { paddingHorizontal: 13, gap: 10 },
   profileRail: { width: "100%", justifyContent: "space-between", gap: 13, paddingVertical: 8 },
   profileItem: { width: 105, alignItems: "center" },
   profileRing: { width: 80, height: 80, borderRadius: 40, padding: 3, alignItems: "center", justifyContent: "center" },
-  profileName: { color: "#F1EDF4", fontSize: 13, fontFamily: "Inter_700Bold", marginTop: 7, maxWidth: 100 },
-  rolePill: { minWidth: 52, borderRadius: 5, backgroundColor: "#40146E", alignItems: "center", paddingHorizontal: 8, paddingVertical: 2, marginTop: 3 },
-  rolePillText: { color: "#E7CFFF", fontSize: 10, fontFamily: "Inter_700Bold" },
-  feedback: { minHeight: 48, borderRadius: 12, paddingHorizontal: 15, borderWidth: 1, borderColor: "#39215C", backgroundColor: "#171027", flexDirection: "row", alignItems: "center", gap: 12 },
-  feedbackText: { flex: 1, color: "#C76BEE", fontSize: 13, fontFamily: "Inter_500Medium" },
-  card: { borderRadius: 16, borderWidth: 1, borderColor: "#201C3A", backgroundColor: "#080916", padding: 13, gap: 9, overflow: "hidden" },
+  profileName: { color: styleColors.foreground, fontSize: fontSizes.detail, fontFamily: fonts.bold, marginTop: 7, maxWidth: 100 },
+  rolePill: { minWidth: 52, borderRadius: 5, backgroundColor: styleColors.secondary, alignItems: "center", paddingHorizontal: 8, paddingVertical: 2, marginTop: 3 },
+  rolePillText: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny, fontFamily: fonts.bold },
+  feedback: { minHeight: 48, borderRadius: radii.control, paddingHorizontal: 15, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, flexDirection: "row", alignItems: "center", gap: 12 },
+  feedbackText: { flex: 1, color: styleColors.primary, fontSize: fontSizes.detail, fontFamily: fonts.medium },
+  card: { borderRadius: 16, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, padding: 13, gap: 9, overflow: "hidden" },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
-  cardAvatar: { width: 50, height: 50, borderRadius: 25, padding: 2, borderWidth: 1, borderColor: "#A440F5", alignItems: "center", justifyContent: "center" },
+  cardAvatar: { width: 50, height: 50, borderRadius: 25, padding: 2, borderWidth: 1, borderColor: styleColors.border, alignItems: "center", justifyContent: "center" },
   cardIdentity: { flex: 1 },
   cardNameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  cardName: { color: "#F4F1F7", fontSize: 16, fontFamily: "Inter_700Bold" },
-  authorRole: { borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: "#52228D" },
-  authorRoleText: { color: "#EAD9FF", fontSize: 10, fontFamily: "Inter_700Bold" },
-  cardTime: { color: "#9992A3", fontSize: 12, marginTop: 2 },
+  cardName: { color: styleColors.foreground, fontSize: fontSizes.input, fontFamily: fonts.bold },
+  authorRole: { borderRadius: 5, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: styleColors.primary },
+  authorRoleText: { color: styleColors.foreground, fontSize: fontSizes.tiny, fontFamily: fonts.bold },
+  cardTime: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, marginTop: 2 },
   moreButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  cardBody: { color: "#F0ECF3", fontSize: 15, lineHeight: 22, fontFamily: "Inter_400Regular" },
-  hashtags: { color: "#B651E8", fontSize: 13, lineHeight: 19 },
+  cardBody: { color: styleColors.foreground, fontSize: fontSizes.body, lineHeight: 22, fontFamily: fonts.regular },
+  hashtags: { color: styleColors.primary, fontSize: fontSizes.detail, lineHeight: 19 },
   mediaGrid: { height: 220, flexDirection: "row", flexWrap: "wrap", gap: 3, borderRadius: 10, overflow: "hidden" },
   mediaGridSingle: { height: 290 },
-  mediaImage: { width: "49.5%", height: "49.5%", backgroundColor: "#141122" },
+  mediaImage: { width: "49.5%", height: "49.5%", backgroundColor: styleColors.card },
   mediaSingle: { width: "100%", height: "100%" },
   mediaTwo: { width: "49.5%", height: "100%" },
   mediaThreeLead: { width: "100%", height: "59%" },
   mediaThreeTail: { width: "49.5%", height: "39.5%" },
   actions: { flexDirection: "row", alignItems: "center", gap: 28, paddingTop: 2 },
   action: { flexDirection: "row", alignItems: "center", gap: 8 },
-  actionText: { color: "#B4AFBC", fontSize: 13 },
-  state: { minHeight: 150, borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 9, borderWidth: 1, borderColor: "#211C38", backgroundColor: "#080812" },
-  stateTitle: { color: "#F2EEF5", fontSize: 15, fontFamily: "Inter_700Bold" },
-  stateText: { color: "#9892A2", fontSize: 12 },
+  actionText: { color: styleColors.mutedForeground, fontSize: fontSizes.detail },
+  state: { minHeight: 150, borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 9, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card },
+  stateTitle: { color: styleColors.foreground, fontSize: fontSizes.body, fontFamily: fonts.bold },
+  stateText: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
   moreLoader: { marginVertical: 16 },
-  composer: { borderRadius: 22, borderWidth: 1, borderColor: "#9A45E6", padding: 15, gap: 15 },
+  composer: { borderRadius: 22, borderWidth: 1, borderColor: styleColors.border, padding: 15, gap: 15 },
   composerIdentity: { flexDirection: "row", alignItems: "center", gap: 10 },
-  composerName: { color: "#F3EEF7", fontSize: 17, fontFamily: "Inter_700Bold" },
-  inputBox: { minHeight: 180, borderRadius: 16, borderWidth: 1, borderColor: "#46345F", backgroundColor: "rgba(8,8,20,0.58)", padding: 13 },
-  composerInput: { minHeight: 115, color: "#F2EEF5", fontSize: 16, lineHeight: 23, textAlignVertical: "top" },
+  composerName: { color: styleColors.foreground, fontSize: fontSizes.headingSmall, fontFamily: fonts.bold },
+  inputBox: { minHeight: 180, borderRadius: 16, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, padding: 13 },
+  composerInput: { minHeight: 115, color: styleColors.foreground, fontSize: fontSizes.input, lineHeight: 23, textAlignVertical: "top" },
   composerMediaRow: { flexDirection: "row", gap: 7, alignItems: "center" },
-  photoButton: { height: 40, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: "#6B5A7A", flexDirection: "row", alignItems: "center", gap: 7 },
-  photoText: { color: "#DED7E6", fontSize: 12 },
-  composerPreview: { width: 40, height: 40, borderRadius: 8 },
-  supportTitle: { color: "#E9E4EE", fontSize: 14, marginBottom: 10 },
-  optional: { color: "#96909E", fontSize: 12 },
+  photoButton: { height: 40, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: styleColors.border, flexDirection: "row", alignItems: "center", gap: 7 },
+  photoText: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
+  composerPreview: { width: 40, height: 40, borderRadius: radii.small },
+  supportTitle: { color: styleColors.foreground, fontSize: fontSizes.label, marginBottom: 10 },
+  optional: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
   supportRail: { gap: 14, paddingBottom: 2 },
   supportItem: { width: 68, alignItems: "center", gap: 5 },
-  supportAvatar: { width: 62, height: 62, borderRadius: 31, borderWidth: 1, borderColor: "#6A4387", alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  supportSelected: { borderWidth: 3, borderColor: "#B348FF" },
-  supportName: { color: "#D2CBD9", fontSize: 10, maxWidth: 66 },
+  supportAvatar: { width: 62, height: 62, borderRadius: 31, borderWidth: 1, borderColor: styleColors.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  supportSelected: { borderWidth: 3, borderColor: styleColors.primary },
+  supportName: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny, maxWidth: 66 },
   publishButton: { height: 54, borderRadius: 15, overflow: "hidden" },
   publishGradient: { flex: 1, alignItems: "center", justifyContent: "center" },
-  publishText: { color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_700Bold" },
+  publishText: { color: styleColors.primaryForeground, fontSize: fontSizes.headingSmall, fontFamily: fonts.bold },
   disabled: { opacity: 0.45 },
   menuBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.72)",
+    backgroundColor: styleColors.scrim,
   },
   postMenu: {
     width: "100%",
@@ -536,8 +554,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: "#4E2A72",
-    backgroundColor: "#0C0B17",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
   },
   menuHandle: {
     width: 42,
@@ -545,31 +563,31 @@ const styles = StyleSheet.create({
     marginBottom: 17,
     borderRadius: 2,
     alignSelf: "center",
-    backgroundColor: "#514A5D",
+    backgroundColor: styleColors.secondary,
   },
-  menuTitle: { color: "#F6F2F9", fontSize: 19, fontFamily: "Inter_700Bold" },
-  menuDescription: { color: "#9E97A7", fontSize: 13, marginTop: 5, marginBottom: 12 },
+  menuTitle: { color: styleColors.foreground, fontSize: fontSizes.titleSmall, fontFamily: fonts.bold },
+  menuDescription: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, marginTop: 5, marginBottom: 12 },
   menuItem: {
     minHeight: 50,
     paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#2B2638",
+    borderBottomColor: styleColors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   menuItemPressed: { opacity: 0.62 },
-  menuItemText: { color: "#E8E2ED", fontSize: 15, fontFamily: "Inter_500Medium" },
+  menuItemText: { color: styleColors.foreground, fontSize: fontSizes.body, fontFamily: fonts.medium },
   menuCancel: {
     height: 50,
     marginTop: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#3A3149",
+    borderColor: styleColors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#151220",
+    backgroundColor: styleColors.card,
   },
-  menuCancelText: { color: "#CFC7D7", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  menuCancelText: { color: styleColors.mutedForeground, fontSize: fontSizes.body, fontFamily: fonts.semibold },
   pressed: { opacity: 0.66 },
 });

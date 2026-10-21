@@ -1,0 +1,36 @@
+Chat media cache improvements — 2026-10-12
+
+Implemented, not deployed. Existing distributed versions remain iOS 1.0.0 (13), Android 1.0.0 (22), web-20261012-chat-media-r1.
+
+Photo rendering
+- Shared ChatCachedImage for single photos, albums and native zoom viewers.
+- Cache identity includes Clerk account ID and canonical object path rather than expiring access-ticket URL.
+- Native disk lookup can display cached bytes while URL resolution is pending or offline.
+- Tiny preview remains available; source transition disabled; one automatic ticket refresh on image failure.
+- Android inverted chat list disables native clipped subview removal and expands window from 5 to 7 viewports. Actual device scroll verification still required.
+- Photo cache uses expo-image's SDK-managed memory/disk store. No custom hard photo-cache byte limit is claimed.
+
+Video caching
+- Canonical path/account digest addresses local cached files. Concurrent opens share a download.
+- Full first download precedes playback; subsequent opens use cached file without ticket request. This is not streaming prefetch or durable background download.
+- Cache limited to 150MiB, max individual file 25MiB; oldest downloaded files evicted; files over 7 days replaced on access/pruned on new downloads.
+- Partial files removed on failure; generation fencing prevents completed old downloads recreating cache after owner change.
+- MP4/MOV/WebM extension follows server content type.
+
+Saving and cleanup
+- Separate photo save/share actions and direct video save through official expo-media-library.
+- Photos saved with server-reported PNG/GIF/WebP/HEIC/JPEG extension; HTTP failures never saved as media.
+- Photo/video granular permission requested only when saving; Android media location access disabled.
+- Account change clears photo/video cache; same-account restart preserves video cache.
+- Settings offers photo/video cache clearing; gallery files and messages remain untouched.
+- Generated upload photo previews kept in app-owned directory and removed after 24 hours during native session initialization. OS library temp files not created by this manager are not broadly deleted.
+- Temporary photo thumbnails, video posters and compressed uploaded videos cleaned explicitly; original user-selected assets are preserved.
+
+Validation
+- TypeScript check passed.
+- 7 cache tests cover cache hit/offline reuse, concurrent dedupe, owner isolation, expiry, HTTP failure, 150MiB eviction and owner switch during download.
+- Web export passed (.local/chat-cache-web-check).
+- Android native release Kotlin compile and final granular permission regeneration passed (44s, 509 tasks).
+- No new store upload, production web deployment, physical phone scroll/save test or iOS archive performed in this task.
+
+Release follow-up: these changes are now available in Android internal test 1.0.0 (23) and iOS internal TestFlight 1.0.0 (14). See composer-cache-release-2026-10-12.txt. Web/PWA production unchanged.

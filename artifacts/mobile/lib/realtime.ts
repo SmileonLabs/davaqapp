@@ -1,10 +1,16 @@
+import {shopEventTargets,shopQueryAffected} from './shopRealtime';
+import { ChatInvalidationBatch, ChatRealtimeEventDeduper } from "./chatInvalidationBatch";
+import { setChatRealtimeConnected } from "./chatRealtimeStatus";
+import { projectRoomRead } from "./chatUnreadProjection";
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getFetchRoomMessagesQueryKey,
+  getGetMeQueryKey,
+  type ChatRoom,
   getGetCallQueryKey,
   getGetRoomQueryKey,
   getGetTypingUsersQueryKey,
@@ -12,6 +18,9 @@ import {
   getListRoomsQueryKey,
 } from "@workspace/api-client-react";
 import { getApiBase } from "@/lib/apiBase";
+import { projectRealtimeCall } from "./callRealtimeProjection";
+import type { Call, Message } from "@workspace/api-client-react";
+import { projectCreatedMessage, projectReadCursors, type ReadCursor } from "./chatRealtimeProjection";
 import {
   noteChatRealtimeDeliveryAge,
   noteChatResource,
@@ -26,13 +35,17 @@ import {
 } from "@/lib/realtimeConnectionPolicy";
 
 type RealtimeEventType =
+  | "shop.message.created"
+  | "shop.thread.updated"
   | "message.created"
   | "message.updated"
   | "message.read"
   | "typing.updated"
   | "room.updated"
   | "call.created"
-  | "call.updated";
+  | "call.updated"
+  | "group_call.created"
+  | "group_call.updated";
 
 interface RealtimeEvent {
   type: RealtimeEventType;
@@ -45,6 +58,8 @@ interface RealtimeEvent {
 }
 
 const EVENT_TYPES = new Set<RealtimeEventType>([
+  "shop.message.created",
+  "shop.thread.updated",
   "message.created",
   "message.updated",
   "message.read",
@@ -52,6 +67,8 @@ const EVENT_TYPES = new Set<RealtimeEventType>([
   "room.updated",
   "call.created",
   "call.updated",
+  "group_call.created",
+  "group_call.updated",
 ]);
 
 function getRealtimeUrl(ticket: string): string | null {
@@ -106,6 +123,9 @@ export function useRealtimeInvalidation(): void {
     if (!isSignedIn || typeof WebSocket === "undefined") return;
 
     let disposed = false;
+    setChatRealtimeConnected(false);
+    const invalidations = new ChatInvalidationBatch();
+    const deduper = new ChatRealtimeEventDeduper();
     let appActive =
       Platform.OS === "web" ||
       (AppState.currentState !== "background" &&
@@ -123,20 +143,45 @@ export function useRealtimeInvalidation(): void {
     let retryAttempt = 0;
 
     const invalidateRoomMessages = (roomId: string) => {
-      void queryClient.invalidateQueries({ queryKey: getFetchRoomMessagesQueryKey(roomId) });
+      invalidations.enqueue("messages:"+roomId, () => { void queryClient.invalidateQueries({ queryKey: getFetchRoomMessagesQueryKey(roomId) }); });
     };
 
     const invalidateRoomMeta = (roomId: string) => {
-      void queryClient.invalidateQueries({ queryKey: getGetRoomQueryKey(roomId) });
-      void queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() });
+      invalidations.enqueue("room:"+roomId, () => { void queryClient.invalidateQueries({ queryKey: getGetRoomQueryKey(roomId) }); });
+      invalidations.enqueue("rooms", () => { void queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() }); });
     };
 
     const handleEvent = (event: RealtimeEvent) => {
+      if (!deduper.accept(event.type,event.roomId??"",event.data)) return;
+      const shop=shopEventTargets(event.type,event.data);
+      if(shop){
+        invalidations.enqueue(`shop:${shop.shopId}`,()=>{void queryClient.invalidateQueries({predicate:q=>shopQueryAffected(q.queryKey,shop.shopId)});});
+        return;
+      }
       if(event.data?.exchangeProposalId || event.data?.relayId){void queryClient.invalidateQueries({queryKey:["davaq"]});if(event.roomId)invalidateRoomMessages(event.roomId);}
       if (event.type === "message.created") {
         noteChatRealtimeDeliveryAge(event.createdAt);
       }
+      if (event.type.startsWith("group_call.")) {
+        void queryClient.invalidateQueries({ queryKey: ["davaq-group-incoming"] });
+        void queryClient.invalidateQueries({ queryKey: ["davaq-room-group-call"] });
+      }
       if (event.roomId) {
+        const roomId = event.roomId;
+        if (event.type === "message.created" && event.data?.message) {
+          queryClient.setQueriesData<Message[]>({ queryKey: getFetchRoomMessagesQueryKey(roomId) }, current =>
+            current ? projectCreatedMessage(current, event.data!.message as unknown as Message, roomId) : current);
+        }
+        if (event.type === "message.read" && Array.isArray(event.data?.readCursors)) {
+          const me = queryClient.getQueryData<{id:string}>(getGetMeQueryKey());
+          const own = (event.data.readCursors as ReadCursor[]).find(r=>r.userId===me?.id);
+          if (own) {
+            queryClient.setQueriesData<ChatRoom[]>({queryKey:getListRoomsQueryKey()}, rooms=>rooms?.map(r=>projectRoomRead(r,roomId,own.lastReadSeq)));
+            queryClient.setQueriesData<ChatRoom>({queryKey:getGetRoomQueryKey(roomId)}, r=>r?projectRoomRead(r,roomId,own.lastReadSeq):r);
+          }
+          queryClient.setQueriesData<Message[]>({ queryKey: getFetchRoomMessagesQueryKey(roomId) }, current =>
+            current ? projectReadCursors(current, event.data!.readCursors as ReadCursor[]) : current);
+        }
         if (
           event.type === "message.created" ||
           event.type === "message.updated"
@@ -146,6 +191,7 @@ export function useRealtimeInvalidation(): void {
         }
         if (event.type === "message.read") {
           invalidateRoomMessages(event.roomId);
+          invalidateRoomMeta(event.roomId);
         }
         if (
           event.type === "room.updated" ||
@@ -168,9 +214,22 @@ export function useRealtimeInvalidation(): void {
       }
 
       if (event.type === "call.created" || event.type === "call.updated") {
-        void queryClient.invalidateQueries({ queryKey: getListIncomingCallsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getListIncomingCallsQueryKey() }, { cancelRefetch: false });
         if (event.callId) {
-          void queryClient.invalidateQueries({ queryKey: getGetCallQueryKey(event.callId) });
+          const callId = event.callId;
+          const snapshot = projectRealtimeCall(undefined, callId, event.data?.call);
+          const queryKey = getGetCallQueryKey(callId);
+          if (snapshot) {
+            // The authenticated event already carries the server's call state.
+            // Cancel an older HTTP read before applying it so a slow active
+            // response cannot overwrite the terminal event after hangup.
+            void queryClient.cancelQueries({ queryKey, exact: true }).then(() => {
+              if (!disposed) queryClient.setQueryData<Call>(queryKey,
+                current => projectRealtimeCall(current, callId, snapshot));
+            });
+          } else {
+            void queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false });
+          }
         }
       }
     };
@@ -211,6 +270,7 @@ export function useRealtimeInvalidation(): void {
     };
 
     const closeSocket = () => {
+      setChatRealtimeConnected(false);
       const current = socketState;
       if (!current) return;
       socketState = null;
@@ -333,6 +393,11 @@ export function useRealtimeInvalidation(): void {
           }
           clearSocketOpenTimer();
           retryAttempt = 0;
+          setChatRealtimeConnected(true);
+          void queryClient.invalidateQueries({predicate:q=>shopQueryAffected(q.queryKey)});
+          // Repair messages/read markers missed while the app was suspended.
+          void queryClient.invalidateQueries({ predicate: query => typeof query.queryKey[0] === "string" && /^\/api\/rooms\/[^/]+\/messages$/.test(query.queryKey[0]) });
+          void queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() });
         };
         socket.onmessage = (message) => {
           if (!isCurrentSocket()) return;
@@ -343,6 +408,7 @@ export function useRealtimeInvalidation(): void {
           if (!isCurrentSocket()) return;
           clearSocketOpenTimer();
           socketState = null;
+          setChatRealtimeConnected(false);
           fence.invalidate();
           scheduleReconnect();
         };
@@ -401,7 +467,7 @@ export function useRealtimeInvalidation(): void {
       const onPageShow = () => reconnectImmediately();
       const onVisibilityChange = () => {
         if (document.visibilityState === "visible") reconnectImmediately();
-        else pauseNewConnections(false);
+        else pauseNewConnections(true);
       };
       window.addEventListener("online", onNetworkRestored);
       window.addEventListener("offline", onOffline);
@@ -419,7 +485,7 @@ export function useRealtimeInvalidation(): void {
       const appStateSubscription = AppState.addEventListener("change", (state) => {
         appActive = state === "active";
         if (appActive) reconnectImmediately();
-        else pauseNewConnections(false);
+        else pauseNewConnections(true);
       });
       const unsubscribeNetwork = NetInfo.addEventListener((state) => {
         networkOnline =
@@ -439,6 +505,8 @@ export function useRealtimeInvalidation(): void {
 
     return () => {
       disposed = true;
+      invalidations.dispose();
+      setChatRealtimeConnected(false);
       removeEnvironmentListeners();
       clearRetryTimer();
       abortAttempt();

@@ -1,0 +1,4 @@
+USearch 2.26.3, Apache-2.0
+https://github.com/unum-cloud/usearch/tree/v2.26.3/include/usearch
+Only index.hpp, index_dense.hpp and index_plugins.hpp are vendored.
+NumKong/OpenMP are disabled; the portable cosine implementation is used.

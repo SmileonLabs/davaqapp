@@ -1,3 +1,4 @@
+import {CallVideoLayout} from './CallVideoLayout';
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
@@ -15,9 +16,11 @@ type VideoTrackLike = LocalVideoTrack | RemoteVideoTrack;
 export function CallVideoView({
   room,
   cameraOn,
+  onToggleControls,
 }: {
   room: Room | null;
   cameraOn: boolean;
+  onToggleControls?:()=>void;
 }) {
   const [tracks, setTracks] = useState(() => findVideoTracks(room));
 
@@ -56,23 +59,7 @@ export function CallVideoView({
     };
   }, [room]);
 
-  return (
-    <View style={styles.wrap}>
-      {tracks.remote ? (
-        // Remote audio is rendered by voiceCall.web.ts on a dedicated audio
-        // element. Keep this video-only surface muted so Safari always permits
-        // inline autoplay in an installed PWA.
-        <VideoElement key={tracks.remote.sid} track={tracks.remote} muted style={videoFillStyle} />
-      ) : (
-        <VideoPlaceholder label={room ? "상대방 영상을 기다리는 중..." : "영상 연결 중..."} />
-      )}
-      {cameraOn && tracks.local ? (
-        <View style={styles.localPreview}>
-          <VideoElement key={tracks.local.sid} track={tracks.local} muted mirror style={videoFillStyle} />
-        </View>
-      ) : null}
-    </View>
-  );
+  return <CallVideoLayout onToggleControls={onToggleControls} remote={tracks.remote?<VideoElement key={tracks.remote.sid} track={tracks.remote} muted style={videoFillStyle}/>:<VideoPlaceholder label={room?'상대방 카메라가 꺼져 있거나 연결 중이에요':'영상 연결 중...'}/>} local={cameraOn&&tracks.local?<VideoElement key={tracks.local.sid} track={tracks.local} muted mirror style={videoFillStyle}/>:undefined}/>;
 }
 
 function findVideoTracks(room: Room | null): { local: VideoTrackLike | null; remote: VideoTrackLike | null } {
@@ -81,7 +68,7 @@ function findVideoTracks(room: Room | null): { local: VideoTrackLike | null; rem
   let remote: VideoTrackLike | null = null;
   for (const participant of room.remoteParticipants.values()) {
     const track = participant.getTrackPublication(Track.Source.Camera)?.videoTrack;
-    if (track) {
+    if (track && !participant.getTrackPublication(Track.Source.Camera)?.isMuted) {
       remote = track;
       break;
     }

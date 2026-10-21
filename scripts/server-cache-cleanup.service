@@ -1,0 +1,23 @@
+[Unit]
+Description=Clean regenerable server caches and inactive deployment temp files
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/server-cache-cleanup.py
+StateDirectory=server-cache-cleanup
+StateDirectoryMode=0700
+Environment=DOCKER_CONFIG=/var/lib/server-cache-cleanup/docker
+Environment=DOCKER_HOST=unix:///var/run/docker.sock
+UMask=0077
+Nice=19
+IOSchedulingClass=idle
+CPUWeight=10
+TimeoutStartSec=20min
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+

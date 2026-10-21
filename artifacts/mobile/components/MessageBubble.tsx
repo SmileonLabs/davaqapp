@@ -1,6 +1,18 @@
+import { useReducedMotion } from "react-native-reanimated";
+import { SwipeToReply } from "./chat/SwipeToReply";
+import { groupReactions } from "@/lib/chatInteractionPolicy";
+import { useQueryClient } from "@tanstack/react-query";
+import { crossAlert } from "@/lib/crossAlert";
+import { Image as CachedImage } from "expo-image";
+import { ChatCachedImage } from "./ChatCachedImage";
+import { ChatVideoViewer } from "./ChatVideoViewer";
+import { ChatAlbum } from "./ChatAlbum";
+import type { ChatAlbumImage } from "@/lib/chatAlbumPolicy";
+import { ChatImageViewer } from "./ChatImageViewer";
 import React, { useState } from "react";
 import {
   Image,
+  Animated,
   Linking,
   Platform,
   Pressable,
@@ -42,10 +54,16 @@ interface MessageBubbleProps {
   isMe: boolean;
   type?: string;
   imageUri?: string;
+  imageThumbnail?: string;
+  imageAlbum?: ChatAlbumImage[];
+  imageCaption?: string;
+  imageAspect?: number;
+  videoDuration?: number;
   senderName?: string;
   senderAvatar?: string | null;
   senderAvatarNode?: React.ReactNode;
   senderCharacterType?: "fan" | "star" | "official_ai";
+  onPressSender?: () => void;
   time: string;
   showSender?: boolean;
   compact?: boolean;
@@ -53,7 +71,17 @@ interface MessageBubbleProps {
   isDM?: boolean;
   isAnotherMe?: boolean;
   onJoinCall?: (callId: string, media: "audio" | "video") => void;
-  onLongPress?: (messageId: string) => void;
+  onLongPress?: (
+    messageId: string,
+    anchor?: { x: number; y: number; width: number; height: number },
+    preview?: React.ReactNode,
+  ) => void;
+  onReply?: (messageId: string) => void;
+  onTouchMessage?: () => void;
+  selectionMode?: boolean;
+  onSelect?: (messageId: string) => void;
+  viewerId?: string;
+  onReact?: (messageId: string, code: string) => void;
   selected?: boolean;
   deletedAt?: string | null;
   replyTo?: MessageReplyPreview | null;
@@ -62,6 +90,7 @@ interface MessageBubbleProps {
   onPressReply?: (messageId: string) => void;
   retryClientMessageId?: string | null;
   onRetryMessage?: (clientMessageId: string) => void;
+  onCancelMessage?: (clientMessageId: string) => void;
 }
 
 // A "call" message carries { callId, status, media, durationSec? } JSON so the
@@ -107,10 +136,16 @@ function MessageBubbleComponent({
   isMe,
   type = "text",
   imageUri,
+  imageThumbnail,
+  imageAlbum,
+  imageCaption,
+  imageAspect,
+  videoDuration,
   senderName,
   senderAvatar,
   senderAvatarNode,
   senderCharacterType,
+  onPressSender,
   time,
   showSender = false,
   compact = false,
@@ -119,6 +154,12 @@ function MessageBubbleComponent({
   isAnotherMe = false,
   onJoinCall,
   onLongPress,
+  onReply,
+  onTouchMessage,
+  selectionMode = false,
+  onSelect,
+  viewerId,
+  onReact,
   selected = false,
   deletedAt,
   replyTo,
@@ -127,10 +168,15 @@ function MessageBubbleComponent({
   onPressReply,
   retryClientMessageId,
   onRetryMessage,
+  onCancelMessage,
 }: MessageBubbleProps) {
   noteChatRender("bubbleRenders");
   const colors = useColors();
-  const authorizedImageUri = useMediaUri(imageUri);
+  const mediaQueryClient = useQueryClient();
+  const [imageRetry, setImageRetry] = React.useState(0);
+  const [imageError, setImageError] = useState(false);
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [imageOpen, setImageOpen] = useState(false);
   const safeLinkPreviewThumbnail = linkPreviewThumbnailUri(
     linkPreview?.imageUrl,
   );
@@ -144,10 +190,41 @@ function MessageBubbleComponent({
   if (isImage) noteChatRender("imageRenders");
   const fileMeta =
     !isDeleted && type === "file" ? parseFileContent(content) : null;
-  const [aspect, setAspect] = useState(1);
+  const [aspect, setAspect] = useState(
+    imageAspect && imageAspect > 0 ? imageAspect : 1,
+  );
+  const replyToMessage = React.useCallback(
+    () => onReply?.(messageId),
+    [onReply, messageId],
+  );
+  const bodyRef = React.useRef<View>(null);
+  const pressScale = React.useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+  React.useEffect(() => () => pressScale.stopAnimation(), [pressScale]);
+  const pressFeedback = React.useCallback(
+    (pressed: boolean) => {
+      if (reducedMotion || selectionMode || !onLongPress) return;
+      Animated.spring(pressScale, {
+        toValue: pressed ? 0.965 : 1,
+        stiffness: 420,
+        damping: pressed ? 30 : 12,
+        mass: 0.6,
+        useNativeDriver: Platform.OS !== "web",
+      }).start();
+    },
+    [pressScale, reducedMotion, selectionMode, onLongPress],
+  );
+  const focusPreview = React.useRef<React.ReactNode>(null);
   const handleLongPress = React.useCallback(() => {
-    onLongPress?.(messageId);
-  }, [messageId, onLongPress]);
+    if (selectionMode) {
+      onSelect?.(messageId);
+      return;
+    }
+    bodyRef.current?.measureInWindow((x, y, width, height) => {
+      if (width > 0 && height > 0)
+        onLongPress?.(messageId, { x, y, width, height }, focusPreview.current);
+    });
+  }, [messageId, onLongPress, selectionMode, onSelect]);
   const longPressHandler = onLongPress ? handleLongPress : undefined;
   const handleRetry = React.useCallback(() => {
     if (retryClientMessageId) onRetryMessage?.(retryClientMessageId);
@@ -209,6 +286,7 @@ function MessageBubbleComponent({
     return (
       <View style={styles.callRow}>
         <View
+          onTouchStart={onTouchMessage}
           style={[
             styles.callCard,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -257,17 +335,30 @@ function MessageBubbleComponent({
   }
 
   const openImage = () => {
-    if (!authorizedImageUri) return;
-    if (Platform.OS === "web") {
-      window.open(authorizedImageUri, "_blank");
-    } else {
-      Linking.openURL(authorizedImageUri).catch(() => {});
+    if (imageError) {
+      setImageRetry((value) => value + 1);
+      setImageError(false);
+      void mediaQueryClient
+        .invalidateQueries({ queryKey: ["media-url", imageUri] })
+        .catch(() => {});
+      return;
     }
+    if (imageUri) setImageOpen(true);
   };
 
   const openFile = async () => {
     if (!fileMeta) return;
-    const uri = await resolveMediaUri(fileMeta.path);
+    if (fileMeta.mime?.startsWith("video/")) {
+      setVideoUri(fileMeta.path);
+      return;
+    }
+    let uri: string;
+    try {
+      uri = await resolveMediaUri(fileMeta.path);
+    } catch {
+      crossAlert("파일 열기 실패", "연결을 확인한 뒤 다시 눌러 주세요.");
+      return;
+    }
     if (Platform.OS === "web") {
       const a = document.createElement("a");
       a.href = uri;
@@ -329,16 +420,30 @@ function MessageBubbleComponent({
     >
       {isMe && readLabel ? (
         retryClientMessageId && onRetryMessage ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="메시지 다시 보내기"
-            hitSlop={8}
-            onPress={handleRetry}
-          >
-            <Text style={[styles.read, { color: colors.destructive }]}>
-              다시 시도
-            </Text>
-          </Pressable>
+          <View style={{ gap: 10 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="메시지 다시 보내기"
+              hitSlop={8}
+              onPress={handleRetry}
+            >
+              <Text style={[styles.read, { color: colors.destructive }]}>
+                다시 시도
+              </Text>
+            </Pressable>
+            {onCancelMessage ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="실패한 메시지 전송 취소"
+                hitSlop={8}
+                onPress={() => onCancelMessage(retryClientMessageId)}
+              >
+                <Text style={[styles.read, { color: colors.mutedForeground }]}>
+                  전송 취소
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : ["읽음", "안읽음", "전송됨", "전송 중"].includes(readLabel) ? (
           <View
             accessible
@@ -478,14 +583,20 @@ function MessageBubbleComponent({
         <StickerImage code={content} size={STICKER_SIZE} />
       )}
     </View>
+  ) : isImage && imageAlbum ? (
+    <ChatAlbum images={imageAlbum} />
   ) : isImage ? (
     <Pressable
       onPress={openImage}
       onLongPress={longPressHandler}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
-      <Image
-        source={{ uri: authorizedImageUri }}
+      <ChatCachedImage
+        objectPath={imageUri}
+        autoplay
+        retryKey={imageRetry}
+        thumbnail={imageThumbnail}
+        contentFit="cover"
         style={[
           styles.image,
           {
@@ -494,67 +605,88 @@ function MessageBubbleComponent({
             backgroundColor: colors.muted,
           },
         ]}
-        resizeMode="cover"
-        onLoad={(e) => {
-          const src: any = e.nativeEvent?.source;
-          if (src?.width && src?.height) setAspect(src.width / src.height);
+        onError={() => setImageError(true)}
+        onLoad={(event) => {
+          setImageError(false);
+          if (event.source.width && event.source.height)
+            setAspect(event.source.width / event.source.height);
         }}
       />
+      {imageError ? (
+        <Text style={{ padding: 8, color: colors.primary }}>
+          사진 다시 불러오기 ↻
+        </Text>
+      ) : null}
     </Pressable>
   ) : fileMeta ? (
-    <Pressable
-      onPress={openFile}
-      onLongPress={longPressHandler}
-      style={({ pressed }) => [
-        styles.fileCard,
-        {
-          backgroundColor: isMe ? colors.myBubble : colors.otherBubble,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.fileIcon,
-          { backgroundColor: isMe ? "rgba(255,255,255,0.18)" : colors.muted },
+    <View>
+      {fileMeta.mime?.startsWith("video/") &&
+      imageThumbnail?.startsWith("data:image/jpeg;base64,") &&
+      imageThumbnail.length < 10000 ? (
+        <Pressable onPress={openFile} accessibilityLabel="영상 재생">
+          <CachedImage
+            source={imageThumbnail}
+            contentFit="cover"
+            style={{ width: IMAGE_WIDTH, height: 124, borderRadius: 12 }}
+          />
+        </Pressable>
+      ) : null}
+      <Pressable
+        onPress={openFile}
+        onLongPress={longPressHandler}
+        style={({ pressed }) => [
+          styles.fileCard,
+          {
+            backgroundColor: isMe ? colors.myBubble : colors.otherBubble,
+            opacity: pressed ? 0.85 : 1,
+          },
         ]}
       >
-        <Feather
-          name="file"
-          size={22}
-          color={isMe ? colors.myBubbleText : colors.foreground}
-        />
-      </View>
-      <View style={styles.fileInfo}>
-        <Text
-          numberOfLines={1}
+        <View
           style={[
-            styles.fileName,
-            { color: isMe ? colors.myBubbleText : colors.otherBubbleText },
+            styles.fileIcon,
+            { backgroundColor: isMe ? "rgba(255,255,255,0.18)" : colors.muted },
           ]}
         >
-          {fileMeta.name}
-        </Text>
-        {formatFileSize(fileMeta.size) ? (
+          <Feather
+            name="file"
+            size={22}
+            color={isMe ? colors.myBubbleText : colors.foreground}
+          />
+        </View>
+        <View style={styles.fileInfo}>
           <Text
+            numberOfLines={1}
             style={[
-              styles.fileSize,
-              {
-                color: isMe ? colors.myBubbleText : colors.mutedForeground,
-                opacity: isMe ? 0.8 : 1,
-              },
+              styles.fileName,
+              { color: isMe ? colors.myBubbleText : colors.otherBubbleText },
             ]}
           >
-            {formatFileSize(fileMeta.size)}
+            {fileMeta.mime?.startsWith("video/") ? "▶ " : ""}
+            {fileMeta.name}
+            {videoDuration ? ` · ${Math.round(videoDuration)}초` : ""}
           </Text>
-        ) : null}
-      </View>
-      <Feather
-        name="download"
-        size={18}
-        color={isMe ? colors.myBubbleText : colors.mutedForeground}
-      />
-    </Pressable>
+          {formatFileSize(fileMeta.size) ? (
+            <Text
+              style={[
+                styles.fileSize,
+                {
+                  color: isMe ? colors.myBubbleText : colors.mutedForeground,
+                  opacity: isMe ? 0.8 : 1,
+                },
+              ]}
+            >
+              {formatFileSize(fileMeta.size)}
+            </Text>
+          ) : null}
+        </View>
+        <Feather
+          name="download"
+          size={18}
+          color={isMe ? colors.myBubbleText : colors.mutedForeground}
+        />
+      </Pressable>
+    </View>
   ) : (
     <View
       style={[
@@ -601,50 +733,39 @@ function MessageBubbleComponent({
           isMe ? styles.stickerBadgesMe : styles.stickerBadgesOther,
         ]}
       >
-        {stickerBadges.slice(0, 3).map((badge) => (
-          <View
-            key={badge.id}
+        {groupReactions(stickerBadges, viewerId).map((reaction) => (
+          <Pressable
+            key={reaction.code}
+            accessibilityRole="button"
+            accessibilityLabel={`${reaction.count}명 반응${reaction.mine ? ", 내 반응 취소" : ""}`}
+            accessibilityState={{ selected: reaction.mine }}
+            disabled={!onReact || selectionMode}
+            onPress={() => onReact?.(messageId, reaction.code)}
             style={[
               styles.stickerBadge,
-              { backgroundColor: colors.card, borderColor: colors.border },
+              {
+                backgroundColor: reaction.mine ? colors.accent : colors.card,
+                borderColor: reaction.mine ? colors.primary : colors.border,
+                flexDirection: "row",
+                gap: 4,
+              },
             ]}
           >
             {staticStickers ? (
-              <Text style={{ fontSize: 15 }}>🙂</Text>
+              <Text>🙂</Text>
             ) : (
-              <StickerImage code={badge.code} size={22} />
+              <StickerImage code={reaction.code} size={22} />
             )}
-          </View>
+            <Text style={{ color: colors.foreground }}>{reaction.count}</Text>
+          </Pressable>
         ))}
       </View>
     ) : null;
 
-  // A disabled Pressable also disables nested retry/media controls on web.
-  const Row = longPressHandler ? Pressable : View;
+  focusPreview.current = body;
   return (
-    <Row
+    <View
       testID={"message-" + messageId}
-      {...(longPressHandler
-        ? { onLongPress: longPressHandler, delayLongPress: 320 }
-        : {})}
-      {...(Platform.OS === "web" && longPressHandler
-        ? {
-            onContextMenu: (event: any) => {
-              event.preventDefault();
-              longPressHandler();
-            },
-            onKeyDown: (event: any) => {
-              if (
-                event.key === "ContextMenu" ||
-                (event.shiftKey && event.key === "F10")
-              ) {
-                event.preventDefault();
-                longPressHandler();
-              }
-            },
-            tabIndex: 0,
-          }
-        : ({} as any))}
       style={[
         styles.row,
         { marginTop: compact ? 1 : 9, marginBottom: 2 },
@@ -652,11 +773,22 @@ function MessageBubbleComponent({
         selected && { backgroundColor: colors.accent },
       ]}
     >
+      {selectionMode && (
+        <Pressable
+          accessibilityLabel={selected ? "메시지 선택 해제" : "메시지 선택"}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: selected }}
+          onPress={() => onSelect?.(messageId)}
+          style={{ padding: 8 }}
+        >
+          <Text style={{ color: colors.primary }}>{selected ? "☑" : "☐"}</Text>
+        </Pressable>
+      )}
       {!isMe &&
         (compact ? (
           <View style={{ width: 32 }} />
         ) : (
-          (senderAvatarNode ??
+          (<Pressable disabled={!onPressSender} onPress={onPressSender} accessibilityRole={onPressSender ? "button" : undefined} accessibilityLabel={onPressSender ? `${senderName ?? ""} 프로필 보기` : undefined}>{senderAvatarNode ??
           (simpleAvatars ? (
             <View
               style={{
@@ -674,24 +806,82 @@ function MessageBubbleComponent({
               crop="face"
               characterType={senderCharacterType}
             />
-          )))
+          ))}</Pressable>)
         ))}
       <View style={[styles.bubbleWrap, isMe && styles.bubbleWrapMe]}>
         {!isMe && showSender && senderName ? (
-          <Text style={[styles.senderName, { color: colors.mutedForeground }]}>
+          <Text onPress={onPressSender} accessibilityRole={onPressSender ? "button" : undefined} style={[styles.senderName, { color: colors.mutedForeground }]}>
             {senderName}
           </Text>
         ) : null}
         <View style={[styles.bubbleLine, isMe && styles.bubbleLineMe]}>
           {isMe ? meta : null}
-          <View style={styles.bodyWrap}>
-            {body}
-            {stickerBadgeOverlay}
-          </View>
+          <SwipeToReply
+            onReply={!selectionMode && onReply ? replyToMessage : undefined}
+          >
+            <Pressable
+              onTouchStart={onTouchMessage}
+              onPressIn={() => pressFeedback(true)}
+              onPressOut={() => pressFeedback(false)}
+              ref={bodyRef}
+              collapsable={false}
+              style={styles.bodyWrap}
+              onLongPress={longPressHandler}
+              delayLongPress={320}
+              accessibilityActions={[
+                { name: "menu", label: "메시지 메뉴 열기" },
+              ]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === "menu") handleLongPress();
+              }}
+              onPress={selectionMode ? () => onSelect?.(messageId) : undefined}
+              {...(Platform.OS === "web" && longPressHandler
+                ? {
+                    tabIndex: 0,
+                    onContextMenu: (event: any) => {
+                      event.preventDefault();
+                      longPressHandler();
+                    },
+                    onKeyDown: (event: any) => {
+                      if (
+                        event.key === "ContextMenu" ||
+                        (event.shiftKey && event.key === "F10")
+                      ) {
+                        event.preventDefault();
+                        longPressHandler();
+                      }
+                    },
+                  }
+                : {})}
+            >
+              <Animated.View
+                style={{ transform: [{ scale: pressScale }] }}
+                pointerEvents={selectionMode ? "none" : "auto"}
+              >
+                {body}
+              </Animated.View>
+              {stickerBadgeOverlay}
+            </Pressable>
+          </SwipeToReply>
           {!isMe ? meta : null}
         </View>
       </View>
-    </Row>
+      {videoUri ? (
+        <ChatVideoViewer uri={videoUri} onClose={() => setVideoUri(null)} />
+      ) : null}
+      {(isImage || fileMeta) && imageCaption ? (
+        <Text style={{ padding: 8, color: colors.foreground }}>
+          {imageCaption}
+        </Text>
+      ) : null}
+      {imageOpen && imageUri && (
+        <ChatImageViewer
+          uri={imageUri}
+          thumbnails={[imageThumbnail]}
+          onClose={() => setImageOpen(false)}
+        />
+      )}
+    </View>
   );
 }
 
@@ -957,9 +1147,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   stickerBadges: {
-    position: "absolute",
-    bottom: -10,
+    position: "relative",
     flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 4,
+    gap: 4,
   },
   stickerBadgesMe: {
     right: -6,
@@ -968,7 +1160,8 @@ const styles = StyleSheet.create({
     left: -6,
   },
   stickerBadge: {
-    width: 30,
+    minWidth: 42,
+    paddingHorizontal: 6,
     height: 30,
     borderRadius: 15,
     alignItems: "center",

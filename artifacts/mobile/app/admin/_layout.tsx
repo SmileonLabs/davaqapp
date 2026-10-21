@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { Redirect, Slot } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 

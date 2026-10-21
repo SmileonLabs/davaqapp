@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Frame, Txt, Button, Notice } from "@/components/davaq/UI";
 import { parseInviteCode, savePendingInvite } from "@/lib/inviteLinks";

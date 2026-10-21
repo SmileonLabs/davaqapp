@@ -67,7 +67,7 @@ function parseEntries(raw: string): readonly unknown[] {
 }
 
 /**
- * Applies the 24-hour retention policy to every account namespace on the
+ * Applies the 30-day retention policy to every account namespace on the
  * device, not only the account that happens to be signed in. The optional
  * owner lock prevents a startup/session-transition sweep from racing a send.
  */

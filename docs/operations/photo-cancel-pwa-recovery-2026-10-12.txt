@@ -1,0 +1,12 @@
+Failed-photo cancellation and PWA image recovery
+
+Source changes (not released):
+- Failed local messages expose a separate send-cancel button. Cancellation validates sender, room, failed status and delivery lease, removes the durable outbox entry first, then removes the local bubble. Confirmed and in-flight operations remain intact. Failed orphan bubbles without an outbox entry may also be discarded.
+- Image loading retry explicitly resets the failed image state and remounts the image even when a refreshed access URL is unchanged. Automatic ticket refresh gets one retry. Access URL query errors now reach the visible photo error UI.
+- Album tiles and web full-screen viewer provide image reload actions.
+
+Observed production web: received photos in the existing conversation displayed photo-reload labels. No successful received-photo recovery was verified on production. The old deployed PWA predates ChatCachedImage; current source changes do not update production automatically. Server/object availability remains to be verified if photos still fail after deploying this bundle.
+
+Validation: mobile TypeScript check passed; 16 existing album/upload retry tests and 4 new cancellation/image recovery tests passed; production-config web export succeeded. Native release numbers remain Android 24 / iOS 15, unchanged by this task. No native/store/server deployment performed.
+
+Follow-up: now released. See photo-cancel-release-2026-10-12.txt. Production HEIC cause and successful received-photo display verified; supersedes the earlier pending status.

@@ -1,0 +1,31 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply from: '../nitrogen/generated/android/TCGScanner+autolinking.gradle'
+
+android {
+  namespace 'com.margelo.nitro.tcgscanner'
+  ndkVersion rootProject.ext.ndkVersion
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  defaultConfig {
+    minSdkVersion 26
+    externalNativeBuild { cmake {
+      cppFlags '-frtti -fexceptions'
+      arguments '-DANDROID_STL=c++_shared', '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+      abiFilters(*((rootProject.findProperty('reactNativeArchitectures') ?: 'arm64-v8a').split(',')))
+    } }
+  }
+  externalNativeBuild { cmake { path 'CMakeLists.txt' } }
+  buildFeatures { prefab true }
+  packagingOptions { excludes = ['**/libc++_shared.so', '**/libNitroModules.so', '**/libVisionCamera.so', '**/libfbjni.so', '**/libjsi.so', '**/libreactnative.so'] }
+}
+dependencies {
+  implementation 'com.facebook.react:react-android'
+  implementation project(':react-native-nitro-modules')
+  implementation project(':react-native-vision-camera')
+  implementation 'org.opencv:opencv:4.13.0'
+  implementation 'androidx.camera:camera-core:1.7.0-alpha03'
+  implementation 'com.google.ai.edge.litert:litert:1.4.0'
+  implementation 'com.google.mlkit:text-recognition:16.0.1'
+  implementation 'com.google.mlkit:text-recognition-japanese:16.0.1'
+  implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
+}

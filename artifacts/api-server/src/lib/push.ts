@@ -1,3 +1,4 @@
+import { sendApplePushToUser } from "./applePush";
 import webpush, { type PushSubscription } from "web-push";
 import { asc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
@@ -53,6 +54,9 @@ function roomIdFromChatUrl(url: string | undefined): string | null {
 
 function fcmNotificationData(payload: PushPayload): Record<string, string> | undefined {
   const data: Record<string, string> = {};
+  for (const [key, value] of Object.entries(payload.data ?? {})) {
+    if (typeof value === "string" || typeof value === "number") data[key] = String(value);
+  }
   if (payload.url) data.url = payload.url;
   if (payload.tag) data.tag = payload.tag;
   const roomId = roomIdFromChatUrl(payload.url);
@@ -235,7 +239,7 @@ async function removeEndpoints(userId: string, staleEndpoints: Set<string>): Pro
 export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
-  opts: { force?: boolean } = {},
+  opts: { force?: boolean; strict?: boolean } = {},
 ): Promise<void> {
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -250,34 +254,48 @@ export async function sendPushToUser(
     // Skip the call type: incoming calls have their own data-only full-screen
     // native path in sendCallPush (sendFcmCallToUser), so sending a tray
     // notification here too would double-notify native devices.
+    let nativeFailed = false;
     if (payload.type !== "call") {
-      await sendFcmNotificationToUser(userId, {
+      const deliveryOptions: [] | [{ strict: true }] = opts.strict ? [{ strict: true }] : [];
+      const nativeResults = await Promise.allSettled([
+        sendApplePushToUser(userId, { title: payload.title, body: payload.body, data: fcmNotificationData(payload) }, ...deliveryOptions),
+        sendFcmNotificationToUser(userId, {
         title: payload.title,
         body: payload.body,
         tag: payload.tag,
         data: fcmNotificationData(payload),
-      });
+        }, ...deliveryOptions),
+      ]);
+      nativeFailed = nativeResults.some(result => result.status === "rejected");
     }
 
     // Web push (VAPID). Only runs when VAPID keys are configured.
-    if (!configured) return;
+    if (!configured) {
+      if (opts.strict && (nativeFailed || parseSubscriptions(user.pushToken ?? null).length > 0)) throw new Error("Push provider unavailable");
+      return;
+    }
     const subscriptions = parseSubscriptions(user.pushToken ?? null);
-    if (subscriptions.length === 0) return;
+    if (subscriptions.length === 0) {
+      if (opts.strict && nativeFailed) throw new Error("Native push delivery failed");
+      return;
+    }
 
     // The service worker validates this server-owned recipient against the
     // locally active account before displaying anything. Never trust a caller
     // supplied value for this ownership fence.
     const body = JSON.stringify({ ...payload, recipientUserId: userId });
     const stale = new Set<string>();
+    let failed = false;
     await Promise.allSettled(
       subscriptions.map(async (sub) => {
         try {
-          await webpush.sendNotification(sub, body);
+          await webpush.sendNotification(sub, body, { timeout: 10_000 });
         } catch (err: unknown) {
           const statusCode = (err as { statusCode?: number })?.statusCode;
           if (statusCode === 404 || statusCode === 410) {
             stale.add(sub.endpoint);
           } else {
+            failed = true;
             logger.error(
               { ...buildPushFailureLog(err), userId },
               "Failed to send web push to a device",
@@ -287,17 +305,20 @@ export async function sendPushToUser(
       }),
     );
     await removeEndpoints(userId, stale);
+    if (opts.strict && (failed || nativeFailed)) throw new Error("Push delivery failed");
   } catch (err) {
     logger.error(
       { ...buildPushFailureLog(err), userId },
       "Failed to send push",
     );
+    if (opts.strict) throw err;
   }
 }
 
 /** Send the same notification to multiple users concurrently (best-effort). */
-export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<void> {
-  await Promise.allSettled(userIds.map((id) => sendPushToUser(id, payload)));
+export async function sendPushToUsers(userIds: string[], payload: PushPayload, opts: { strict?: boolean } = {}): Promise<void> {
+  const results = await Promise.allSettled(userIds.map((id) => sendPushToUser(id, payload, opts)));
+  if (opts.strict && results.some(result => result.status === "rejected")) throw new Error("Push delivery failed");
 }
 
 /**
@@ -309,12 +330,13 @@ export async function sendCallPush(
   userId: string,
   payload: Omit<PushPayload, "type">,
 ): Promise<void> {
-  // Web/PWA delivery (Web Push / VAPID).
-  await sendPushToUser(userId, { ...payload, type: "call" }, { force: true });
-  // Native delivery (Android FCM). Best-effort and independent of web push so a
-  // user with both a browser subscription and a native device gets rung on both.
+  // Start all transports independently: a slow web endpoint must not delay
+  // the iPhone/Android ringtone until the server's ringing window expires.
   const data = payload.data ?? {};
-  await sendFcmCallToUser(userId, {
+  await Promise.allSettled([
+    sendPushToUser(userId, { ...payload, type: "call" }, { force: true }),
+    sendApplePushToUser(userId, { title: payload.title, body: payload.body, data }),
+    sendFcmCallToUser(userId, {
     title: payload.title,
     body: payload.body,
     tag: payload.tag,
@@ -325,8 +347,10 @@ export async function sendCallPush(
       callerUserId: typeof data.callerUserId === "string" ? data.callerUserId : "",
       media: data.media === "video" ? "video" : "audio",
       callerName: typeof data.callerName === "string" ? data.callerName : payload.title,
+      ...(typeof data.expiresAt === "number" ? { expiresAt: String(data.expiresAt) } : {}),
     },
-  });
+    }),
+  ]);
 }
 
 /**
@@ -344,8 +368,10 @@ export async function sendCallTerminalPush(
   },
 ): Promise<void> {
   await Promise.allSettled(
-    Array.from(new Set(userIds)).map((userId) =>
-      sendFcmCallToUser(userId, {
+    Array.from(new Set(userIds)).map(async (userId) => {
+      await Promise.allSettled([
+        sendApplePushToUser(userId, { title: "통화 종료", body: "", data: { ...data, type: `call_${data.status}` } }),
+        sendFcmCallToUser(userId, {
         title: "통화 종료",
         body: "통화가 종료되었습니다.",
         tag: `call-${data.callId}`,
@@ -356,13 +382,15 @@ export async function sendCallTerminalPush(
           chatRoomId: data.chatRoomId ?? "",
           media: data.media,
         },
-      }),
-    ),
+        }),
+      ]);
+    }),
   );
 }
 
 /** Build the structured data payload for an incoming-call push. */
 export function incomingCallData(args: {
+  expiresAt?: number;
   callId: string;
   chatRoomId: string | null;
   callerUserId: string;
@@ -371,6 +399,7 @@ export function incomingCallData(args: {
 }): Record<string, unknown> {
   return {
     type: "incoming_call",
+    ...(args.expiresAt !== undefined ? { expiresAt: args.expiresAt } : {}),
     callId: args.callId,
     chatRoomId: args.chatRoomId,
     callerUserId: args.callerUserId,

@@ -6,19 +6,23 @@ import { logger } from "./logger";
 import { isAllowedOrigin, normalizeOrigin } from "./origins";
 import { getRedis, redisPublish, redisSubscribe } from "./redis";
 
-const REALTIME_CHANNEL = "anotherme:realtime";
+const REALTIME_CHANNEL = "davaq:realtime:v1";
 const HEARTBEAT_MS = 30_000;
 const REALTIME_TICKET_TTL_SECONDS = 60;
-const REALTIME_TICKET_PREFIX = "anotherme:realtime-ticket:";
+const REALTIME_TICKET_PREFIX = "davaq:realtime-ticket:";
 
 export type RealtimeEventType =
+  | "shop.message.created"
+  | "shop.thread.updated"
   | "message.created"
   | "message.updated"
   | "message.read"
   | "typing.updated"
   | "room.updated"
   | "call.created"
-  | "call.updated";
+  | "call.updated"
+  | "group_call.created"
+  | "group_call.updated";
 
 export interface RealtimeEvent {
   type: RealtimeEventType;
@@ -44,12 +48,14 @@ let attached = false;
 
 export async function publishRealtimeEvent(
   event: Omit<RealtimeEvent, "createdAt" | "userIds"> & { userIds: string[] },
+  options: { durable?: boolean } = {},
 ): Promise<void> {
   const userIds = Array.from(new Set(event.userIds.filter(Boolean)));
   if (userIds.length === 0) return;
   await redisPublish(
     REALTIME_CHANNEL,
     JSON.stringify({ ...event, userIds, createdAt: new Date().toISOString() }),
+    options,
   );
 }
 

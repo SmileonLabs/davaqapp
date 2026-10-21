@@ -64,11 +64,11 @@ const appKit = projectId
       metadata: {
         name: "DavaQ",
         description: "DavaQ STAR NFT wallet verification",
-        url: "https://davaq.anothermeai.app",
-        icons: ["https://davaq.anothermeai.app/favicon.ico"],
+        url: "https://davaq.app",
+        icons: ["https://davaq.app/favicon.ico"],
         redirect: {
           native: "anotherme://wallet",
-          universal: "https://davaq.anothermeai.app/app",
+          universal: "https://davaq.app/app",
         },
       },
       enableAnalytics: false,

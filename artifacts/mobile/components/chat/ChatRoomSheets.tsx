@@ -1,6 +1,9 @@
+import { MessageFocusMenu } from "./MessageFocusMenu";
+import type { MessageAnchor } from "@/lib/chatInteractionPolicy";
 import React, { useState } from "react";
 import {
   Pressable,
+  Platform,
   StyleSheet,
   Switch,
   Text,
@@ -10,6 +13,8 @@ import {
 import { Feather } from "@expo/vector-icons";
 import type { Message } from "@workspace/api-client-react";
 import { StickerPicker } from "@/components/StickerPicker";
+import { ContentReportSheet } from "@/components/ContentReportSheet";
+import type { ContentReportTarget } from "@/lib/contentReports";
 import { roomDisplayName, summarizeMessage } from "@/lib/chatScreenUtils";
 import type { DeleteMessageScope } from "@/lib/messageActions";
 import { useColors } from "@/hooks/useColors";
@@ -29,6 +34,9 @@ type RoomOptionSheet = {
 };
 
 type MessageActionSheet = {
+  anchor?: MessageAnchor;
+  preview?: React.ReactNode;
+  viewerId?: string;
   message: Message | null;
   isDeleted: boolean;
   isMine: boolean;
@@ -85,6 +93,49 @@ export function ChatRoomSheets({
   const c = useColors(),
     message = messageActions.message,
     [search, setSearch] = useState("");
+  const [reportTarget, setReportTarget] = useState<ContentReportTarget | null>(
+    null,
+  );
+  const pendingReport = React.useRef<ContentReportTarget | null>(null);
+  const pendingSticker = React.useRef<(() => void) | null>(null);
+  const pendingForward = React.useRef<(() => void) | null>(null);
+  const reactionPicker = message &&
+    !messageActions.isDeleted &&
+    messageActions.onReact && (
+      <View style={[s.reactions, { backgroundColor: c.muted }]}>
+        {reactions.map(([code, emoji, label]) => (
+          <Pressable
+            key={code}
+            accessibilityRole="button"
+            accessibilityLabel={label + " 반응"}
+            accessibilityState={{
+              selected: !!message.stickerBadges?.some(
+                (badge) =>
+                  badge.userId === messageActions.viewerId &&
+                  badge.code === code,
+              ),
+            }}
+            onPress={() => messageActions.onReact!(message, code)}
+            style={({ pressed }) => [
+              s.reaction,
+              {
+                backgroundColor:
+                  pressed ||
+                  message.stickerBadges?.some(
+                    (badge) =>
+                      badge.userId === messageActions.viewerId &&
+                      badge.code === code,
+                  )
+                    ? c.accent
+                    : "transparent",
+              },
+            ]}
+          >
+            <Text style={{ fontSize: 25 }}>{emoji}</Text>
+          </Pressable>
+        ))}
+      </View>
+    );
   return (
     <>
       <MessengerSheet
@@ -157,36 +208,35 @@ export function ChatRoomSheets({
           onPress={roomOptions.onLeave}
         />
       </MessengerSheet>
-      <MessengerSheet
+      <MessageFocusMenu
+        anchor={messageActions.anchor}
+        preview={messageActions.preview}
+        reactions={reactionPicker}
         visible={!!message}
         title="메시지"
         onClose={messageActions.onClose}
+        onDismiss={() => {
+          if (pendingReport.current) {
+            setReportTarget(pendingReport.current);
+            pendingReport.current = null;
+          }
+          const openForward = pendingForward.current;
+          pendingForward.current = null;
+          openForward?.();
+          const openSticker = pendingSticker.current;
+          pendingSticker.current = null;
+          openSticker?.();
+        }}
       >
         {message && (
           <>
-            <Text
-              numberOfLines={2}
-              style={[s.preview, { color: c.mutedForeground }]}
-            >
-              {summarizeMessage(message)}
-            </Text>
-            {!messageActions.isDeleted && messageActions.onReact && (
-              <View style={[s.reactions, { backgroundColor: c.muted }]}>
-                {reactions.map(([code, emoji, label]) => (
-                  <Pressable
-                    key={code}
-                    accessibilityRole="button"
-                    accessibilityLabel={label + " 반응"}
-                    onPress={() => messageActions.onReact!(message, code)}
-                    style={({ pressed }) => [
-                      s.reaction,
-                      { backgroundColor: pressed ? c.accent : "transparent" },
-                    ]}
-                  >
-                    <Text style={{ fontSize: 25 }}>{emoji}</Text>
-                  </Pressable>
-                ))}
-              </View>
+            {!messageActions.preview && (
+              <Text
+                numberOfLines={2}
+                style={[s.preview, { color: c.mutedForeground }]}
+              >
+                {summarizeMessage(message)}
+              </Text>
             )}
             <View style={s.grid}>
               {!messageActions.isDeleted && (
@@ -212,13 +262,25 @@ export function ChatRoomSheets({
                     <Action
                       icon="send"
                       label="전달"
-                      onPress={() => messageActions.onForward(message)}
+                      onPress={() => {
+                        if (Platform.OS === "ios")
+                          pendingForward.current = () =>
+                            messageActions.onForward(message);
+                        else messageActions.onForward(message);
+                        messageActions.onClose();
+                      }}
                     />
                   )}
                   <Action
                     icon="smile"
                     label="스티커"
-                    onPress={() => messageActions.onSticker(message)}
+                    onPress={() => {
+                      if (Platform.OS === "ios")
+                        pendingSticker.current = () =>
+                          messageActions.onSticker(message);
+                      else messageActions.onSticker(message);
+                      messageActions.onClose();
+                    }}
                   />
                 </>
               )}
@@ -229,6 +291,26 @@ export function ChatRoomSheets({
               />
             </View>
             <View style={[s.divider, { backgroundColor: c.border }]} />
+            {!messageActions.isMine &&
+              !messageActions.isDeleted &&
+              message.type !== "system" && (
+                <Action
+                  icon="flag"
+                  label="메시지 신고"
+                  destructive
+                  onPress={() => {
+                    const target: ContentReportTarget = {
+                      targetType: "message",
+                      targetId: message.id,
+                    };
+                    // iOS must finish dismissing the action menu before a
+                    // sibling native modal can be presented.
+                    if (Platform.OS === "ios") pendingReport.current = target;
+                    else setReportTarget(target);
+                    messageActions.onClose();
+                  }}
+                />
+              )}
             <Action
               icon="trash-2"
               label="나에게만 삭제"
@@ -245,7 +327,11 @@ export function ChatRoomSheets({
             )}
           </>
         )}
-      </MessengerSheet>
+      </MessageFocusMenu>
+      <ContentReportSheet
+        target={reportTarget}
+        onClose={() => setReportTarget(null)}
+      />
       <MessengerSheet
         visible={!!stickerBadge.target}
         title="스티커 반응"

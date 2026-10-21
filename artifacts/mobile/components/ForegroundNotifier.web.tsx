@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import {
   getListIncomingFriendRequestsQueryKey,
   getListRoomsQueryKey,

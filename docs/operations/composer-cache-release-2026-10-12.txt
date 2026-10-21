@@ -1,0 +1,10 @@
+DavaQ test release — 2026-10-12
+
+Release versions: Android 1.0.0 (23), iOS 1.0.0 (14).
+Includes automatic long-text composer sizing, stable Android image rendering, account-isolated image/video caches, gallery saving and cache cleanup. See chat-composer-autogrow-2026-10-12.txt and chat-media-cache-improvements-2026-10-12.txt for behavior and limits.
+
+Android: local release build passed, production login/API embedded, release signature valid, telecom/foreground modules registered, target SDK 36, 30 ARM64 libraries and APK ZIP alignment verified for 16KB. APK/AAB and SHA256SUMS retained in .local/releases/composer-cache-20261012/. Google Play release 15 published to the internal track; console confirmed internally available at 2026-10-12 14:52 KST. No supported-device reductions; one non-blocking deobfuscation mapping warning. Screenshot: evidence/android-23-internal-20261012.png.
+
+iOS: archive and App Store Connect upload completed successfully (ARCHIVE SUCCEEDED / EXPORT SUCCEEDED); archived Info.plist confirms app.davaq.mobile / 1.0.0 / 14 and gallery save permission text. Third-party WebRTC/Hermes dSYM warnings did not block upload. App Store Connect processing completed. Build UUID 40058abe-639b-43f7-a0c4-58af1c9bde36. Standard encryption / France not distributed selected consistently with prior user-confirmed scope. Build connected to DavaQ Internal (3 testers); group screen confirms 1.0.0 (14) TESTING with 90-day availability. Screenshot: evidence/ios-14-internal-20261012.png. Both native release bundles independently checked for composer measurement and video/upload cache code.
+
+No operating API or web/PWA production release changes in this task. Physical device testing is the purpose of this test release; actual behavior is not claimed verified before tester feedback.

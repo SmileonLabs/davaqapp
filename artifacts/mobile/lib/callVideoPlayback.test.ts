@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-// @ts-expect-error -- Node's strip-types runner needs the source extension.
+// Node's strip-types runner uses the source extension.
 import { attachCallVideoPlayback } from "./callVideoPlayback.ts";
 
 function fixture() {

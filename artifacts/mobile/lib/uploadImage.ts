@@ -1,6 +1,8 @@
+import type { MediaSelection } from "../components/ChatMediaPreview";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import { customFetch, requestUploadUrl } from "@workspace/api-client-react";
+import { prepareChatImage } from "./chatImagePreparation";
 import { convertHeicIfNeeded } from "./convertHeic";
 
 export interface UploadedImage {
@@ -8,6 +10,9 @@ export interface UploadedImage {
   objectPath: string;
   /** Local uri of the picked asset (useful for instant previews). */
   localUri: string;
+  thumbnail?: string;
+  width?: number;
+  height?: number;
 }
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -26,9 +31,20 @@ export class UploadCancelledError extends Error {
   }
 }
 
+export type PreparedRetryImage = ImagePicker.ImagePickerAsset & {
+  _chatUploadPrepared: true;
+  thumbnail?: string;
+};
+
 export interface UploadOptions {
   signal?: AbortSignal;
   onProgress?: (progress: number) => void;
+  onPrepared?: (asset: PreparedRetryImage, index: number) => void;
+  onUploaded?: (image: UploadedImage, index: number, total: number) => Promise<void>;
+  camera?: boolean;
+  assets?: ImagePicker.ImagePickerAsset[];
+  original?: boolean;
+  confirmAssets?: (assets: ImagePicker.ImagePickerAsset[]) => Promise<MediaSelection | null>;
 }
 
 type ApiUploadResponse = {
@@ -75,6 +91,11 @@ export function putBlob(
     const abort = () => xhr.abort();
 
     xhr.open("PUT", uploadURL);
+    xhr.timeout = 90_000;
+    xhr.ontimeout = () => {
+      options.signal?.removeEventListener("abort", abort);
+      reject(new Error("upload-timeout"));
+    };
     xhr.setRequestHeader("Content-Type", contentType);
 
     xhr.upload.onprogress = (event) => {
@@ -135,10 +156,16 @@ export async function uploadBlob(
  * Upload one image picker asset straight to object storage and return the stored
  * object path. Shared by single and multi-select picker flows.
  */
-async function uploadImagePickerAsset(
+async function uploadImagePickerAssetAttempt(
   asset: ImagePicker.ImagePickerAsset,
   options: UploadOptions = {},
 ): Promise<UploadedImage> {
+  const prepared = (asset as Partial<PreparedRetryImage>)._chatUploadPrepared
+    ? asset as PreparedRetryImage
+    : { ...await prepareChatImage(asset, options.original), _chatUploadPrepared: true as const };
+  options.onPrepared?.(prepared, 0);
+  asset = prepared;
+  if (options.signal?.aborted) throw new UploadCancelledError();
   const rawBlob = await (await fetch(asset.uri)).blob();
   // iPhone photos are HEIC; convert to JPEG (web only) so every recipient can
   // see them. No-op for non-HEIC images and on native.
@@ -152,14 +179,37 @@ async function uploadImagePickerAsset(
 
   if (Platform.OS === "web") {
     const objectPath = await uploadBlobViaApi(blob, name, contentType, options);
-    return { objectPath, localUri: asset.uri };
+    return { objectPath, localUri: asset.uri, thumbnail: prepared.thumbnail, width: asset.width, height: asset.height };
   }
 
   const { uploadURL, objectPath } = await requestUploadUrl({ name, size, contentType });
 
   await putBlob(uploadURL, blob, contentType, options);
 
-  return { objectPath, localUri: asset.uri };
+  return { objectPath, localUri: asset.uri, thumbnail: prepared.thumbnail, width: asset.width, height: asset.height };
+}
+
+// Bound each transfer separately; selecting/editing photos does not consume
+// this deadline. A timeout is a retryable failure, distinct from user cancel.
+async function uploadImagePickerAsset(asset: ImagePicker.ImagePickerAsset, options: UploadOptions): Promise<UploadedImage> {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (options.signal?.aborted) throw new UploadCancelledError();
+  options.signal?.addEventListener("abort", abort, { once: true });
+  let timedOut = false;
+  let timeout: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => { timedOut = true; controller.abort(); reject(new Error("image-upload-timeout")); }, 90_000);
+  });
+  try {
+    return await Promise.race([uploadImagePickerAssetAttempt(asset, { ...options, signal: controller.signal }), deadline]);
+  } catch (error) {
+    if (timedOut && !options.signal?.aborted) throw new Error("image-upload-timeout");
+    throw error;
+  } finally {
+    clearTimeout(timeout!);
+    options.signal?.removeEventListener("abort", abort);
+  }
 }
 
 /**
@@ -167,24 +217,33 @@ async function uploadImagePickerAsset(
  * and return their stored object paths. Returns `null` when the user cancels.
  */
 export async function pickAndUploadImages(options: UploadOptions = {}): Promise<UploadedImage[] | null> {
-  if (Platform.OS !== "web") {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  // Android's system Photo Picker grants access to the chosen items. Asking
+  // for the whole library first would block attachment when that access is denied.
+  if (!options.assets && Platform.OS !== "web" && (options.camera || Platform.OS === "ios")) {
+    const perm = options.camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) throw new PermissionDeniedError();
   }
 
-  const result = await ImagePicker.launchImageLibraryAsync({
+  const picker = options.camera ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
+  const result = options.assets ? { canceled: false, assets: options.assets } : await picker({
     mediaTypes: ["images"],
-    quality: 0.7,
-    allowsMultipleSelection: true,
+    quality: 1,
+    selectionLimit: 10,
+    allowsMultipleSelection: !options.camera,
     orderedSelection: true,
   });
   if (result.canceled || !result.assets?.length) return null;
 
+  const selection = options.confirmAssets ? await options.confirmAssets(result.assets) : { assets: result.assets, original: options.original ?? false, caption: "" };
+  if (!selection || options.signal?.aborted) return null;
+  options.original = selection.original;
   const uploaded: UploadedImage[] = [];
-  const total = result.assets.length;
-  for (const [index, asset] of result.assets.entries()) {
+  const total = selection.assets.length;
+  for (const [index, asset] of selection.assets.entries()) {
     const aggregateOptions: UploadOptions = {
       signal: options.signal,
+      original: options.original,
+      onPrepared: options.onPrepared ? (prepared) => options.onPrepared?.(prepared, index) : undefined,
       onProgress: options.onProgress
         ? (progress) => {
             const aggregate = Math.round(((index + progress / 100) / total) * 100);
@@ -192,7 +251,9 @@ export async function pickAndUploadImages(options: UploadOptions = {}): Promise<
           }
         : undefined,
     };
-    uploaded.push(await uploadImagePickerAsset(asset, aggregateOptions));
+    const image = await uploadImagePickerAsset(asset, aggregateOptions);
+    uploaded.push(image);
+    await options.onUploaded?.(image, index, total);
   }
 
   options.onProgress?.(100);

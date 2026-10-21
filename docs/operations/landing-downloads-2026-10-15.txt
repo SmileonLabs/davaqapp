@@ -1,0 +1,15 @@
+DavaQ landing native downloads — 2026-10-15
+
+Deployed https://davaq.app/#download. Black/white icon buttons appear in hero and final section; header anchors to installation instructions; web alternative remains available.
+
+iOS: enabled public TestFlight link https://testflight.apple.com/join/szwESrhZ for DavaQ Testers. Added latest 1.0.0 (25) and submitted; App Store Connect returned Testing immediately. Anonymous public join page shows DAVAQ and TestFlight install steps. This is beta distribution, not a public App Store release.
+
+Android: publicly hosted exact existing signed APK 1.0.0 (35), 141159008 bytes, SHA256 1f992f8aca468dd7245fd84f7063f2bc6e121ee797d3387f6019527948d878f4 at /downloads/DavaQ-1.0.0-35.apk. Source .local/releases/card-feed-20261015/DavaQ-1.0.0-35.apk. No new native build. Full public HTTP body hash and APK MIME/size verified. Registered Play testers have a separate internal test link; APK instructions explain installation source approval and directing existing Play installs to Play updates. Future landing deployments must retain this path while linked. Do not copy signing credentials into public assets.
+
+Release root: /opt/davaq-landing-downloads-1ca3c8ab2d06/landing
+Archive SHA256: 1ca3c8ab2d0640c5252a398cd6d3bcd83de0342cbca89d166a17bfa5d3ff35f6
+Backup: /opt/davaq-backups/before-landing-downloads-1ca3c8ab2d06-20261015T054945Z.env
+Only LANDING_WEB_ROOT changed and web container recreated. API, PWA, routing configs and protected service identities remained unchanged. Old hashed landing entry assets retained. All 15 public files match package hashes. Build/typecheck and 320/390 mobile plus desktop layout checked.
+
+Proof and manifest: .local/landing-downloads-20261015/
+Temporary SSH key/socket/transfer files and preview cleaned up. No Git commit/push made.

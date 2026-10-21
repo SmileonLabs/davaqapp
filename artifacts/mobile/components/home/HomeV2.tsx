@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { CustomScrollView } from "@/components/CustomScroll";
 import { Avatar } from "@/components/Avatar";
 import { CharacterAvatar } from "@/components/CharacterAvatar";
@@ -50,24 +53,16 @@ interface MissionPresentation {
   title: string;
   description: string;
   icon: FeatherName;
-  accent: string;
-  iconBackground: string;
-  borderColor: string;
-  gradient: readonly [string, string, string];
   route: string;
   fallbackTarget: number;
 }
 
-const HOME_MISSIONS: readonly MissionPresentation[] = [
+const homeMissions: readonly MissionPresentation[] = [
   {
     key: "daily_talk",
     title: "채팅 참여",
     description: "채팅에서 메시지를 보내보세요.",
     icon: "zap",
-    accent: "#8C3DFF",
-    iconBackground: "rgba(80,28,176,0.42)",
-    borderColor: "rgba(178,90,255,0.72)",
-    gradient: ["rgba(42,12,85,0.96)", "rgba(17,7,38,0.99)", "#05040D"],
     route: "/(tabs)/chats",
     fallbackTarget: 1,
   },
@@ -76,10 +71,6 @@ const HOME_MISSIONS: readonly MissionPresentation[] = [
     title: "좋아요 미션",
     description: "피드에서 마음에 드는 글을 응원해보세요.",
     icon: "heart",
-    accent: "#F15FC9",
-    iconBackground: "rgba(122,24,92,0.38)",
-    borderColor: "rgba(238,77,190,0.62)",
-    gradient: ["rgba(61,12,54,0.96)", "rgba(30,7,27,0.99)", "#05040D"],
     route: "/(tabs)/feed",
     fallbackTarget: 1,
   },
@@ -88,30 +79,26 @@ const HOME_MISSIONS: readonly MissionPresentation[] = [
     title: "출석 미션",
     description: "오늘 접속하고 출석 포인트를 받아보세요.",
     icon: "calendar",
-    accent: "#20E4EB",
-    iconBackground: "rgba(0,97,114,0.38)",
-    borderColor: "rgba(20,212,226,0.62)",
-    gradient: ["rgba(0,55,68,0.94)", "rgba(2,23,32,0.99)", "#05040D"],
     route: "/(tabs)/quests",
     fallbackTarget: 1,
   },
 ] as const;
 
-const STAR_STATS = [
-  { key: "charm", label: "매력", icon: "heart" as const, color: "#F062D7" },
+const starStats = (styleColors: ReturnType<typeof useColors>) => [
+  { key: "charm", label: "매력", icon: "heart" as const, color: styleColors.primary },
   {
     key: "stagePresence",
     label: "스타성",
     icon: "star" as const,
-    color: "#FFE02F",
+    color: styleColors.primary,
   },
   {
     key: "bond",
     label: "유대감",
     icon: "message-circle" as const,
-    color: "#39D9FF",
+    color: styleColors.primary,
   },
-  { key: "lore", label: "영향력", icon: "award" as const, color: "#F6C733" },
+  { key: "lore", label: "영향력", icon: "award" as const, color: styleColors.primary },
 ] as const;
 
 function xpFloor(level: number): number {
@@ -143,6 +130,9 @@ function findMission(
 }
 
 export default function HomeV2() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -311,7 +301,7 @@ export default function HomeV2() {
     : readableJob(activeProfile?.jobKey, "팬클럽 회원");
 
   const stats = isStar
-    ? STAR_STATS.map((stat) => ({
+    ? starStats(styleColors).map((stat) => ({
         ...stat,
         value: safeStat(equippedStar?.stats[stat.key]),
       }))
@@ -402,7 +392,7 @@ export default function HomeV2() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refreshAll}
-            tintColor="#8D43FF"
+            tintColor={styleColors.primary}
           />
         }
       >
@@ -437,7 +427,7 @@ export default function HomeV2() {
                 <Feather
                   name="bell"
                   size={29}
-                  color="#F3F0EA"
+                  color={styleColors.foreground}
                   strokeWidth={1.6}
                 />
                 {incomingRequests.length > 0 ? (
@@ -511,15 +501,7 @@ export default function HomeV2() {
               </View>
             ) : null}
             <LinearGradient
-              colors={
-                isStar
-                  ? [
-                      "rgba(2,2,9,0.99)",
-                      "rgba(3,3,13,0.92)",
-                      "rgba(3,2,15,0.16)",
-                    ]
-                  : ["rgba(2,2,9,0.99)", "rgba(3,3,13,0.95)", "rgba(3,2,15,0)"]
-              }
+              colors={[styleColors.card, styleColors.card + "EB", styleColors.card + "00"]}
               locations={isStar ? [0, 0.48, 1] : [0, 0.43, 0.64]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -604,7 +586,7 @@ export default function HomeV2() {
                       pressed && styles.pressed,
                     ]}
                   >
-                    <Feather name="lock" size={13} color="#FFFFFF" />
+                    <Feather name="lock" size={13} color={styleColors.foreground} />
                     <Text style={styles.starLockText}>NFT 장착하기</Text>
                   </Pressable>
                 ) : null}
@@ -623,12 +605,12 @@ export default function HomeV2() {
               ]}
             >
               <Text style={styles.moreText}>더보기</Text>
-              <Feather name="chevron-right" size={20} color="#DB32FF" />
+              <Feather name="chevron-right" size={20} color={styleColors.primary} />
             </Pressable>
           </View>
 
           <View style={styles.missionRow}>
-            {HOME_MISSIONS.map((definition) => {
+            {homeMissions.map((definition) => {
               const quest = findMission(quests, definition);
               return (
                 <MissionCard
@@ -661,9 +643,9 @@ export default function HomeV2() {
             />
             <LinearGradient
               colors={[
-                "rgba(7,3,17,0)",
-                "rgba(6,3,16,0.30)",
-                "rgba(6,3,16,0.96)",
+                styleColors.card,
+                styleColors.card,
+                styleColors.card,
               ]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -671,7 +653,7 @@ export default function HomeV2() {
             />
             <View style={styles.bannerCopy}>
               <View style={styles.bannerEyebrow}>
-                <Feather name="award" size={15} color="#FFE9C9" />
+                <Feather name="award" size={15} color={styleColors.mutedForeground} />
                 <Text style={styles.bannerEyebrowText}>
                   스타 리미티드 에디션 쇼핑몰
                 </Text>
@@ -682,7 +664,7 @@ export default function HomeV2() {
               </Text>
               <View style={styles.bannerCta}>
                 <Text style={styles.bannerCtaText}>RARE ON 쇼핑하러 가기</Text>
-                <Feather name="chevron-right" size={18} color="#FFFFFF" />
+                <Feather name="chevron-right" size={18} color={styleColors.foreground} />
               </View>
             </View>
           </Pressable>
@@ -703,6 +685,9 @@ function ModeButton({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const isStar = mode === "star";
   return (
     <Pressable
@@ -719,7 +704,7 @@ function ModeButton({
       <Feather
         name={isStar ? "star" : "heart"}
         size={22}
-        color={active ? "#FFFFFF" : "#8D8995"}
+        color={active ? styleColors.primaryForeground : styleColors.mutedForeground}
         strokeWidth={1.8}
       />
       <Text style={[styles.modeText, active && styles.modeTextActive]}>
@@ -740,6 +725,9 @@ function MissionCard({
   target: number;
   onPress: () => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -751,21 +739,21 @@ function MissionCard({
       ]}
     >
       <LinearGradient
-        colors={definition.gradient}
+        colors={[styleColors.accent, styleColors.card, styleColors.card]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.9, y: 1 }}
-        style={[styles.missionCard, { borderColor: definition.borderColor }]}
+        style={[styles.missionCard, { borderColor: styleColors.border }]}
       >
         <View
           style={[
             styles.missionIcon,
-            { backgroundColor: definition.iconBackground },
+            { backgroundColor: styleColors.secondary },
           ]}
         >
           <Feather
             name={definition.icon}
             size={26}
-            color={definition.accent}
+            color={styleColors.primary}
             strokeWidth={1.6}
           />
         </View>
@@ -783,9 +771,9 @@ function MissionCard({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#000000" },
-  scrollContent: { flexGrow: 1, backgroundColor: "#000000" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: styleColors.background },
+  scrollContent: { flexGrow: 1, backgroundColor: styleColors.card },
   content: {
     width: "100%",
     maxWidth: 480,
@@ -805,26 +793,24 @@ const styles = StyleSheet.create({
   modeButton: {
     width: 79,
     height: 39,
-    borderRadius: 12,
+    borderRadius: radii.control,
     borderWidth: 1,
-    borderColor: "rgba(110,103,132,0.28)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "rgba(9,8,17,0.78)",
+    backgroundColor: styleColors.card,
   },
   modeButtonActive: {
-    borderColor: "#7835FF",
-    backgroundColor: "#702BFF",
-    shadowColor: "#7A32FF",
+    backgroundColor: styleColors.primary,
+    shadowColor: styleColors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.52,
     shadowRadius: 10,
     elevation: 5,
   },
-  modeText: { color: "#8D8995", fontFamily: "Inter_500Medium", fontSize: 15 },
-  modeTextActive: { color: "#FFFFFF", fontFamily: "Inter_600SemiBold" },
+  modeText: { color: styleColors.mutedForeground, fontFamily: fonts.medium, fontSize: fontSizes.body },
+  modeTextActive: { color: styleColors.primaryForeground, fontFamily: fonts.semibold },
   topActions: { flexDirection: "row", alignItems: "center", gap: 22 },
   bellButton: {
     width: 39,
@@ -840,18 +826,16 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#FF4B78",
+    backgroundColor: styleColors.primary,
     borderWidth: 1,
-    borderColor: "#000000",
   },
   avatarRing: {
     width: 43,
     height: 43,
     borderRadius: 22,
     padding: 2,
-    backgroundColor: "#05030D",
+    backgroundColor: styleColors.secondary,
     borderWidth: 1.5,
-    borderColor: "#B536FF",
     overflow: "hidden",
   },
   avatarFaceCrop: {
@@ -866,12 +850,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(107,91,145,0.43)",
-    backgroundColor: "#05040D",
+    backgroundColor: styleColors.card,
     flexDirection: "row",
   },
   characterCardCompact: { height: 248 },
-  lockedStarCard: { backgroundColor: "#000000" },
+  lockedStarCard: { backgroundColor: styleColors.card },
   fanSceneLayer: {
     position: "absolute",
     top: 0,
@@ -888,52 +871,51 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   level: {
-    color: "#FFFFFF",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 32,
+    color: styleColors.foreground,
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.display,
     letterSpacing: -1.4,
     textShadowColor: "rgba(150,86,255,0.68)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 9,
   },
-  levelCompact: { fontSize: 28 },
+  levelCompact: { fontSize: fontSizes.displayMedium },
   xpTrack: {
     width: "100%",
     height: 6,
     marginTop: 4,
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: "rgba(118,106,145,0.45)",
-    backgroundColor: "rgba(4,4,10,0.88)",
+    backgroundColor: styleColors.card,
     overflow: "hidden",
   },
   xpFill: {
     minWidth: 7,
     height: "100%",
     borderRadius: 4,
-    backgroundColor: "#7E29FF",
-    shadowColor: "#A756FF",
+    backgroundColor: styleColors.primary,
+    shadowColor: styleColors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 5,
   },
   xpText: {
-    color: "#A49FAC",
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.small,
     marginTop: 5,
   },
   identity: {
-    color: "#BCB7C2",
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.small,
     marginTop: 7,
   },
-  identityDivider: { color: "#746D7B" },
+  identityDivider: { color: styleColors.mutedForeground },
   statDivider: {
     width: "100%",
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(133,123,150,0.28)",
+    backgroundColor: styleColors.secondary,
     marginTop: 7,
     marginBottom: 5,
   },
@@ -943,19 +925,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(122,112,140,0.18)",
+    borderBottomColor: styleColors.border,
   },
   statLabel: {
     flex: 1,
-    color: "#D6D1D8",
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.detail,
     marginLeft: 10,
   },
   statValue: {
-    color: "#D8D3DE",
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.detail,
     paddingRight: 4,
   },
   characterStage: {
@@ -974,8 +956,8 @@ const styles = StyleSheet.create({
     bottom: 9,
     height: 18,
     borderRadius: 100,
-    backgroundColor: "rgba(105,35,255,0.36)",
-    shadowColor: "#7B2CFF",
+    backgroundColor: styleColors.primary,
+    shadowColor: styleColors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 15,
@@ -1005,14 +987,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(94,39,200,0.94)",
+    backgroundColor: styleColors.primary,
     borderWidth: 1,
-    borderColor: "rgba(220,189,255,0.55)",
   },
   starLockText: {
-    color: "#FFFFFF",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 11,
+    color: styleColors.primaryForeground,
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.small,
   },
   sectionHeader: {
     height: 49,
@@ -1023,9 +1004,9 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   sectionTitle: {
-    color: "#F1EEE9",
-    fontFamily: "Inter_500Medium",
-    fontSize: 19,
+    color: styleColors.foreground,
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.titleSmall,
   },
   moreButton: {
     flexDirection: "row",
@@ -1033,9 +1014,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   moreText: {
-    color: "#A8A2A9",
-    fontFamily: "Inter_400Regular",
-    fontSize: 14,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.label,
     marginRight: 4,
   },
   missionRow: { flexDirection: "row", gap: 8 },
@@ -1059,24 +1040,24 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   missionTitle: {
-    color: "#FFFFFF",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
+    color: styleColors.foreground,
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.label,
     textAlign: "center",
   },
   missionDescription: {
     minHeight: 35,
-    color: "#E4DFE4",
-    fontFamily: "Inter_400Regular",
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
     fontSize: 10.5,
     lineHeight: 14,
     textAlign: "center",
     marginTop: 5,
   },
   missionProgress: {
-    color: "#9E98A0",
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.small,
     marginTop: "auto",
   },
   missionPressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
@@ -1085,8 +1066,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(147,54,206,0.55)",
-    backgroundColor: "#070311",
+    backgroundColor: styleColors.card,
     marginTop: 14,
   },
   bannerPressed: { opacity: 0.88 },
@@ -1100,24 +1080,24 @@ const styles = StyleSheet.create({
   },
   bannerEyebrow: { flexDirection: "row", alignItems: "center", gap: 5 },
   bannerEyebrowText: {
-    color: "#E6DDE5",
-    fontFamily: "Inter_400Regular",
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
     fontSize: 10.5,
   },
   bannerTitle: {
-    color: "#FFF5FF",
-    fontFamily: "Inter_500Medium",
+    color: styleColors.foreground,
+    fontFamily: fonts.medium,
     fontSize: 30,
     letterSpacing: 1.2,
     marginTop: 1,
-    textShadowColor: "#B95AFF",
+    textShadowColor: styleColors.primary,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
   bannerDescription: {
     width: "100%",
-    color: "#B9AFBA",
-    fontFamily: "Inter_400Regular",
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
     fontSize: 9.5,
     textAlign: "center",
     marginTop: 2,
@@ -1127,17 +1107,16 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#C16DFF",
-    backgroundColor: "rgba(123,39,176,0.54)",
+    backgroundColor: styleColors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginTop: "auto",
   },
   bannerCtaText: {
-    color: "#FFFFFF",
-    fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    color: styleColors.foreground,
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.small,
   },
   pressed: { opacity: 0.7 },
 });

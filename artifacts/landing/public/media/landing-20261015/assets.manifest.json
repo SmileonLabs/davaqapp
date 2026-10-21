@@ -1,0 +1,224 @@
+{
+  "createdAt": "2026-10-15",
+  "brand": "black-and-white",
+  "assets": [
+    {
+      "name": "card-pikachu",
+      "kind": "catalog-card",
+      "file": "card-pikachu.webp",
+      "url": "/media/landing-20261015/card-pikachu.webp",
+      "title": "피카츄 ex",
+      "alt": "포켓몬 TCG 피카츄 ex SAR 초전브레이커 (일어판)",
+      "canonicalCardId": "kream:649512",
+      "catalogDisplayId": "kr:649512",
+      "source": "design/tcg-renewal/assets/card-0.jpg",
+      "sourceImagePath": "/market/images/kream/3e0ba83ec8a9041c3d837c19213a2f3575378dd761b5d30398f0ef768d4585e6",
+      "sourceCatalogPath": "/market/printings/cp%3A80cf5131ad482a037c00ceeaeeb9bffc389c3ff032e40a05c8895fe2b128a8f6",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        112,
+        48,
+        416,
+        480
+      ],
+      "width": 304,
+      "height": 432,
+      "bytes": 51926,
+      "sha256": "5a5be2d04fcccfed2b49e71ffac807925f540fcfe5c88693cecf5a7fe7278a7e",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "card-glaceon",
+      "kind": "catalog-card",
+      "file": "card-glaceon.webp",
+      "url": "/media/landing-20261015/card-glaceon.webp",
+      "title": "글레이시아 ex",
+      "alt": "포켓몬 TCG 글레이시아 ex SAR 테라스탈 페스타 ex (일어판)",
+      "canonicalCardId": "kream:649349",
+      "catalogDisplayId": "kr:649349",
+      "source": "design/tcg-renewal/assets/card-1.jpg",
+      "sourceImagePath": "/market/images/kream/456be99bcee910e1d6044b4091edb7129a6195b146d85c46c85d675b7b490143",
+      "sourceCatalogPath": "/market/printings/cp%3Afcf2b57d2be93949c84a9ccc3b78a6a84ad06c8bbc3f670768786bd11767bd73",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        112,
+        48,
+        416,
+        480
+      ],
+      "width": 304,
+      "height": 432,
+      "bytes": 53408,
+      "sha256": "1d8c0bcb8e41659de617c0f17706df08384b9024c0fd2bf4baef187fe3c4c320",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "card-sylveon",
+      "kind": "catalog-card",
+      "file": "card-sylveon.webp",
+      "url": "/media/landing-20261015/card-sylveon.webp",
+      "title": "님피아 ex",
+      "alt": "포켓몬 TCG 님피아 ex SAR 테라스탈 페스타 ex (한글판)",
+      "canonicalCardId": "kream:803217",
+      "catalogDisplayId": "kr:803217",
+      "source": "design/tcg-renewal/assets/card-2.jpg",
+      "sourceImagePath": "/market/images/kream/36a5654058af261450a70f9a6d4a5f94533922682f2f82ed0a5932d276cf53aa",
+      "sourceCatalogPath": "/market/printings/cp%3A5e3be96443483deb1e8cb16de5d6ad29e40e4b8fd81b86c04f03631367d214f8",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        104,
+        48,
+        416,
+        480
+      ],
+      "width": 312,
+      "height": 432,
+      "bytes": 42168,
+      "sha256": "eaabbc6823d563b091bbdb9fc273198dc835feb90e4977e671ef3096d4994f53",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "card-umbreon",
+      "kind": "catalog-card",
+      "file": "card-umbreon.webp",
+      "url": "/media/landing-20261015/card-umbreon.webp",
+      "title": "블래키 ex",
+      "alt": "포켓몬 TCG 블래키 ex SAR 테라스탈 페스타 ex (한글판)",
+      "canonicalCardId": "kream:959332",
+      "catalogDisplayId": "kr:959332",
+      "source": "design/tcg-renewal/assets/card-3.jpg",
+      "sourceImagePath": "/market/images/kream/5c7f0b4037b79dd9c9b5d48f34240a904159041e09afc6d218394819730983ce",
+      "sourceCatalogPath": "/market/printings/cp%3A419d47d137e4652030d108f6596ee62bef72d137c6565882fda4e1c6aa700e36",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        104,
+        48,
+        416,
+        480
+      ],
+      "width": 312,
+      "height": 432,
+      "bytes": 52068,
+      "sha256": "44a8d67be830877d98744d756c69d6761bebb2195afa1c1172f9453e4f789dba",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "card-charmander",
+      "kind": "catalog-card",
+      "file": "card-charmander.webp",
+      "url": "/media/landing-20261015/card-charmander.webp",
+      "title": "파이리",
+      "alt": "포켓몬 TCG 파이리 AR 포켓몬 카드 151 (일어판)",
+      "canonicalCardId": "kream:651518",
+      "catalogDisplayId": "kr:651518",
+      "source": "design/tcg-renewal/assets/card-4.jpg",
+      "sourceImagePath": "/market/images/kream/78e4a793428055d02ebb083af26b5d002f149108776b9f0ee9ae0e4a4e0ff1c4",
+      "sourceCatalogPath": "/market/printings/cp%3Ae75a8da2b8c2559f5b33cd7c8f9681e72688198aad4b8b413af9441140973930",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        112,
+        48,
+        416,
+        480
+      ],
+      "width": 304,
+      "height": 432,
+      "bytes": 28594,
+      "sha256": "95dbb89a132f3da15bd3b83061d4b0149acfa5809c9d362e35f858c0ed6dcb3e",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "card-pikachu-151",
+      "kind": "catalog-card",
+      "file": "card-pikachu-151.webp",
+      "url": "/media/landing-20261015/card-pikachu-151.webp",
+      "title": "피카츄 151",
+      "alt": "포켓몬 TCG 피카츄 AR 포켓몬 카드 151 (일어판)",
+      "canonicalCardId": "kream:651523",
+      "catalogDisplayId": "kr:651523",
+      "source": "design/tcg-renewal/assets/card-5.jpg",
+      "sourceImagePath": "/market/images/kream/935d10904e2a1f9cf0ccb4142ecb1a5a921ec9014b4b8707fa86b9955ee6fce1",
+      "sourceCatalogPath": "/market/printings/cp%3A89008548519e6427b2592507daac038194c1fa7706d3ad7fa3b47ee0063f463f",
+      "sourceCatalogMetadata": "design/tcg-renewal/cards.json",
+      "sourceDimensions": [
+        525,
+        525
+      ],
+      "cropBounds": [
+        112,
+        48,
+        416,
+        480
+      ],
+      "width": 304,
+      "height": 432,
+      "bytes": 44458,
+      "sha256": "11091802d4a66d2154517cebab091cd4209289bc66122af7039299ee7cd3a8c1",
+      "notes": "Actual locally cached catalog card art; only surrounding black padding cropped. No card artwork regenerated or pricing reproduced."
+    },
+    {
+      "name": "scan-promo",
+      "kind": "existing-store-promotion",
+      "file": "scan-promo.webp",
+      "url": "/media/landing-20261015/scan-promo.webp",
+      "alt": "카드를 스캔해 시세를 확인하는 DavaQ 스토어 홍보 이미지",
+      "source": "docs/store-launch/2026-10-14/assets/scan-gpt-speed-android-imagegen-v2.png",
+      "sourceNotes": "docs/store-launch/2026-10-14/asset-notes.md",
+      "sourceDimensions": [
+        1024,
+        1536
+      ],
+      "width": 768,
+      "height": 1152,
+      "bytes": 91110,
+      "sha256": "aeef12239da966dd65581ed1f42e1c226d8d91c35205474019615ba22286f38a",
+      "notes": "Existing AI staged store promotional artwork, not a native app screenshot. Full composition and text preserved."
+    },
+    {
+      "name": "exchange-promo",
+      "kind": "existing-store-promotion",
+      "file": "exchange-promo.webp",
+      "url": "/media/landing-20261015/exchange-promo.webp",
+      "alt": "내 카드로 원하는 카드를 교환하는 DavaQ 스토어 홍보 이미지",
+      "source": "docs/store-launch/2026-10-14/assets/google-feature-1024x500.png",
+      "sourceNotes": "docs/store-launch/2026-10-14/asset-notes.md",
+      "sourceDimensions": [
+        1024,
+        500
+      ],
+      "width": 1024,
+      "height": 500,
+      "bytes": 56100,
+      "sha256": "d0bdc33e3468cf75d6c88e5381b2a9c08e7052be7b1a7f1b4012eaf75a2db9e2",
+      "notes": "Existing AI staged store promotional artwork, not actual transaction photography. Full composition and text preserved."
+    }
+  ],
+  "totalBytes": 419832,
+  "usageNotes": [
+    "Six card illustrations are actual catalog assets, not generated art.",
+    "Two promotional images are existing store artwork; do not label them native app screenshots.",
+    "Prices in older source catalog metadata intentionally not copied; no live market prices are asserted.",
+    "Use object-fit:contain for full card art and store promos.",
+    "Original source files remain unchanged."
+  ]
+}

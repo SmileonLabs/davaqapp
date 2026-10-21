@@ -11,4 +11,5 @@ import "./lib/runtimePolyfills";
 // file is the "main" in package.json — do not point "main" back at
 // "expo-router/entry" or the killed-state handler will never register.
 import "./lib/fcmBackground";
+import "./lib/callActionBackground";
 import "expo-router/entry";

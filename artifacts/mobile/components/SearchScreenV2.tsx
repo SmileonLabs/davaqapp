@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -10,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/Avatar";
 import { CustomScrollView } from "@/components/CustomScroll";
 import { NeonBackdrop } from "@/components/NeonUI";
-import { neon } from "@/constants/colors";
 import { customFetch } from "@workspace/api-client-react";
 
 type ProfileType = "fan" | "star" | "official_ai";
@@ -55,10 +57,13 @@ function modeLabel(type: ProfileType) {
 }
 
 function More({ open, onPress }: { open?: boolean; onPress: () => void }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
     <Pressable onPress={onPress} hitSlop={10} style={styles.more}>
       <Text style={styles.moreText}>{open ? "접기" : "더보기"}</Text>
-      <Feather name={open ? "chevron-up" : "chevron-right"} size={17} color="#918B9E" />
+      <Feather name={open ? "chevron-up" : "chevron-right"} size={17} color={styleColors.mutedForeground} />
     </Pressable>
   );
 }
@@ -70,12 +75,15 @@ function Section({ icon, title, action, children, style }: {
   children: React.ReactNode;
   style?: object;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
-    <LinearGradient colors={["rgba(10,10,25,0.99)", "rgba(5,5,16,0.99)"]} style={[styles.section, style]}>
+    <LinearGradient colors={[styleColors.card, styleColors.card]} style={[styles.section, style]}>
       <View pointerEvents="none" style={styles.glow} />
       <View style={styles.sectionHead}>
         <View style={styles.sectionTitleRow}>
-          <Feather name={icon} size={18} color="#D44CFF" />
+          <Feather name={icon} size={18} color={styleColors.primary} />
           <Text style={styles.sectionTitle}>{title}</Text>
         </View>
         {action}
@@ -86,6 +94,9 @@ function Section({ icon, title, action, children, style }: {
 }
 
 function ProfileAvatar({ profile, size }: { profile: Profile; size: number }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
     <View style={[styles.avatarRing, { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2 }]}>
       <Avatar
@@ -96,7 +107,7 @@ function ProfileAvatar({ profile, size }: { profile: Profile; size: number }) {
         characterType={profile.type}
       />
       <View style={styles.typeBadge}>
-        <Feather name={profile.type === "fan" ? "user" : "star"} size={11} color="#FFF" />
+        <Feather name={profile.type === "fan" ? "user" : "star"} size={11} color={styleColors.primaryForeground} />
       </View>
     </View>
   );
@@ -110,6 +121,9 @@ function ProfileRow({ profile, following, pending, onOpen, onFollow, last }: {
   onFollow: () => void;
   last: boolean;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
     <View style={[styles.profileRow, !last && styles.divider]}>
       <Pressable onPress={onOpen} style={({ pressed }) => [styles.profileMain, pressed && styles.pressed]}>
@@ -120,7 +134,7 @@ function ProfileRow({ profile, following, pending, onOpen, onFollow, last }: {
         </View>
       </Pressable>
       <Pressable disabled={pending} onPress={onFollow} style={[styles.follow, following && styles.following]}>
-        {pending ? <ActivityIndicator size="small" color="#CE55FF" /> : (
+        {pending ? <ActivityIndicator size="small" color={styleColors.primary} /> : (
           <Text style={[styles.followText, following && styles.followingText]}>{following ? "팔로잉" : "팔로우"}</Text>
         )}
       </Pressable>
@@ -129,6 +143,9 @@ function ProfileRow({ profile, following, pending, onOpen, onFollow, last }: {
 }
 
 export default function SearchScreenV2() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -226,21 +243,21 @@ export default function SearchScreenV2() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.searchBox}>
-          <Feather name="search" size={25} color="#9895A5" />
+          <Feather name="search" size={25} color={styleColors.mutedForeground} />
           <TextInput
             value={text}
             onChangeText={setText}
             accessibilityLabel="통합 검색"
             placeholder="비비, 팬아트, 팬, 미션 검색"
-            placeholderTextColor="#817E8C"
+            placeholderTextColor={styleColors.mutedForeground}
             style={styles.input}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
           />
-          {text ? <Pressable accessibilityRole="button" accessibilityLabel="검색어 지우기" onPress={() => setText("")} hitSlop={10}><Feather name="x-circle" size={20} color="#8F8C9E" /></Pressable> : null}
+          {text ? <Pressable accessibilityRole="button" accessibilityLabel="검색어 지우기" onPress={() => setText("")} hitSlop={10}><Feather name="x-circle" size={20} color={styleColors.mutedForeground} /></Pressable> : null}
           <Pressable accessibilityRole="button" accessibilityLabel="검색 필터 열기" onPress={() => { setPendingFilter(filter); setFilterOpen(true); }} hitSlop={10}>
-            <Feather name="sliders" size={23} color="#C04BFF" />
+            <Feather name="sliders" size={23} color={styleColors.primary} />
           </Pressable>
         </View>
 
@@ -248,15 +265,15 @@ export default function SearchScreenV2() {
           <>
             <Pressable accessibilityRole="button" accessibilityLabel="STAR 등록하기" onPress={() => router.push("/pvt/wallet" as never)} style={({ pressed }) => [styles.hero, pressed && styles.pressed]}>
               <Image source={require("../assets/images/search-star-banner.png")} style={styles.heroImage} contentFit="cover" contentPosition={{ top: "15%" }} />
-              <LinearGradient colors={["rgba(4,3,15,0.25)", "rgba(4,3,15,0.03)"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.heroOverlay}>
+              <LinearGradient colors={[styleColors.card, styleColors.card + "E8", styleColors.card + "00"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.heroOverlay}>
                 <Text style={styles.heroTitle}>NFT로 STAR 소환</Text>
                 <Text style={styles.heroSubtitle}>나만의 STAR를 생성 시작해보세요.</Text>
-                <View style={styles.heroCta}><Text style={styles.heroCtaText}>STAR 등록하기</Text><Feather name="chevron-right" size={19} color="#FFF" /></View>
+                <View style={styles.heroCta}><Text style={styles.heroCtaText}>STAR 등록하기</Text><Feather name="chevron-right" size={19} color={styleColors.primaryForeground} /></View>
               </LinearGradient>
             </Pressable>
 
             <Section icon="zap" title="인기 검색어" style={styles.trendingSection} action={<More open={allTrending} onPress={() => setAllTrending((value) => !value)} />}>
-              {trending.isLoading ? <ActivityIndicator color="#A64DFF" style={styles.loader} /> : (trending.data?.items.length ?? 0) > 0 ? (
+              {trending.isLoading ? <ActivityIndicator color={styleColors.primary} style={styles.loader} /> : (trending.data?.items.length ?? 0) > 0 ? (
                 <View style={styles.trendingList}>
                   {(trending.data?.items ?? []).slice(0, allTrending ? 10 : 5).map((item) => (
                     <Pressable key={item.term} onPress={() => setText(item.term)} style={styles.trendingItem}>
@@ -269,7 +286,7 @@ export default function SearchScreenV2() {
             </Section>
 
             <Section icon="star" title="추천 STAR / FAN" style={styles.featuredSection} action={<More open={allProfiles} onPress={() => setAllProfiles((value) => !value)} />}>
-              {recommendations.isLoading ? <ActivityIndicator color="#A64DFF" style={styles.featuredLoader} /> : profiles.length ? (
+              {recommendations.isLoading ? <ActivityIndicator color={styleColors.primary} style={styles.featuredLoader} /> : profiles.length ? (
                 <View style={styles.featuredRow}>
                   {profiles.slice(0, 4).map((profile) => (
                     <Pressable key={profile.id} onPress={() => openProfile(profile.id)} style={styles.featuredProfile}>
@@ -282,7 +299,7 @@ export default function SearchScreenV2() {
               ) : <Text style={styles.emptyTrending}>추천할 프로필을 준비하고 있습니다.</Text>}
             </Section>
 
-            {profiles.length ? <LinearGradient colors={["rgba(10,10,25,0.99)", "rgba(5,5,16,0.99)"]} style={styles.profileCard}>
+            {profiles.length ? <LinearGradient colors={[styleColors.card, styleColors.card]} style={styles.profileCard}>
               {renderRows(allProfiles ? profiles : profiles.slice(0, 4))}
             </LinearGradient> : null}
           </>
@@ -290,27 +307,27 @@ export default function SearchScreenV2() {
           <>
             <View style={styles.summary}>
               <Text style={styles.summaryText}><Text style={styles.summaryStrong}>‘{query}’</Text> {FILTERS.find((item) => item.key === filter)?.label} 검색 결과</Text>
-              {results.isFetching ? <ActivityIndicator size="small" color="#A64DFF" /> : null}
+              {results.isFetching ? <ActivityIndicator size="small" color={styleColors.primary} /> : null}
             </View>
             {results.isError ? <View style={styles.emptySearch}><Text style={styles.emptyTitle}>검색 결과를 불러오지 못했어요.</Text><Pressable onPress={() => results.refetch()} style={styles.retry}><Text style={styles.retryText}>다시 시도</Text></Pressable></View>
-              : results.isLoading ? <ActivityIndicator color="#A64DFF" style={styles.searchLoader} />
+              : results.isLoading ? <ActivityIndicator color={styleColors.primary} style={styles.searchLoader} />
                 : <>
                   {searchProfiles.length ? <Section icon="users" title="프로필"><View style={styles.resultList}>{renderRows(searchProfiles)}</View></Section> : null}
                   {searchPosts.length ? <Section icon="file-text" title="게시물"><View style={styles.resultList}>{searchPosts.map((post) => (
                     <Pressable key={post.id} onPress={() => router.push({ pathname: "/post/[postId]", params: { postId: post.id } } as never)} style={styles.resultRow}>
-                      <View style={styles.resultIcon}><Feather name="file-text" size={19} color="#B85CFF" /></View>
+                      <View style={styles.resultIcon}><Feather name="file-text" size={19} color={styleColors.primary} /></View>
                       <View style={styles.resultCopy}><Text style={styles.resultTitle} numberOfLines={1}>{post.title || post.body}</Text><Text style={styles.resultDesc} numberOfLines={2}>{post.body}</Text></View>
-                      <Feather name="chevron-right" size={18} color="#777486" />
+                      <Feather name="chevron-right" size={18} color={styleColors.mutedForeground} />
                     </Pressable>
                   ))}</View></Section> : null}
                   {searchMissions.length ? <Section icon="flag" title="미션"><View style={styles.resultList}>{searchMissions.map((mission) => (
                     <Pressable key={mission.key} onPress={() => router.push("/(tabs)/persona" as never)} style={styles.resultRow}>
-                      <View style={styles.resultIcon}><Feather name="flag" size={19} color="#7CEBFF" /></View>
+                      <View style={styles.resultIcon}><Feather name="flag" size={19} color={styleColors.primary} /></View>
                       <View style={styles.resultCopy}><Text style={styles.resultTitle}>{mission.title}</Text><Text style={styles.resultDesc} numberOfLines={2}>{mission.description}</Text></View>
                       <Text style={styles.reward}>+{mission.rewardExp} XP</Text>
                     </Pressable>
                   ))}</View></Section> : null}
-                  {!searchProfiles.length && !searchPosts.length && !searchMissions.length ? <View style={styles.emptySearch}><Feather name="search" size={30} color="#655B75" /><Text style={styles.emptyTitle}>검색 결과가 없습니다.</Text><Text style={styles.emptyBody}>다른 검색어나 필터를 사용해 보세요.</Text></View> : null}
+                  {!searchProfiles.length && !searchPosts.length && !searchMissions.length ? <View style={styles.emptySearch}><Feather name="search" size={30} color={styleColors.mutedForeground} /><Text style={styles.emptyTitle}>검색 결과가 없습니다.</Text><Text style={styles.emptyBody}>다른 검색어나 필터를 사용해 보세요.</Text></View> : null}
                 </>}
           </>
         )}
@@ -321,11 +338,11 @@ export default function SearchScreenV2() {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setFilterOpen(false)} />
           <View style={[styles.sheet, { paddingBottom: Math.max(28, insets.bottom + 18) }]}>
             <View style={styles.handle} />
-            <View style={styles.sheetHead}><Text style={styles.sheetTitle}>검색 필터</Text><Pressable onPress={() => setFilterOpen(false)}><Feather name="x" size={22} color={neon.muted} /></Pressable></View>
+            <View style={styles.sheetHead}><Text style={styles.sheetTitle}>검색 필터</Text><Pressable onPress={() => setFilterOpen(false)}><Feather name="x" size={22} color={styleColors.mutedForeground} /></Pressable></View>
             <View style={styles.filterGrid}>{FILTERS.map((item) => {
               const active = pendingFilter === item.key;
               return <Pressable key={item.key} onPress={() => setPendingFilter(item.key)} style={[styles.filterOption, active && styles.filterActive]}>
-                <Feather name={item.icon} size={18} color={active ? "#C653FF" : neon.muted} /><Text style={[styles.filterText, active && styles.filterTextActive]}>{item.label}</Text>
+                <Feather name={item.icon} size={18} color={active ? "#C653FF" : styleColors.mutedForeground} /><Text style={[styles.filterText, active && styles.filterTextActive]}>{item.label}</Text>
               </Pressable>;
             })}</View>
             <Pressable onPress={() => { setFilter(pendingFilter); setFilterOpen(false); }} style={styles.apply}><Text style={styles.applyText}>적용</Text></Pressable>
@@ -336,79 +353,79 @@ export default function SearchScreenV2() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 14, paddingBottom: 118, gap: 12 },
   pressed: { opacity: 0.72 },
-  searchBox: { minHeight: 45, borderRadius: 24, borderWidth: 1, borderColor: "rgba(136,68,214,.52)", backgroundColor: "rgba(7,7,18,.97)", paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 12 },
-  input: { flex: 1, color: "#F7F4FA", fontFamily: "Inter_400Regular", fontSize: 15, paddingVertical: 10 },
-  hero: { height: 154, borderRadius: 15, borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(112,67,174,.42)", overflow: "hidden", backgroundColor: "#050410" },
+  searchBox: { minHeight: 45, borderRadius: 24, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 12 },
+  input: { flex: 1, color: styleColors.foreground, fontFamily: fonts.regular, fontSize: fontSizes.body, paddingVertical: 10 },
+  hero: { height: 154, borderRadius: 15, borderWidth: StyleSheet.hairlineWidth, borderColor: styleColors.border, overflow: "hidden", backgroundColor: styleColors.card },
   heroImage: { width: "100%", height: "100%" },
   heroOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "center", paddingHorizontal: 22, gap: 7 },
-  heroTitle: { width: "60%", color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 24, letterSpacing: -0.7 },
-  heroSubtitle: { width: "60%", color: "#D8D0EC", fontFamily: "Inter_400Regular", fontSize: 14 },
-  heroCta: { alignSelf: "flex-start", minHeight: 38, flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7, paddingHorizontal: 16, borderRadius: 20, backgroundColor: "#7138FF" },
-  heroCtaText: { color: "#FFF", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  section: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(103,65,165,.42)", paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, overflow: "hidden" },
-  glow: { position: "absolute", right: -50, top: -55, width: 145, height: 130, borderRadius: 72, backgroundColor: "rgba(66,29,149,.12)" },
+  heroTitle: { width: "60%", color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.title, letterSpacing: -0.7 },
+  heroSubtitle: { width: "60%", color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.label },
+  heroCta: { alignSelf: "flex-start", minHeight: 38, flexDirection: "row", alignItems: "center", gap: 4, marginTop: 7, paddingHorizontal: 16, borderRadius: radii.card, backgroundColor: styleColors.primary },
+  heroCtaText: { color: styleColors.primaryForeground, fontFamily: fonts.semibold, fontSize: fontSizes.label },
+  section: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: styleColors.border, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 14, overflow: "hidden" },
+  glow: { position: "absolute", right: -50, top: -55, width: 145, height: 130, borderRadius: 72, backgroundColor: styleColors.primary },
   sectionHead: { minHeight: 28, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  sectionTitle: { color: "#F5F1F8", fontFamily: "Inter_600SemiBold", fontSize: 17 },
+  sectionTitle: { color: styleColors.foreground, fontFamily: fonts.semibold, fontSize: fontSizes.headingSmall },
   more: { flexDirection: "row", alignItems: "center", gap: 2, paddingVertical: 3 },
-  moreText: { color: "#918B9E", fontFamily: "Inter_400Regular", fontSize: 13 },
+  moreText: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.detail },
   trendingSection: { minHeight: 82 },
   loader: { minHeight: 42 },
-  emptyTrending: { color: "#8C8796", fontFamily: "Inter_400Regular", fontSize: 14, paddingTop: 18, paddingBottom: 3, textAlign: "center" },
-  trendingList: { marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(126,79,185,.20)" },
+  emptyTrending: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.label, paddingTop: 18, paddingBottom: 3, textAlign: "center" },
+  trendingList: { marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: styleColors.border },
   trendingItem: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 9 },
-  rank: { width: 18, color: "#D14CFF", fontFamily: "Inter_700Bold", fontSize: 13 },
-  term: { flex: 1, color: "#C5C0CB", fontFamily: "Inter_400Regular", fontSize: 13 },
-  same: { color: "#706B78", fontSize: 13 },
+  rank: { width: 18, color: styleColors.primary, fontFamily: fonts.bold, fontSize: fontSizes.detail },
+  term: { flex: 1, color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.detail },
+  same: { color: styleColors.mutedForeground, fontSize: fontSizes.detail },
   featuredSection: { minHeight: 164 },
   featuredLoader: { minHeight: 116 },
   featuredRow: { minHeight: 118, flexDirection: "row", alignItems: "flex-start", paddingTop: 10 },
   featuredProfile: { flex: 1, minWidth: 0, alignItems: "center", gap: 4 },
-  avatarRing: { alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#8738D6", backgroundColor: "#110A20" },
-  typeBadge: { position: "absolute", right: -2, top: -2, width: 23, height: 23, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#7A35FF", borderWidth: 2, borderColor: "#0A0814" },
-  featuredName: { width: "100%", paddingHorizontal: 2, color: "#F4F0F6", fontFamily: "Inter_500Medium", fontSize: 13, textAlign: "center" },
-  featuredType: { color: "#D04BFF", fontFamily: "Inter_500Medium", fontSize: 12 },
-  profileCard: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(103,65,165,.42)", paddingHorizontal: 14, overflow: "hidden" },
+  avatarRing: { alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: styleColors.border, backgroundColor: styleColors.secondary },
+  typeBadge: { position: "absolute", right: -2, top: -2, width: 23, height: 23, borderRadius: radii.control, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.primary, borderWidth: 2, borderColor: styleColors.border },
+  featuredName: { width: "100%", paddingHorizontal: 2, color: styleColors.foreground, fontFamily: fonts.medium, fontSize: fontSizes.detail, textAlign: "center" },
+  featuredType: { color: styleColors.primary, fontFamily: fonts.medium, fontSize: fontSizes.caption },
+  profileCard: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: styleColors.border, paddingHorizontal: 14, overflow: "hidden" },
   profileRow: { minHeight: 78, flexDirection: "row", alignItems: "center", gap: 12 },
-  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(121,93,159,.25)" },
+  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: styleColors.border },
   profileMain: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 13, paddingVertical: 10 },
   profileCopy: { flex: 1, minWidth: 0, gap: 5 },
-  profileName: { color: "#F5F1F8", fontFamily: "Inter_600SemiBold", fontSize: 16 },
-  profileReason: { color: "#97929F", fontFamily: "Inter_400Regular", fontSize: 13 },
-  follow: { width: 79, minHeight: 39, borderRadius: 8, borderWidth: 1, borderColor: "#A33EEB", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(100,33,148,.08)" },
-  following: { borderColor: "rgba(132,124,145,.45)", backgroundColor: "rgba(84,76,94,.22)" },
-  followText: { color: "#CE55FF", fontFamily: "Inter_600SemiBold", fontSize: 15 },
-  followingText: { color: "#A8A1B0" },
+  profileName: { color: styleColors.foreground, fontFamily: fonts.semibold, fontSize: fontSizes.input },
+  profileReason: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.detail },
+  follow: { width: 79, minHeight: 39, borderRadius: radii.small, borderWidth: 1, borderColor: styleColors.border, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.primary },
+  following: { borderColor: styleColors.border, backgroundColor: styleColors.secondary },
+  followText: { color: styleColors.primary, fontFamily: fonts.semibold, fontSize: fontSizes.body },
+  followingText: { color: styleColors.mutedForeground },
   summary: { minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 4 },
-  summaryText: { color: "#AAA4B2", fontFamily: "Inter_400Regular", fontSize: 14 },
-  summaryStrong: { color: "#F4F0F6", fontFamily: "Inter_600SemiBold" },
+  summaryText: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.label },
+  summaryStrong: { color: styleColors.foreground, fontFamily: fonts.semibold },
   searchLoader: { paddingVertical: 80 },
   resultList: { marginTop: 8 },
-  resultRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(121,93,159,.22)" },
-  resultIcon: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(107,52,173,.16)" },
+  resultRow: { minHeight: 72, flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: styleColors.border },
+  resultIcon: { width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.primary },
   resultCopy: { flex: 1, minWidth: 0, gap: 4 },
-  resultTitle: { color: "#F3EEF6", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  resultDesc: { color: "#928C9B", fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 17 },
-  reward: { color: "#D35CFF", fontFamily: "Inter_600SemiBold", fontSize: 12 },
+  resultTitle: { color: styleColors.foreground, fontFamily: fonts.semibold, fontSize: fontSizes.label },
+  resultDesc: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.caption, lineHeight: 17 },
+  reward: { color: styleColors.primary, fontFamily: fonts.semibold, fontSize: fontSizes.caption },
   emptySearch: { alignItems: "center", paddingVertical: 70, gap: 9 },
-  emptyTitle: { color: "#D8D3DE", fontFamily: "Inter_600SemiBold", fontSize: 16 },
-  emptyBody: { color: "#817B89", fontFamily: "Inter_400Regular", fontSize: 13 },
-  retry: { minWidth: 100, minHeight: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "#7138FF" },
-  retryText: { color: "#FFF", fontFamily: "Inter_600SemiBold", fontSize: 13 },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,.65)" },
-  sheet: { paddingHorizontal: 18, paddingTop: 9, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: "#0B0A18", borderWidth: 1, borderColor: "rgba(139,82,229,.38)" },
-  handle: { alignSelf: "center", width: 42, height: 4, borderRadius: 2, backgroundColor: "rgba(218,205,255,.28)", marginBottom: 16 },
+  emptyTitle: { color: styleColors.mutedForeground, fontFamily: fonts.semibold, fontSize: fontSizes.input },
+  emptyBody: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.detail },
+  retry: { minWidth: 100, minHeight: 40, borderRadius: radii.card, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.primary },
+  retryText: { color: styleColors.primaryForeground, fontFamily: fonts.semibold, fontSize: fontSizes.detail },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: styleColors.scrim },
+  sheet: { paddingHorizontal: 18, paddingTop: 9, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: styleColors.card, borderWidth: 1, borderColor: styleColors.border },
+  handle: { alignSelf: "center", width: 42, height: 4, borderRadius: 2, backgroundColor: styleColors.secondary, marginBottom: 16 },
   sheetHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
-  sheetTitle: { color: neon.text, fontFamily: "Inter_700Bold", fontSize: 18 },
+  sheetTitle: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.heading },
   filterGrid: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
-  filterOption: { width: "31%", minHeight: 68, borderRadius: 13, alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: "rgba(126,72,198,.20)" },
-  filterActive: { backgroundColor: "rgba(123,53,255,.16)", borderColor: "rgba(164,111,255,.62)" },
-  filterText: { color: neon.muted, fontFamily: "Inter_500Medium", fontSize: 13 },
-  filterTextActive: { color: neon.text },
-  apply: { minHeight: 49, marginTop: 18, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: neon.purple },
-  applyText: { color: "#FFF", fontFamily: "Inter_700Bold", fontSize: 15 },
+  filterOption: { width: "31%", minHeight: 68, borderRadius: 13, alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: styleColors.border },
+  filterActive: { backgroundColor: styleColors.primary, borderColor: styleColors.primary },
+  filterText: { color: styleColors.mutedForeground, fontFamily: fonts.medium, fontSize: fontSizes.detail },
+  filterTextActive: { color: styleColors.foreground },
+  apply: { minHeight: 49, marginTop: 18, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.primary },
+  applyText: { color: styleColors.primaryForeground, fontFamily: fonts.bold, fontSize: fontSizes.body },
 });

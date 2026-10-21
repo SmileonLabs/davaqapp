@@ -1,0 +1,70 @@
+DavaQ exchange offer feed — 2026-10-15
+
+Production deployment and client release
+The Exchange tab now points to ExchangeFeedScreen. The old /tcg/market route remains available for the map and legacy links. The production API and web/PWA were deployed on 2026-10-15. Existing app IDs, user/card/chat ownership, production domain and signing identities are preserved. Final native targets are iOS 1.0.0 (24) and Android 1.0.0 (34). See the release status below for actual store availability.
+
+Interaction
+- Vertically paged cards with a measured fixed page size, one scroll owner, stable card IDs and virtualized rendering. Initial render: 3; viewport window: 5. Native paging and web CSS scroll snapping share the same layout.
+- Register a specific-card swap, open proposals or a free giveaway. Existing collection photos remain the actual seller photos; a duplicate active listing routes to management.
+- Like, comment and propose from sheets; sheets respect safe areas and preserve the feed position on dismissal. Comments page in batches of 50. Offers use current available quantity/version and stable request keys; giveaways do not send an offered card or payment.
+- Existing transaction locking/reservation logic protects acceptance and prevents duplicate allocation. Proposals alone do not reserve stock.
+
+Full-screen visual update
+- Card photography occupies the entire viewport. The original image is contained without cropping; a blurred cover of the same resolved URI fills the remaining background. Dark gradients keep the overlaid header, captions, social actions and transaction button readable.
+- Twenty editable SVG assets live in artifacts/mobile/assets/icons/exchange/. ExchangeIcon provides consistent optical size, 1.9px rounded strokes and currentColor. The exchange screen and five tab controls use actual vector paths instead of text symbols or icon-font glyphs.
+- Likes have outlined/filled states, spring press feedback and native selection haptics. Share uses the system share flow or the browser share/clipboard fallback only after a user press.
+- Exchange tab navigation becomes transparent with light icons. A focused light status bar and native safe-area offsets keep system controls clear; PWA sheets include the standalone bottom inset.
+- Compact and short viewport layouts reduce caption density and reposition social/photo controls to prevent overlap. Preview checked at 390x844, 375x667, 844x390 and desktop, including photo arrows, filled like state, sheet close controls and 720px card scroll snapping.
+- Foreground and blurred backdrop share one URI resolution and cache entry. They are two image views, so physical-device decode/GPU cost still requires release testing. Native retry waits for authorization refresh before remounting the image.
+
+Loading and cache
+- Failed explicit refresh restores previously loaded pages and the viewing position; expired cursors prompt a fresh feed instead of repeated retries.
+- Warm the first 20-card page and first 3 representative photos after authenticated tab startup, before the Exchange tab is opened.
+- Prepare the current photo, next 3 and previous 1. Speculative image work has concurrency 2 and a bounded 80-path completion history. Mounted visible views can additionally load images needed for display.
+- Prepare another 20-card page with 10 cards remaining. Late warmup cannot replace the active swipe window. Rapid swipes replace pending work; hidden/background/offline sessions stop starting speculative work.
+- Query keys include the account, search and card filter. Abort signals protect fetch lifecycle; query cache expires after 5 minutes without observers. Metadata pages are retained while browsing so swiping back does not lose cards.
+- Native prefetch and display share the same media-url query and exact signed URL, with expo-image memory/disk cache. Invalid/expired addresses have visible retry and request a fresh address. No image is rendered before a usable native URI exists.
+- PWA private photos share the existing account-specific blob cache (80 photos, 64 MiB, 7 days; logout/account-switch cleanup). Public thumbnails use browser image caching. No new service-worker cache of private images was added.
+
+API and database
+- Legacy public /api/tcg/listings keeps swap/both only; new giveaways are exposed by the new feed and the owner listing manager.
+- GET /api/tcg/feed?cursor=&q=&cardId= returns 20 items and nextCursor; items include offer_count, like_count, comment_count, liked_by_me, can_offer.
+- PUT /api/tcg/listings/:id/like {liked}; GET/POST /api/tcg/listings/:id/comments. Writes are authenticated, blocked-user visibility is respected, and comments have length/rate/idempotency checks.
+- Migration 0043_davaq_tcg_offer_feed.sql preserves old data, adds gift mode, social tables/indexes and owner/search-scoped 30-minute feed snapshots.
+- First load snapshots the set of cards with currently active proposals. Accepting/cancelling an offer does not reorder later pages. Explicit refresh creates a new snapshot, excluding expired/closed proposals from priority.
+- A materialized 21-row page bounds per-card statistics work; only 20 rows are returned. A missing/expired/mismatched snapshot returns 410. The client offers a new feed rather than endlessly retrying that cursor.
+
+Verification
+- Mobile and API TypeScript checks passed. Mobile feed/registration tests: 71 passed; API tests: 49 passed, including 33 exchange and 16 social authentication cases. Auth UI/provider retry tests: 5 passed; PWA policy tests: 10 passed. API production bundle build passed.
+- Mobile feed/media/registration/transaction tests run with pnpm --filter @workspace/mobile test:exchange-feed.
+- API integration tests run with pnpm --filter @workspace/api-server exec vitest run src/lib/tcgService.test.ts (PGlite + authenticated HTTP contract tests).
+- Actual web export, including the full-screen overlay UI and SVG assets, completed in .local/exchange-feed-preview/production-web.
+- Browser harness uses the actual feed and React Native Web list/query logic with sample API data and a lightweight image adapter. Tested 390x844, 375x667 and desktop: snap offsets, forward/backward scroll, virtualized image count, like, comment, offer selection/submission, giveaway sheet, search, close controls and retained position. It is not proof of physical-device frame rate or live production image latency.
+- Current full-screen screenshot: evidence/exchange-fullscreen-icons-20261015.png. The earlier evidence/exchange-feed-mobile-20261015.png shows the superseded boxed layout. Reproducible local harness lives in ignored .local/exchange-feed-preview/.
+
+Registration and sign-in follow-up
+- Home leads to browsing; registering a card is optional. An empty public feed explains the absence of listings and offers a catalog browse action without forcing ownership registration.
+- Owning a card and publishing a trade are explicit separate steps. Successful save updates the scoped account cache and waits for refresh before navigation. Publishing from an offer returns to the same target with the new offered card selected.
+- The saved-card photo editor preserves the publish/offer intent and returns directly to the selected card's publish screen. Success notices expire instead of obstructing the feed.
+- The sign-in/sign-up entry offers Google and Apple only. Legacy installed-client server login compatibility is retained.
+- A provider subject mapping is authoritative. A newly verified, exact normalized email may link to exactly one existing database user; id, clerk_id, nickname, cards and chat ownership are retained. Provider/email transaction locks avoid concurrent duplicate accounts; ambiguous or unverified matches are refused.
+- Unknown Apple private-relay addresses are not guessed or merged. An authenticated existing member can explicitly link Apple in settings.
+
+Production release status
+- Migration 0043 was applied once with database/environment backups before the initial exchange API release.
+- The final social-login/registration API+PWA patch uses no migration and inherits the prior immutable API image. Only socialAuth.ts changed in the API source compared with the initial exchange release; no external imports were added.
+- Final API image: localhost:5000/davaq-api@sha256:e5d24594775108dcf49be56175b66f3848fed3d9519959c4a6c1dcb3dc0db91d
+- Final PWA: browse-auth-20261015-988e7c33940e; root /opt/davaq-browse-auth-16fb627b0396/web.
+- Public https://davaq.app/app/ HTML, sw.js and JS SHA256 match the reviewed package; health is ok and Google/Apple providers both report enabled. Unauthenticated feed returns 401.
+- Eleven other long-lived containers, landing page and routing are unchanged. The separately confirmed transient tcgindex-justtcg-sync one-shot is excluded by exact name only.
+- Patch archive SHA256: 16fb627b0396c917e291e5932805454ecd9384f409d8b6ffdc292938ca4cfb93. Environment backup and complete validation/rollback record are in /opt/davaq-backups/before-browse-auth-16fb627b0396-20261015T041036Z.*.
+- Android 1.0.0 (34): Play internal testing release 26 is available to existing internal testers (Console verified at 13:12 KST). AAB SHA256 e814e4274d3594d576f1c9a8f48c77fe18e46aa20c5d3caf447105f17c0aa8a9; same upload certificate as build 33. Runtime sources match the bundled source map; target SDK 36 and 16KB alignment checks pass.
+- iOS 1.0.0 (24): Apple upload succeeded at 13:14 KST (EXPORT SUCCEEDED, exit 0). Build 67fe45ee-2f94-4f1a-8d5b-b20904ebb44e processed; existing standard WebRTC encryption and user-confirmed no-France settings saved. DavaQ Internal (3 testers) confirms TESTING / 90 days. Test notes saved.
+- Local private release records: .local/releases/exchange-feed-20261015/. These include hashes, production result/public checks, signed artifact verification and browser evidence.
+- Physical-device swipe frame rate, low-memory behavior and real-network media latency remain release acceptance checks; build/source/harness checks do not prove physical-device performance.
+
+Completion evidence
+- .local/releases/exchange-feed-20261015/social-login-live.png: production sign-in shows Google and Apple only, no email/password inputs.
+- .local/releases/exchange-feed-20261015/play-34-live.png: Android34 available to internal testers.
+- .local/releases/exchange-feed-20261015/ios-24-internal-live.png: iOS24 TESTING in DavaQ Internal.
+- Agent-created remote transfer files were removed only after SHA256 comparison. Temporary EC2 Instance Connect key expired; local temporary key pair and SSH control channel were removed/closed. Permanent app signing keys and operational backups remain.

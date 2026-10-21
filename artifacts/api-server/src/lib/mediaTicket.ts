@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getRedis } from "./redis";
 
-const MEDIA_TICKET_PREFIX = "anotherme:media-ticket:";
+const MEDIA_TICKET_PREFIX = "davaq:media-ticket:";
 export const MEDIA_TICKET_TTL_SECONDS = 300;
 
 function key(ticket: string): string {

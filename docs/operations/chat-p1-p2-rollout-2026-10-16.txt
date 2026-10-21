@@ -1,0 +1,70 @@
+P0/P1/P2 단계 적용 기록 (2026-10-16)
+
+P0 운영
+- API: localhost:5000/davaq-api@sha256:103da46c976694eb39525a81afa1b1257a0db0203080705b9c40913ad9c4b6c0
+- PWA: /opt/davaq-chat-p0-c8f3b02571e1/web
+- 0046과 후속 0047 적용, 0045 해시를 선행 검증하고 과거 마이그레이션 재실행 없음.
+- DavaQ만 변경했고 다른 11개 서비스/라우팅/랜딩의 동일성을 확인했다.
+- 사전 백업: /opt/davaq-backups/before-chat-p0-c8f3b02571e1-20261016T094921Z.dump
+- 네트워크 없는 임시 PostgreSQL 16에 백업 전체 복원 성공, 기존 메시지 793건 확인.
+- 운영 합성 계정/비공개 방의 실제 HTTP·WebSocket 검증 6개 통과. 검증 세션 만료.
+- 운영에 Redis/DB/API 장애를 주입하지 않았다. 장애 주입은 로컬 격리 환경에서 수행했다.
+
+P1 정책과 범위
+- 전송 대기 본문 보존 기간: 기존 24시간 -> 30일. 로그아웃/계정 전환 시 해당 계정 데이터 삭제 유지.
+- 자동 재시도: 기존 30분/8회 -> 7일/4096회, 최대 5분 backoff 및 회당 3건 처리 유지.
+- 수동 재시도는 원래 clientMessageId와 생성 시각을 유지하면서 retryStartedAt만 갱신한다.
+- 기존 확정 실패는 자동으로 재활성화하지 않는다. 프로필 없는 과거 항목도 다른 프로필로 발송하지 않는다.
+- 로컬 대화: 계정+프로필+방 단위, 500개 메시지/최근 20개 방/30일의 복원 캐시.
+  PWA는 IndexedDB, 네이티브는 기존 AsyncStorage 사용. 전체 서버 기록은 서버가 원본이다.
+- 본문과 변경 revision은 하나의 저장 단위로 함께 기록한다. 저장 실패 시 둘 다 이전 상태다.
+- 서버 응답이 실제 Query 캐시에 반영된 뒤 저장하며, 세대 번호와 계정 잠금으로 로그아웃 뒤 늦은 저장을 차단한다.
+- 읽음 성공/다른 기기의 읽음 이벤트는 최신 메시지까지 읽었을 때 배지를 즉시 0으로 반영한다.
+  부분 읽음은 sequence 차이로 수를 추정하지 않고 서버의 확정 unreadCount를 다시 받는다.
+- 서버 unreadCount/firstUnreadMessageId는 전체 삭제와 개인 삭제 메시지를 제외한다.
+- 로컬 데이터 보존 만료/용량 제한 및 서버 삭제 이력 반영을 테스트한다.
+
+P1 운영 완료
+- API: localhost:5000/davaq-api@sha256:a8ed2618cd9a393554865503a2ccb2b05964eeea4f82c88edb71a1429c61d96a
+- PWA: /opt/davaq-chat-p1-c26ddd7b4daf/web
+- 추가 DB 스키마 변경 없음. 0046/0047 설치 상태 재검증.
+- 운영 합성 계정 검증 7개 통과 (P0 항목 + 삭제 메시지 unreadCount 제외).
+- 서버 회귀 260 통과/2 기존 인프라 테스트 미실행, TypeScript/API/PWA 빌드 통과.
+
+P2 정책과 운영 완료
+- 정상 실시간 연결 시 메시지 안전 조회 5초 -> 60초, 방 목록 30초 -> 180초.
+- 단절 시 메시지·입력 상태의 5초 복구 조회를 유지하고 재연결 시 즉시 동기화한다.
+- 입력 중 사용자가 있으면 TTL 정리를 위해 5초 조회 유지. 정상 연결+빈 목록에서는 입력 상태 조회 중단.
+- 실시간 이벤트의 방별 메시지/메타/목록 무효화를 150ms 고정 창으로 묶는다.
+- eventId로 durable 재전달을, 짧은 창의 생성 messageId로 즉시 발행/후속 outbox 생성 중복을 제거한다.
+  서로 다른 수정 이벤트는 합치지 않고 각 변경 로그를 재생할 수 있게 유지한다.
+- 이미 같은 lastMessageSeq까지 예열한 방은 같은 최신 창을 다시 가져오지 않는다.
+- 변경 revision이 같은 응답은 같은 로컬 본문을 반복 저장하지 않는다.
+- PWA: /opt/davaq-chat-p2-fe94a4896fe0/web
+- API는 P1 이미지 유지, API 재시작 및 DB 명령 실행 없음.
+- API/PWA 배포 기준, 웹 index/sw 해시, API health, 타 서비스 12개 컨테이너 동일성 확인.
+- 클라이언트 회귀 138개 통과. 모바일 TypeScript 및 production PWA 빌드 통과.
+- 실제 브라우저 75초 관찰: 변경 조회 2회, 유휴 typing 조회 0회.
+- 실제 브라우저 게이트웨이 단절에서 5초 fallback으로 전환되고,
+  재연결로 누락 메시지를 복구한 뒤 이후 메시지가 수동 새로고침 없이 도착했다.
+- 브라우저 검증은 실제 복구/실시간/폴링 훅 및 실제 IndexedDB를 사용했다.
+  합성 인증/화면 focus 어댑터를 사용한 로컬 검증 화면이며 실물 휴대전화 테스트는 아니다.
+- 최종 운영 outbox 미처리 항목 0, 마이그레이션 0046/0047 해시 일치.
+- 테스트 DB/Redis/API 및 임시 SSH 접속/로컬 키 파일 정리 완료.
+
+적용 경계
+- 이번 운영 적용 대상은 서버와 PWA다. Android/iOS 공유 소스도 변경했지만
+  새로운 APK/AAB/IPA를 빌드하거나 Play Store/TestFlight에 게시하지 않았다.
+- 실물 휴대전화의 OS 알림 표시, APNs/FCM 실제 제공자 장애 및 OS 백그라운드 정책은
+  이번 검증에 포함하지 않는다. 서버 외부 알림의 exactly-once 표시는 보장하지 않는다.
+- 기존 Android versionCode 46 및 다른 진행 중인 네이티브 배포 파일은 변경하지 않았다.
+- 전체 대화를 무기한 로컬 보관하는 SQLite 아카이브가 아니라 범위가 제한된 복원 캐시다.
+
+검증 기록 (비밀 정보 없는 결과)
+.local/chat-staging-20261016/production-p0-result.json
+.local/chat-staging-20261016/production-p1-result.json
+.local/chat-staging-20261016/production-p2-result.json
+.local/chat-staging-20261016/production-p1-smoke.log
+.local/chat-staging-20261016/p1-integration-result.json
+.local/chat-staging-20261016/p2-browser-verification.json
+.local/chat-staging-20261016/production-final-database-check.json

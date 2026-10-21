@@ -38,6 +38,13 @@ export const pool = new Pool({
   statement_timeout: statementTimeout,
   lock_timeout: lockTimeout,
 });
+// The pool evicts disconnected idle clients itself. Handling this event keeps
+// a database restart from terminating the API before it can reconnect.
+pool.on("error", (error: Error & { code?: string }) => {
+  console.error("Database idle connection lost", {
+    code: /^[A-Z0-9]{5}$/.test(error.code ?? "") ? error.code : "CONNECTION_LOST",
+  });
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";

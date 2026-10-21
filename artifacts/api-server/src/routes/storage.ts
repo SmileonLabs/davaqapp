@@ -40,41 +40,11 @@ export async function canReadPrivateObject(
 ): Promise<boolean> {
   const ownUpload = await pool.query("SELECT 1 FROM chat_upload_owners WHERE user_id=$1 AND object_path=$2", [userId, objectPath]);
   if (ownUpload.rows[0]) return true;
-  const brandReference = await pool.query(
-    `SELECT 1 FROM brand_media m WHERE m.object_path=$2 AND (m.owner_id=$1 OR EXISTS(SELECT 1 FROM brand_participations p JOIN brand_versions v ON v.id=p.version_id WHERE p.user_id=$1 AND (v.config->>'videoA'=$2 OR v.config->>'videoB'=$2))) LIMIT 1`,
-    [userId, objectPath],
-  );
-  if (brandReference.rows[0]) return true;
-  const exchangeReference = await pool.query(
-    `
-    SELECT 1
-    FROM exchange_media m
-    WHERE m.object_path = $2
-      AND (
-        m.owner_id = $1
-        OR EXISTS (
-          SELECT 1 FROM exchange_listings l
-          WHERE l.image_key = m.object_path
-            AND (
-              l.status = 'published'
-              OR EXISTS (
-                SELECT 1 FROM exchange_proposals p
-                WHERE $1 IN (p.proposer_id, p.recipient_id)
-                  AND l.id IN (p.offer_id, p.requested_id)
-              )
-            )
-            AND NOT EXISTS (
-              SELECT 1 FROM blocked_users b
-              WHERE (b.blocker_user_id = $1 AND b.blocked_user_id = l.owner_id)
-                 OR (b.blocked_user_id = $1 AND b.blocker_user_id = l.owner_id)
-            )
-        )
-      )
-    LIMIT 1
-  `,
-    [userId, objectPath],
-  );
-  if (exchangeReference.rows[0]) return true;
+  const tcgReference = await pool.query(`SELECT 1 WHERE EXISTS(
+    SELECT 1 FROM tcg_collection c JOIN tcg_listings l ON l.collection_id=c.id WHERE c.photos ? $2 AND l.status='active'
+    AND NOT EXISTS(SELECT 1 FROM blocked_users b WHERE (b.blocker_user_id=$1 AND b.blocked_user_id=c.owner_id) OR (b.blocked_user_id=$1 AND b.blocker_user_id=c.owner_id))
+  ) OR EXISTS(SELECT 1 FROM tcg_trades t WHERE $1 IN(t.buyer_id,t.seller_id) AND (t.snapshot->'target'->'photos' ? $2 OR t.snapshot->'offered'->'photos' ? $2))`,[userId,objectPath]);
+  if(tcgReference.rows[0]) return true;
   const [profileReference] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -310,20 +280,6 @@ router.post(
       return;
     }
     try {
-      if (
-        (
-          await pool.query("SELECT 1 FROM brand_media WHERE object_path=$1", [
-            objectPath,
-          ])
-        ).rows[0]
-      ) {
-        const url = await objectStorageService.brandVideoReadUrl(objectPath);
-        if (url) {
-          res.set("Cache-Control", "no-store");
-          res.json({ url });
-          return;
-        }
-      }
       const ticket = await issueMediaTicket(req.dbUser!.id, objectPath);
       const suffix = objectPath.slice("/objects/".length);
       res.set("Cache-Control", "no-store");

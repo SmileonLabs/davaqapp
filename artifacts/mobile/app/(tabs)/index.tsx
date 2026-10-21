@@ -1,1 +1,1 @@
-export { HomeScreen as default } from "@/components/davaq/Tabs";
+export { HomeScreen as default } from "@/components/tcg/Screens";

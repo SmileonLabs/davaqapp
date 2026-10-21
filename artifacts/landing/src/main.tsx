@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import "./index.css";
 
 const isStandalone =
   window.matchMedia("(display-mode: standalone)").matches ||
@@ -12,16 +11,17 @@ if (isStandalone && !window.location.pathname.startsWith("/app")) {
   window.location.replace("/app/");
 }
 
-// Register Service Worker for PWA
+// The PWA owns /app/. Retire only an old root landing worker; preserve app caches.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register(import.meta.env.BASE_URL + "sw.js", { scope: import.meta.env.BASE_URL })
-      .then((registration) => {
-        console.log("SW registered: ", registration);
+      .getRegistration("/")
+      .then(async (registration) => {
+        if (registration?.scope === new URL("/", location.origin).href)
+          await registration.update();
       })
-      .catch((registrationError) => {
-        console.log("SW registration failed: ", registrationError);
+      .catch(() => {
+        /* The landing stays usable when service workers are unavailable. */
       });
   });
 }

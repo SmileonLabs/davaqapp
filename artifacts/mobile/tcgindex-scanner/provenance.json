@@ -1,0 +1,419 @@
+{
+  "provider": "TCGIndex",
+  "files": [
+    {
+      "source": "apps/mobile/tests/scanner-load-progress.test.ts",
+      "sha256": "92e63a207bf1f4b2d1fff34a83a4a73c56dc9863e4a2014a388e111418a4a235",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/tests/scanner-load-progress.test.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-load-progress.ts",
+      "sha256": "b8a2b9dae3481802836e80d4b02167bb446b812ea61c31c8d72fc18fea36fa5b",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-load-progress.ts"
+    },
+    {
+      "source": "apps/mobile/tests/scanner-live-price.test.ts",
+      "sha256": "c9936ad773aef6aeeb1d43432995269b84928f791c5aed2f155a417498373316",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/tests/scanner-live-price.test.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner.ts",
+      "sha256": "555bd2e7e65010be9f6c26cd28d7de02e4ddc5a6f2788bbedc944254636774c1",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-live-price.ts",
+      "sha256": "84428f39e1b5196fb740b77a1399e7166ee6e799cb86ad7e67ff29554e538f67",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-live-price.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-library.ts",
+      "sha256": "75007a57b32984e382f8cf2e2e904856240f9c9e6075996cb9349cfcf05d2572",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-library.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-index.ts",
+      "sha256": "db6858b22ad7775e590b57fbae6fb293ce4e47d0f646726f20e48725b3ee42d6",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-index.ts"
+    },
+    {
+      "source": "apps/web/src/lib/card-image-fingerprint.ts",
+      "sha256": "77f4c1efce9aedf6934d2b2c1c2f9af12154e4b5cae89ea0ef7ec27799471c06",
+      "destination": "artifacts/mobile/tcgindex-scanner/web/src/lib/card-image-fingerprint.ts"
+    },
+    {
+      "source": "apps/mobile/tests/scanner.test.ts",
+      "sha256": "68509c4500c87a4493aea50e73604d779fa579fba61feabc8afc80106a1dea35",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/tests/scanner.test.ts"
+    },
+    {
+      "source": "apps/mobile/src/card-detection.ts",
+      "sha256": "6d85279a8421af4102b33bbef880c70385133e8b94cfeadac262dfb42c2a1a49",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/card-detection.ts"
+    },
+    {
+      "source": "apps/mobile/src/visual-library.ts",
+      "sha256": "a8a14c941c8f493b693ab2fef86856ad62d3811cba29529a73829b22f2f196ee",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/visual-library.ts"
+    },
+    {
+      "source": "apps/mobile/src/camera-control.ts",
+      "sha256": "1e3897bfc9000ee436f30c94e37f20ed751931afe2a0c64b176646106aed1a7d",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/camera-control.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-regions.ts",
+      "sha256": "cc96d2d2403ca421922bbd45b97bd0983d16cf42cd6523f01e25bc0cc6682d07",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-regions.ts"
+    },
+    {
+      "source": "apps/mobile/src/scanner-games.ts",
+      "sha256": "63af13f77333466a621225223a21ddb70d118743900c9240612e4c3f3c4084ae",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/scanner-games.ts"
+    },
+    {
+      "source": "apps/mobile/src/compact-library.ts",
+      "sha256": "ac995741d1cce77fb22d1f56bcbd8211adfba222574257567a98a141d5187256",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/compact-library.ts"
+    },
+    {
+      "source": "apps/mobile/src/NativeLiveScannerAndroid.tsx",
+      "sha256": "875bd197648eb604d3ea83bdb758691f37b174e54e9fbff327ac01451c8ccc00",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/NativeLiveScannerAndroid.tsx"
+    },
+    {
+      "source": "apps/mobile/src/app/useScannerPrice.ts",
+      "sha256": "fe786e078641933f5d201b86c2d9e06eaab7f3b85fc28ab9b80688749cd06d1e",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/useScannerPrice.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/useCompactScannerLibrary.ts",
+      "sha256": "aff45cc1d6fe5bdb87e6b9d3294d3c16010401ed4b042d0b48293107e5ebafa3",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/useCompactScannerLibrary.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/native-vision.ts",
+      "sha256": "b70204b04b117f2531daea988c87dd912716136474352c58271796e8201240a2",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/native-vision.ts"
+    },
+    {
+      "source": "apps/mobile/src/catalog.ts",
+      "sha256": "97133975c1b86ab90a9309283ef2fc2bc4ca6715ca5aa7fb54dcef2fef507128",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/catalog.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/useVisualScannerLibrary.ts",
+      "sha256": "1063c8b75c7a4967347c07a908781cb7557ab63a914b00e10e226fd0a53d7402",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/useVisualScannerLibrary.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/visual-cache.ts",
+      "sha256": "bb458c8289524e64de52e63f96c145f93e2a4dd2e600a4dbb49b56604d4866a8",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/visual-cache.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/useScannerCameraSession.ts",
+      "sha256": "5e425f005465db683508254bf46a981abd1da1fbd6d208db882af893ef39dfb4",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/useScannerCameraSession.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/ScannerLoadingBar.tsx",
+      "sha256": "e5ec9c1af3d4b4cccec8b6eb07c04366bdf423f5a33eb6857634d54e3e8cd595",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/ScannerLoadingBar.tsx"
+    },
+    {
+      "source": "apps/mobile/src/app/ui.tsx",
+      "sha256": "a29dc7a7adc32450d39dfb57592d2fa5348f0482f3fc9349f07873cb4a3f5b82",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/ui.tsx"
+    },
+    {
+      "source": "apps/mobile/src/app/types.ts",
+      "sha256": "20fdeaef17c4ad200653f1e9afb34b1a5c7c9e60c1bb31605d01d68a4156944c",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/types.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/CardImage.tsx",
+      "sha256": "d9ff3fe8e8fc63d7b3ed69e4372b54776476e3532fcb5011fb03fa2867eb9512",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/CardImage.tsx"
+    },
+    {
+      "source": "apps/mobile/src/SimilarCardsToast.tsx",
+      "sha256": "94a7697baf6540b5548fe61acb7a6645a3bdf1e1dd65e1be969506be02cd770c",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/SimilarCardsToast.tsx"
+    },
+    {
+      "source": "apps/mobile/src/ScanResultToast.tsx",
+      "sha256": "6edad64f6dd61c4cafd26d5de4de2af50902641f930c0c311f324fa2f5ec334b",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/ScanResultToast.tsx"
+    },
+    {
+      "source": "apps/mobile/src/CardOutline.tsx",
+      "sha256": "a7269692e585797f4497bed3024b11be7d44cb207d2fcd03d2638c7afbc063bc",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/CardOutline.tsx"
+    },
+    {
+      "source": "apps/mobile/native-scanner/CardScanner.nitro.ts",
+      "sha256": "17c3cd091349c97a0fffe9b143833b4b510b180528687200f480776fdf02f277",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/CardScanner.nitro.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/ScannerScreen.tsx",
+      "sha256": "840bba91df5bc2fb4118cbfb26f4984f0595f6c099bcbe42c6aa86907cbaf453",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/ScannerScreen.tsx"
+    },
+    {
+      "source": "apps/web/src/lib/game-options.ts",
+      "sha256": "16ae2b6947cee0de1574177ad44f09f3289b429dec0ef43951b766fcbc11504c",
+      "destination": "artifacts/mobile/tcgindex-scanner/web/src/lib/game-options.ts"
+    },
+    {
+      "source": "apps/mobile/src/app/GameLogo.tsx",
+      "sha256": "52e52ef57a60cd4161d7960077fbe084711e8c2263655ddbb2a291115d6d8d00",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/GameLogo.tsx"
+    },
+    {
+      "source": "apps/mobile/src/app/scanner-cache.ts",
+      "sha256": "d535efea31e2084b5459255d3cc1fb84bd066285456cf07235c67d97647a74bb",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/app/scanner-cache.ts"
+    },
+    {
+      "source": "apps/mobile/src/LiveScanner.tsx",
+      "sha256": "1e73bc68a7306a6b1616215eacce430c4a9d1e3244096fb185179ee1eb8f9cb1",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/LiveScanner.tsx"
+    },
+    {
+      "source": "apps/mobile/src/card-text.ts",
+      "sha256": "7a119d01ccdaa944fea8cfac4cb4e8da1b161af6a69bbf2b7fa41e800507fab5",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/card-text.ts"
+    },
+    {
+      "source": "apps/mobile/src/IOSScannerCamera.tsx",
+      "sha256": "e4f365692fe3a453530e7aa9879e00cf29e22042cdc047afbdbf701dcfbfb763",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/src/IOSScannerCamera.tsx"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitro.json",
+      "sha256": "6100635ae11db875bb02858287eb9024e9083b70bc9c0af676f7aa90e1b17fd5",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitro.json"
+    },
+    {
+      "source": "apps/mobile/native-scanner/CardScanner.nitro.ts",
+      "sha256": "17c3cd091349c97a0fffe9b143833b4b510b180528687200f480776fdf02f277",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/CardScanner.nitro.ts"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/.gitattributes",
+      "sha256": "8401d61d91c8f286601668b1b3c8e90e324d3f09d45a22bc72712c9b5f18e348",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/.gitattributes"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/shared/c++/HybridCardScannerSpec.cpp",
+      "sha256": "001abdeda6a4184017c7d5eb8f1314d98e0601874c83da5f47a6dfc6c5977932",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/shared/c++/HybridCardScannerSpec.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/shared/c++/HybridCardScannerSpec.hpp",
+      "sha256": "d86530da099089e1aebb60ab49b75885809baa9d634b501337f504a009b227e7",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/shared/c++/HybridCardScannerSpec.hpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/TCGScannerOnLoad.hpp",
+      "sha256": "762275397a03daec3235ba832637b3c63ac56e645f75417b0676cb60872d13f9",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/TCGScannerOnLoad.hpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/TCGScanner+autolinking.cmake",
+      "sha256": "5977affb586107c6e28e47d514ec50de0e62448b402b42099e7f314cb31dd482",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/TCGScanner+autolinking.cmake"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/TCGScanner+autolinking.gradle",
+      "sha256": "cd50d2fc12cc278c5c683303ae6776adbe0e022472f203993854e2de0ec29517",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/TCGScanner+autolinking.gradle"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/TCGScannerOnLoad.cpp",
+      "sha256": "ca2e7992024cdb5375ad2f7f71038e445fc5c39e96273f213e161e5bf098bb95",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/TCGScannerOnLoad.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/c++/JHybridCardScannerSpec.cpp",
+      "sha256": "61ee4c96aba04d71c9986064e48612cd624b1c7914fad0a97b0e1dfb3eff7a5e",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/c++/JHybridCardScannerSpec.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/c++/JHybridCardScannerSpec.hpp",
+      "sha256": "6cddd5bbffd23e4f05c2c2e20f4c89801925778c7489ae37adb875aa57bf403e",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/c++/JHybridCardScannerSpec.hpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/kotlin/com/margelo/nitro/tcgscanner/TCGScannerOnLoad.kt",
+      "sha256": "cd0f7fff5028fa96e713b9490f4fa0a789afc853901acd393edf5e42aea9ede6",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/kotlin/com/margelo/nitro/tcgscanner/TCGScannerOnLoad.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/nitrogen/generated/android/kotlin/com/margelo/nitro/tcgscanner/HybridCardScannerSpec.kt",
+      "sha256": "e6d8030a66148bcd200edb6873d78da0c6611354a763363de5c0b97a27995129",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/nitrogen/generated/android/kotlin/com/margelo/nitro/tcgscanner/HybridCardScannerSpec.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/CMakeLists.txt",
+      "sha256": "7cc5930f83632b06353298e454c817d984f10d5e830ca948921b1a9e898080a6",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/CMakeLists.txt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/build.gradle",
+      "sha256": "89a79d9fac639c713e2fc70eb99351b47900dbcf8ba459d5dc37a966fd9bc068",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/build.gradle"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/AndroidManifest.xml",
+      "sha256": "343d5be1ac17cdd45d1a2f2ddc616c509290e655869125a9422a96d88aa66066",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/AndroidManifest.xml"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/NativeCardOutput.kt",
+      "sha256": "24f5feea13bac5f4ab2e28a344bc7ac5f4abe79589c78d3f0d135de6018bc46c",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/NativeCardOutput.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/HybridCardScanner.kt",
+      "sha256": "77f4b54428c30e4a76829faa4a8f4d7e93298f2e36e5c2aefbe5293bd1b2b829",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/HybridCardScanner.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactImageVerifier.kt",
+      "sha256": "a5ecda490beac943704083723900e5eb8de5d9154da21fe42854a47aac520320",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactImageVerifier.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CardVisionEngine.kt",
+      "sha256": "84677524e469aee94c36c610b81cb7600544eca39b1165ab48bc144bb22c947a",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CardVisionEngine.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactIdentity.kt",
+      "sha256": "371b1c9d585fc6d8b4c707f5d5f872aa54e415c7dcd275378d29635dd537062f",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactIdentity.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CardFeatureSearch.kt",
+      "sha256": "0602f6005f286ce7ae7b49efd559a99b4b54ae129e809a46f6c61f3953499820",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CardFeatureSearch.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/VisualIndex.kt",
+      "sha256": "f22a45acd2541d6a96e6381d27922ffce9dd0255a4a8dcd0c1a6d38da662dfae",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/VisualIndex.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactCardIndex.kt",
+      "sha256": "65b3f8b41437ad8c22ff90d3d44111f8180a069b532f1f5a7ad21d3df9df607b",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/java/com/margelo/nitro/tcgscanner/CompactCardIndex.kt"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/CardFeatureSearch.cpp",
+      "sha256": "4154c2a8373ca916fb77a0113556760ca59126b7dd54a3aa6cf648fc262b2820",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/CardFeatureSearch.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/cpp-adapter.cpp",
+      "sha256": "b55ad91b0c0f616c5095989db6b6c72a83594a1084e3b8a7c71d6b2fb7f19819",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/cpp-adapter.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/CompactFeatureSearch.cpp",
+      "sha256": "fecfbf83469f26b5c2e6ad842084f5c3afe0f4bc037f4298153c36e3f315ce70",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/CompactFeatureSearch.cpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/third-party/usearch/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/third-party/usearch/LICENSE"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index.hpp",
+      "sha256": "8d96a75506fa89d1a7fba6e9f41be197a5aff2c3da76f56f5d9dcf43b72839d9",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index.hpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/third-party/usearch/SOURCE",
+      "sha256": "4f9df66609edb4712a20b24ea641811069b971151a0155beb0d13c6b35c9cb74",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/third-party/usearch/SOURCE"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index_plugins.hpp",
+      "sha256": "a480e64ca5216b46127b34f26c5d9c985f5651a05c2ec7bba680e2536963c456",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index_plugins.hpp"
+    },
+    {
+      "source": "apps/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index_dense.hpp",
+      "sha256": "d57d57eb192656d85e8e2b5857ce4710414e6affa77968c1822edf604a2f6904",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/native-scanner/android/src/main/cpp/third-party/usearch/index_dense.hpp"
+    },
+    {
+      "source": "apps/mobile/plugins/android/CardVisionModule.kt",
+      "sha256": "b1c6d166fbad2a356ff55c20ef376b78e2b3ebeae64d0697481b7832a9f36cf0",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/android/CardVisionModule.kt"
+    },
+    {
+      "source": "apps/mobile/plugins/android/CardOutlineView.kt",
+      "sha256": "81e9771d16753e53a56b7b5bfce34c0060b8ac328c9a93097af881b0cefd4508",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/android/CardOutlineView.kt"
+    },
+    {
+      "source": "apps/mobile/plugins/android/CardTextModule.kt",
+      "sha256": "78b24d15e5c576aaa1d7260bfc01f10b8e4b13ac56ef80bd9de9fb63ee20db2b",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/android/CardTextModule.kt"
+    },
+    {
+      "source": "apps/mobile/plugins/android/CardQuadDetector.kt",
+      "sha256": "b25e752c6c0b13174f44e0b72abbb5fc560e243eaf4c5af6274cbc273b16aa08",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/android/CardQuadDetector.kt"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGCompactVision.mm",
+      "sha256": "7f509697faacf94c8f81e98797ff01e3c0106674d3217ac109c2bf1e9905a275",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGCompactVision.mm"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGScannerPipeline.m",
+      "sha256": "202963032cef1665cadf7f565827acf83c11028868114f59ef3106aebef70194",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGScannerPipeline.m"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGCompactQuery.hpp",
+      "sha256": "4c49a5c479384a040f99ead9dc0f74941c0fce6df094d232499815b8e63fd08f",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGCompactQuery.hpp"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGCardText.m",
+      "sha256": "31c3ed8e9cf6482989899b4ce3f7fa239d85d892c7feb497f2a22867a8a2517f",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGCardText.m"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGNativeOutputRegistration.mm",
+      "sha256": "1d52958d2c73235283d512d455cf766dff53e2c0981d405cb1c5c4b8789591bd",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGNativeOutputRegistration.mm"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGNativeCameraOutput.swift",
+      "sha256": "193008d19c5f5ae242f83673127189b1e5ee7a8160185b47c266e2cf20d30c00",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGNativeCameraOutput.swift"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGScannerPipeline.h",
+      "sha256": "45e0b35ea4023ce199f25c2def729c45b706392bd47b9687d15dbe456d22c8ff",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGScannerPipeline.h"
+    },
+    {
+      "source": "apps/mobile/plugins/ios/TCGOpenCV.podspec",
+      "sha256": "5003d2b5f1152d36e05bd95ec8419265a5a5776eadd78cb1d21914ce989c6318",
+      "destination": "artifacts/mobile/tcgindex-scanner/mobile/plugins/ios/TCGOpenCV.podspec"
+    }
+  ],
+  "adaptations": {
+    "src/app/ScannerScreen.tsx": "Native-only TCGIndex screen: removes unused non-native recognition branch; original native controls, camera, gallery, pricing and settings retained. Navigation supplied by DAVAQ.",
+    "adapter": "scripts/tcg/ScannerScreen.native.tsx"
+  }
+}

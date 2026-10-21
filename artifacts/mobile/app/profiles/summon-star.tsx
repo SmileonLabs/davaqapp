@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -9,6 +12,9 @@ import { useCharacterProfiles } from "@/hooks/useCharacterProfiles";
 import { crossAlert } from "@/lib/crossAlert";
 
 export default function SummonStarScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { refetch, activateProfile } = useCharacterProfiles();
@@ -45,7 +51,7 @@ export default function SummonStarScreen() {
           hitSlop={12}
           onPress={goBack}
         >
-          <Feather name="arrow-left" size={29} color="#FFFFFF" />
+          <Feather name="arrow-left" size={29} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.title}>NFT 연결 · STAR 소환</Text>
         <View style={{ width: 29 }} />
@@ -68,13 +74,13 @@ export default function SummonStarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#030309" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: styleColors.background },
   header: { minHeight: 62, paddingHorizontal: 18, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 19 },
+  title: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.titleSmall },
   content: { paddingHorizontal: 18, gap: 16 },
-  guide: { padding: 17, borderRadius: 18, borderWidth: 1, borderColor: "#392754", backgroundColor: "#0C0916", gap: 9 },
-  guideTitle: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 16 },
-  guideText: { color: "#C8BDD6", fontSize: 13, lineHeight: 22 },
-  guideNotice: { color: "#9489A2", fontSize: 11, lineHeight: 17 },
+  guide: { padding: 17, borderRadius: 18, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, gap: 9 },
+  guideTitle: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.input },
+  guideText: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, lineHeight: 22 },
+  guideNotice: { color: styleColors.mutedForeground, fontSize: fontSizes.small, lineHeight: 17 },
 });

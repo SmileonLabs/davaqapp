@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { useColorScheme } from "react-native";
 
 import colors from "@/constants/colors";
@@ -16,5 +16,14 @@ export function useColors() {
   const system = useColorScheme();
   const scheme = ctx ? ctx.scheme : system === "dark" ? "dark" : "light";
   const palette = scheme === "dark" ? colors.dark : colors.light;
-  return { ...palette, radius: colors.radius };
+  return useMemo(
+    () => ({
+      ...palette,
+      scrim: "rgba(24,20,40,0.42)",
+      mediaCanvas: "#09090C",
+      mediaForeground: "#FFFFFF",
+      radius: colors.radius,
+    }),
+    [palette],
+  );
 }

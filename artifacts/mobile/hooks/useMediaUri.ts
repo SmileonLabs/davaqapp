@@ -20,7 +20,7 @@ export async function resolveMediaUri(value: string): Promise<string> {
   return mediaUri(result.url);
 }
 
-export function useMediaUri(value: string | null | undefined): string | undefined {
+export function useMediaResource(value: string | null | undefined) {
   const privateObject = isPrivateObjectPath(value);
   const query = useQuery({
     queryKey: ["media-url", value],
@@ -30,6 +30,9 @@ export function useMediaUri(value: string | null | undefined): string | undefine
     gcTime: 5 * 60_000,
     retry: 1,
   });
-  if (!value) return undefined;
-  return privateObject ? query.data : mediaUri(value);
+  return { uri: !value ? undefined : privateObject ? query.data : mediaUri(value), error: privateObject ? query.error : null, refresh: query.refetch };
+}
+
+export function useMediaUri(value: string | null | undefined): string | undefined {
+  return useMediaResource(value).uri;
 }

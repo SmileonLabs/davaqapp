@@ -1,569 +1,685 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { SiAndroid, SiApple } from "react-icons/si";
 import {
   ArrowDown,
-  ArrowRight,
+  ArrowDownUp,
+  ArrowUp,
   ArrowUpRight,
-  PackagePlus,
   Check,
   ChevronDown,
-  ImagePlus,
-  MapPin,
+  Heart,
+  Layers,
   MessageCircle,
-  Repeat2,
+  Plus,
   ScanLine,
-  ShieldCheck,
-  WandSparkles,
+  Search,
+  Smartphone,
+  Sparkles,
 } from "lucide-react";
-import headphones160 from "../assets/products/headphones-160.webp";
-import headphones320 from "../assets/products/headphones-320.webp";
-import headphones640 from "../assets/products/headphones-640.webp";
-import camera160 from "../assets/products/camera-160.webp";
-import camera320 from "../assets/products/camera-320.webp";
-import camera640 from "../assets/products/camera-640.webp";
-import campingchair160 from "../assets/products/camping-chair-160.webp";
-import campingchair320 from "../assets/products/camping-chair-320.webp";
-import campingchair640 from "../assets/products/camping-chair-640.webp";
 import "./davaq.css";
 
-const start = "/app/wishes/new";
-
-const productPhotos = {
-  headphones: [headphones160, headphones320, headphones640],
-  camera: [camera160, camera320, camera640],
-  chair: [campingchair160, campingchair320, campingchair640],
-} as const;
-
-function ProductPhoto({
-  product,
-  sizes = "44px",
-  priority = false,
+const media = "/media/landing-20261015/";
+const links = {
+  start: "/app/",
+  price: "/app/agent",
+  feed: "/app/search",
+  collection: "/app/exchanges",
+  ios: "https://testflight.apple.com/join/szwESrhZ",
+  android: "/downloads/DavaQ-1.0.0-37.apk",
+  androidTest: "https://play.google.com/apps/internaltest/4700858542884065904",
+};
+function DownloadButtons() {
+  return (
+    <div className="dq-download-buttons" aria-label="DAVAQ 앱 다운로드">
+      <a
+        className="dq-download-button"
+        href={links.ios}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <SiApple size={27} aria-hidden="true" />
+        <span>
+          <small>TestFlight 베타</small>
+          <strong>iPhone 다운로드</strong>
+        </span>
+        <ArrowUpRight size={18} aria-hidden="true" />
+      </a>
+      <a
+        className="dq-download-button"
+        href={links.android}
+        download="DavaQ-1.0.0-37.apk"
+      >
+        <SiAndroid size={27} aria-hidden="true" />
+        <span>
+          <small>Android APK · 1.0.0 (37)</small>
+          <strong>Android 다운로드</strong>
+        </span>
+        <ArrowDown size={18} aria-hidden="true" />
+      </a>
+    </div>
+  );
+}
+const cardIds = [
+  "kream:649512",
+  "kream:649349",
+  "kream:803217",
+  "kream:959332",
+  "kream:651518",
+  "kream:651523",
+];
+const cardFeedLink = (index: number) =>
+  `${links.feed}?cardId=${encodeURIComponent(cardIds[index])}`;
+const cards = [
+  {
+    image: "card-pikachu.webp",
+    name: "피카츄 ex",
+    detail: "초전브레이커 · SAR · 일본어판",
+    alt: "포켓몬 TCG 피카츄 ex SAR 초전브레이커 일본어판 카드",
+  },
+  {
+    image: "card-glaceon.webp",
+    name: "글레이시아 ex",
+    detail: "테라스탈 페스타 ex · SAR · 일본어판",
+    alt: "포켓몬 TCG 글레이시아 ex SAR 테라스탈 페스타 일본어판 카드",
+  },
+  {
+    image: "card-sylveon.webp",
+    name: "님피아 ex",
+    detail: "테라스탈 페스타 ex · SAR · 한글판",
+    alt: "포켓몬 TCG 님피아 ex SAR 테라스탈 페스타 한글판 카드",
+  },
+  {
+    image: "card-umbreon.webp",
+    name: "블래키 ex",
+    detail: "테라스탈 페스타 ex · SAR · 한글판",
+    alt: "포켓몬 TCG 블래키 ex SAR 테라스탈 페스타 한글판 카드",
+  },
+  {
+    image: "card-charmander.webp",
+    name: "파이리",
+    detail: "포켓몬 카드 151 · AR · 일본어판",
+    alt: "포켓몬 TCG 파이리 AR 포켓몬 카드 151 일본어판 카드",
+  },
+  {
+    image: "card-pikachu-151.webp",
+    name: "피카츄",
+    detail: "포켓몬 카드 151 · AR · 일본어판",
+    alt: "포켓몬 TCG 피카츄 AR 포켓몬 카드 151 일본어판 카드",
+  },
+];
+function CardImage({
+  index,
+  className = "",
+  eager = false,
 }: {
-  product: keyof typeof productPhotos;
-  sizes?: string;
-  priority?: boolean;
+  index: number;
+  className?: string;
+  eager?: boolean;
 }) {
-  const [small, medium, large] = productPhotos[product];
+  const card = cards[index];
   return (
     <img
-      className="dq-product-photo"
-      src={medium}
-      srcSet={`${small} 160w, ${medium} 320w, ${large} 640w`}
-      sizes={sizes}
-      width={640}
-      height={640}
-      alt=""
-      loading={priority ? "eager" : "lazy"}
-      fetchPriority={priority ? "high" : undefined}
+      className={className}
+      src={media + card.image}
+      alt={card.alt}
+      width="312"
+      height="432"
+      loading={eager ? "eager" : "lazy"}
       decoding="async"
     />
   );
 }
-
-function QAvatar({ small = false }: { small?: boolean }) {
+function FeedPreview() {
+  const [active, setActive] = useState(0);
+  const [liked, setLiked] = useState<number[]>([]);
+  const viewport = useRef<HTMLDivElement>(null);
+  const order = [3, 0, 2];
+  const move = (direction: number) => {
+    const target = Math.max(0, Math.min(order.length - 1, active + direction));
+    const pane = viewport.current;
+    if (pane)
+      pane.scrollTo({
+        top: target * pane.clientHeight,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+  };
   return (
-    <span
-      className={"dq-q" + (small ? " dq-q-small" : "")}
-      aria-label="AI 도우미 Q"
-    >
-      Q<span />
-    </span>
-  );
-}
-
-function WishPreview() {
-  return (
-    <div className="dq-preview" aria-label="사진으로 소원을 만드는 기능 예시">
-      <div className="dq-preview-top">
-        <span>
-          <ScanLine size={17} /> 갖고 싶은 것에서 시작
-        </span>
-        <span className="dq-example">AI 생성 제품 · 화면 예시</span>
-      </div>
-      <div className="dq-product">
-        <div className="dq-product-caption">
-          <span>내 소원함</span>
-          <span>
-            <ShieldCheck size={13} /> 나만 보기
-          </span>
+    <div className="dq-feed-demo">
+      <div className="dq-feed-phone">
+        <div className="dq-phone-bar">
+          <span>DAVAQ</span>
+          <span>FEED PREVIEW</span>
+          <Layers size={17} aria-hidden="true" />
         </div>
-        <div className="dq-headphones">
-          <ProductPhoto
-            product="headphones"
-            sizes="(max-width: 950px) 190px, 220px"
-            priority
-          />
-        </div>
-        <div className="dq-product-name">
-          <div>
-            <small>내가 갖고 싶은 것</small>
-            <strong>무선 헤드폰</strong>
-          </div>
-          <span className="dq-product-tag">물건</span>
-        </div>
-      </div>
-      <div className="dq-preview-question">
-        <ProductPhoto product="camera" />
-        <span>
-          안 쓰는 <strong>카메라</strong>로 바꿀 수 있을까?
-        </span>
-      </div>
-      <div className="dq-q-reply">
-        <QAvatar small />
-        <p>
-          직접 맞는 상대부터,
-          <br />
-          <strong>여러 사람이 이어지는 교환까지 찾아봐요.</strong>
-        </p>
-      </div>
-      <div className="dq-preview-foot">
-        <span>사진·설명 보내기</span>
-        <ArrowRight size={14} />
-        <span>내가 확인하고 저장</span>
-      </div>
-    </div>
-  );
-}
-
-function ExchangeDemo() {
-  const [relay, setRelay] = useState(true);
-  const people = relay
-    ? [
-        {
-          name: "나",
-          give: "카메라",
-          receive: "헤드폰",
-          product: "camera" as const,
-        },
-        {
-          name: "이웃 A",
-          give: "캠핑 의자",
-          receive: "카메라",
-          product: "chair" as const,
-        },
-        {
-          name: "이웃 B",
-          give: "헤드폰",
-          receive: "캠핑 의자",
-          product: "headphones" as const,
-        },
-      ]
-    : [
-        {
-          name: "나",
-          give: "카메라",
-          receive: "헤드폰",
-          product: "camera" as const,
-        },
-        {
-          name: "이웃",
-          give: "헤드폰",
-          receive: "카메라",
-          product: "headphones" as const,
-        },
-      ];
-  return (
-    <div className="dq-exchange-demo">
-      <div className="dq-demo-toolbar">
         <div
-          className="dq-switch"
-          role="group"
-          aria-label="교환 방식 예시 선택"
+          className="dq-feed-viewport"
+          ref={viewport}
+          tabIndex={0}
+          aria-label="카드 피드 미리보기. 위아래로 넘기거나 방향키로 탐색하세요."
+          onScroll={(event) => {
+            const pane = event.currentTarget;
+            setActive(Math.round(pane.scrollTop / pane.clientHeight));
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              move(event.key === "ArrowDown" ? 1 : -1);
+            }
+          }}
         >
-          <button
-            type="button"
-            aria-pressed={!relay}
-            onClick={() => setRelay(false)}
-          >
-            직접 바꾸기
-          </button>
-          <button
-            type="button"
-            aria-pressed={relay}
-            onClick={() => setRelay(true)}
-          >
-            이어 바꾸기
-          </button>
-        </div>
-        <span className="dq-example">이해를 돕기 위한 예시</span>
-      </div>
-      <div className="dq-demo-content" aria-live="polite" aria-atomic="true">
-        <p className="dq-demo-intro">
-          {relay
-            ? "내 카메라를 원하는 사람과, 헤드폰을 가진 사람이 달라도 괜찮아요."
-            : "서로 원하는 것이 맞으면, 두 사람이 바로 바꿔요."}
-        </p>
-        <div className={"dq-chain" + (!relay ? " dq-chain-direct" : "")}>
-          {people.map(({ name, give, receive, product }, i) => (
-            <div className="dq-chain-part" key={name}>
-              <div className={"dq-person" + (i === 0 ? " dq-person-me" : "")}>
-                <div className="dq-person-name">
-                  <span>{name}</span>
-                  {i === 0 && <span className="dq-you">내 교환</span>}
-                </div>
-                <div className="dq-item-photo">
-                  <ProductPhoto
-                    product={product}
-                    sizes="(max-width: 760px) 85px, 150px"
+          {order.map((index, position) => (
+            <article
+              className="dq-feed-slide"
+              key={cards[index].image}
+              aria-label={cards[index].name}
+            >
+              <CardImage index={index} className="dq-feed-art" />
+              <div className="dq-feed-shade" />
+              <div className="dq-feed-actions">
+                <button
+                  type="button"
+                  aria-label={`${cards[index].name} 미리보기 좋아요`}
+                  aria-pressed={liked.includes(position)}
+                  onClick={() =>
+                    setLiked((before) =>
+                      before.includes(position)
+                        ? before.filter((i) => i !== position)
+                        : [...before, position],
+                    )
+                  }
+                >
+                  <Heart
+                    size={25}
+                    fill={liked.includes(position) ? "currentColor" : "none"}
                   />
-                </div>
-                <small>주는 것</small>
-                <strong>{give}</strong>
-                <div className="dq-receive">
-                  <ArrowDown size={14} /> 받는 것 <b>{receive}</b>
-                </div>
+                  <span>좋아요</span>
+                </button>
+                <a
+                  href={cardFeedLink(index)}
+                  aria-label={`${cards[index].name} 카드 피드에서 댓글 남기기`}
+                >
+                  <MessageCircle size={25} />
+                  <span>댓글</span>
+                </a>
+                <a
+                  href={cardFeedLink(index)}
+                  aria-label={`${cards[index].name} 카드 피드에서 오퍼 보기`}
+                >
+                  <ArrowDownUp size={25} />
+                  <span>오퍼</span>
+                </a>
               </div>
-              {i < people.length - 1 && (
-                <div className="dq-chain-arrow" aria-label={give + " 전달"}>
-                  <ArrowRight size={23} />
-                  <span>{give}</span>
-                </div>
-              )}
-            </div>
+              <div className="dq-feed-description">
+                <span className="dq-feed-tag">발견한 카드</span>
+                <h3>{cards[index].name}</h3>
+                <p>{cards[index].detail}</p>
+                <a className="dq-feed-register" href={cardFeedLink(index)}>
+                  <Plus size={17} /> 이 카드 가지고 있어요{" "}
+                  <ArrowUpRight size={17} />
+                </a>
+              </div>
+            </article>
           ))}
         </div>
-        <div className="dq-return">
-          <Repeat2 size={19} />
+        <div className="dq-phone-tabs">
           <span>
-            {relay
-              ? "이웃 B의 헤드폰은 나에게. 세 사람의 교환이 이어져요."
-              : "카메라는 이웃에게, 헤드폰은 나에게."}
+            <Search size={17} />
+            탐색
+          </span>
+          <span className="dq-selected">
+            <ArrowDownUp size={17} />
+            교환
+          </span>
+          <span>
+            <MessageCircle size={17} />
+            채팅
+          </span>
+          <span>
+            <Layers size={17} />
+            컬렉션
           </span>
         </div>
-        <p className="dq-demo-note">
-          {relay
-            ? "중간 물건을 받아 다시 바꿀 필요 없이, 각자 정해진 상대에게 전달해요. 실제 기능은 3~4명 연결을 찾아요."
-            : "물건뿐 아니라 재능·서비스·경험도 서로의 조건이 맞으면 교환할 수 있어요."}
-        </p>
       </div>
+      <div className="dq-feed-control">
+        <span aria-live="polite">
+          0{active + 1} <span>/ 0{order.length}</span>
+        </span>
+        <div>
+          <button
+            type="button"
+            onClick={() => move(-1)}
+            disabled={active === 0}
+            aria-label="이전 카드 보기"
+          >
+            <ArrowUp size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => move(1)}
+            disabled={active === order.length - 1}
+            aria-label="다음 카드 보기"
+          >
+            <ArrowDown size={20} />
+          </button>
+        </div>
+      </div>
+      <p className="dq-demo-note">
+        실제 카드 이미지로 구성한 기능 미리보기입니다.
+      </p>
     </div>
   );
 }
-
-function MapPreview() {
-  return (
-    <div
-      className="dq-map-preview"
-      role="img"
-      aria-label="근처 물건과 만날 장소를 표시하는 지도 기능 예시. 실제 위치가 아닙니다."
-    >
-      <div className="dq-map-park" />
-      <div className="dq-map-water" />
-      <div className="dq-road dq-road-a" />
-      <div className="dq-road dq-road-b" />
-      <div className="dq-road dq-road-c" />
-      <span className="dq-map-pin dq-pin-camera">
-        <ProductPhoto product="camera" /> 카메라
-      </span>
-      <span className="dq-map-pin dq-pin-headphones">
-        <ProductPhoto product="headphones" /> 헤드폰
-      </span>
-      <span className="dq-map-meet">
-        <MapPin size={16} /> 만날 장소 함께 정하기
-      </span>
-      <span className="dq-map-label">지도 기능 예시 · 실제 위치 아님</span>
-    </div>
-  );
-}
-
-const questions = [
-  {
-    question: "지금 맞는 상대가 없으면 어떻게 하나요?",
-    answer:
-      "원하는 것을 소원함에 남겨두세요. 내가 제공할 수 있는 물건이나 재능을 등록하고 자동 매칭을 켜면, 새 교환 후보가 발견됐을 때 Q 대화에서 확인할 수 있어요. 후보와 성사 여부는 실제 등록과 참여자들의 조건에 따라 달라져요.",
-  },
-  {
-    question: "소원과 캡처 사진은 누구에게 보이나요?",
-    answer:
-      "소원함과 참고 사진은 나만 볼 수 있어요. ‘Q로 정리하기’를 누르면 설명과 사진을 AI가 분석하고, 저장 전에 직접 수정할 수 있어요. 교환을 제안한 뒤에는 참여자들이 주고받을 항목과 제안 조건을 확인해요.",
-  },
-  {
-    question: "Q가 제 마음대로 교환을 확정하나요?",
-    answer:
-      "Q는 후보를 찾아주는 역할이에요. 제안 전송과 교환 동의는 직접 해야 해요. 여러 사람이 이어 바꾸는 경우에도 모든 참여자가 같은 조건에 동의해야 교환이 확정돼요.",
-  },
-];
-
 export default function Home() {
   return (
-    <div className="dq-site">
+    <div className="davaq-site">
       <a className="dq-skip" href="#main">
         본문으로 건너뛰기
       </a>
-      <header className="dq-nav dq-shell">
-        <a href="/" className="dq-brand" aria-label="DavaQ 다바꿔 홈">
-          DavaQ<span>다바꿔</span>
+      <header className="dq-header">
+        <a className="dq-wordmark" href="/" aria-label="DavaQ 다바꿔 홈">
+          DAVAQ<span>다바꿔</span>
         </a>
-        <nav aria-label="주요 메뉴">
-          <a className="dq-nav-section" href="#how">
-            시작하는 방법
-          </a>
-          <a className="dq-nav-section" href="#relay">
-            이어 바꾸기
-          </a>
-          <a className="dq-nav-section" href="#nearby">
-            지도와 채팅
-          </a>
-          <a href="/app/" className="dq-nav-app">
-            앱 열기 <ArrowUpRight size={16} />
-          </a>
+        <nav aria-label="서비스 소개">
+          <a href="#price">가격 검색</a>
+          <a href="#exchange">카드 교환</a>
+          <a href="#feed">소통 피드</a>
         </nav>
+        <a className="dq-nav-cta" href="#download">
+          앱 다운로드 <ArrowDown size={17} />
+        </a>
       </header>
       <main id="main">
-        <section className="dq-hero dq-shell" aria-labelledby="hero-title">
+        <section className="dq-hero dq-wrap" aria-labelledby="hero-title">
           <div className="dq-hero-copy">
-            <div className="dq-eyebrow">
-              <span className="dq-dot" /> 물건 · 재능 · 경험을 교환하는 방법
-            </div>
+            <p className="dq-kicker">
+              <span className="dq-dot" /> THE COLLECTOR'S NEXT MOVE
+            </p>
             <h1 id="hero-title">
-              사기 전에,
+              찾고. 바꾸고.
               <br />
-              가진 것으로
-              <br />
-              <em>바꿔보세요.</em>
+              <span>빠져들고.</span>
             </h1>
-            <p className="dq-lead">
-              갖고 싶은 것을 보여주세요.
-              <br />
-              Q가 내 물건과 재능으로
-              <br className="dq-mobile-break" /> 교환할 방법을 찾아줘요.
+            <p className="dq-hero-body">
+              GPT보다 빠른 카드 시세 검색부터
+              <br className="dq-desktop-break" /> 내 카드로 시작하는 교환,
+              취향이 통하는 피드까지.
             </p>
-            <div className="dq-hero-actions">
-              <a className="dq-primary" href={start}>
-                갖고 싶은 것 Q에게 보내기 <ArrowUpRight size={20} />
-              </a>
-              <a className="dq-text-link" href="#how">
-                어떻게 바꾸나요? <ArrowDown size={16} />
-              </a>
+            <a className="dq-button dq-button-black" href={links.feed}>
+              카드 피드 둘러보기 <ArrowUpRight size={21} />
+            </a>
+            <a className="dq-hero-text-link" href="#price">
+              DAVAQ 더 알아보기 <ArrowDown size={15} />
+            </a>
+            <DownloadButtons />
+            <a className="dq-install-guide-link" href="#download">
+              베타 앱 설치 방법 보기
+            </a>
+            <div className="dq-hero-foot">
+              <span>LESS SEARCHING.</span>
+              <span>MORE COLLECTING.</span>
             </div>
-            <p className="dq-caption">
-              설치 없이, 모바일과 PC에서 바로 시작하세요.
-            </p>
           </div>
-          <WishPreview />
-        </section>
-        <section
-          id="how"
-          className="dq-section dq-shell"
-          aria-labelledby="how-title"
-        >
-          <div className="dq-section-heading">
-            <div>
-              <div className="dq-eyebrow">소원에서 교환으로</div>
-              <h2 id="how-title">
-                원하는 것 하나면,
+          <div
+            className="dq-hero-gallery"
+            aria-label="실제 카탈로그 카드: 글레이시아 ex, 피카츄 ex, 님피아 ex"
+          >
+            <div className="dq-gallery-label">
+              <span>
+                GOOD CARDS.
                 <br />
-                시작할 수 있어요.
-              </h2>
+                GOOD PEOPLE.
+              </span>
+              <Sparkles size={24} aria-hidden="true" />
             </div>
-            <p>
-              사진 한 장으로 시작해서,
-              <br />
-              내가 줄 것과 받을 것을 함께 확인해요.
-            </p>
+            <div className="dq-gallery-orbit" aria-hidden="true" />
+            <CardImage index={1} className="dq-hero-card dq-card-left" eager />
+            <CardImage index={2} className="dq-hero-card dq-card-right" eager />
+            <CardImage index={0} className="dq-hero-card dq-card-front" eager />
+            <div className="dq-gallery-caption">
+              <ArrowDownUp size={17} />
+              <span>내 카드의 다음 이야기를 만나세요.</span>
+            </div>
+            <span className="dq-gallery-index" aria-hidden="true">
+              COLLECTION / 001
+            </span>
           </div>
-          <ol className="dq-steps">
-            {[
-              {
-                icon: ImagePlus,
-                title: "갖고 싶은 것을 담아요",
-                body: "상품 캡처나 사진, 짧은 설명을 보내세요. Q가 정리한 초안을 확인하고 내 소원함에 저장해요.",
-              },
-              {
-                icon: PackagePlus,
-                title: "내가 줄 수 있는 것을 등록해요",
-                body: "안 쓰는 물건, 자신 있는 재능, 나눌 수 있는 경험. 내가 제공할 수 있는 것이 교환의 출발점이에요.",
-              },
-              {
-                icon: WandSparkles,
-                title: "이어지는 방법을 찾아요",
-                body: "직접 교환과 여러 사람이 이어 바꾸는 후보를 살펴봐요. 줄 것·받을 것·확인할 조건을 먼저 보여드려요.",
-              },
-            ].map(({ icon: Icon, title, body }, i) => (
-              <li key={title}>
-                <div className="dq-step-top">
-                  <Icon size={24} strokeWidth={1.6} />
-                  <span>0{i + 1}</span>
-                </div>
-                <h3>{title}</h3>
-                <p>{body}</p>
+        </section>
+        <div className="dq-game-band" aria-label="다양한 TCG 카드 탐색">
+          <span>POKÉMON</span>
+          <i />
+          <span>ONE PIECE</span>
+          <i />
+          <span>MAGIC</span>
+          <i />
+          <span>YU-GI-OH!</span>
+          <i />
+          <span>RIFTBOUND</span>
+        </div>
+        <section
+          className="dq-price dq-wrap dq-section"
+          id="price"
+          aria-labelledby="price-title"
+        >
+          <div className="dq-price-visual">
+            <img
+              src={media + "scan-promo.webp"}
+              width="768"
+              height="1152"
+              loading="lazy"
+              decoding="async"
+              alt="GPT보다 빠른 카드 시세 확인을 소개하는 DAVAQ 스토어 홍보 이미지. 카드를 스마트폰으로 스캔하는 연출."
+            />
+            <span className="dq-image-caption">
+              DAVAQ STORE CAMPAIGN · 스캔 연출 이미지
+            </span>
+          </div>
+          <div className="dq-feature-copy">
+            <p className="dq-kicker">01 / FIND YOUR CARD</p>
+            <h2 id="price-title">
+              이 카드, 얼마지?
+              <br />
+              <span className="dq-muted">답을 더 빠르게.</span>
+            </h2>
+            <p className="dq-lead">GPT보다 빠른 카드 시세 검색.</p>
+            <p className="dq-description">
+              길게 설명할 필요 없이, 이름으로 찾거나 카드를 스캔하세요. 카드
+              정보와 참고 가격을 한곳에서 확인하고 다음 교환을 준비하세요.
+            </p>
+            <div className="dq-search-example" aria-label="카드 이름 검색 예시">
+              <Search size={20} />
+              <span>피카츄 ex SAR</span>
+              <ArrowUpRight size={19} />
+            </div>
+            <ul className="dq-feature-list">
+              <li>
+                <ScanLine size={20} />
+                <span>카메라로 카드 찾기</span>
+                <Check size={16} />
               </li>
-            ))}
-          </ol>
+              <li>
+                <Search size={20} />
+                <span>이름·판본으로 정확하게 검색</span>
+                <Check size={16} />
+              </li>
+              <li>
+                <Layers size={20} />
+                <span>카드 정보와 참고 시세를 함께</span>
+                <Check size={16} />
+              </li>
+            </ul>
+            <a className="dq-text-link" href={links.price}>
+              카드 가격 찾아보기 <ArrowUpRight size={19} />
+            </a>
+          </div>
         </section>
         <section
-          id="relay"
-          className="dq-relay-section"
-          aria-labelledby="relay-title"
+          className="dq-exchange"
+          id="exchange"
+          aria-labelledby="exchange-title"
         >
-          <div className="dq-shell">
-            <div className="dq-section-heading">
+          <div className="dq-wrap">
+            <div className="dq-exchange-intro">
               <div>
-                <div className="dq-eyebrow">Q의 이어 바꾸기</div>
-                <h2 id="relay-title">
-                  둘이 안 맞으면,
-                  <br />한 사람 더 이어서.
+                <p className="dq-kicker">02 / TRADE WHAT YOU LOVE</p>
+                <h2 id="exchange-title">
+                  내 카드로,
+                  <br />
+                  원하던 그 카드를.
                 </h2>
               </div>
-              <p>
-                내 물건을 원하는 사람을 거쳐,
-                <br />
-                내가 원하는 물건을 가진 사람까지.
-                <br />
-                Q가 함께 바꿀 수 있는 연결을 찾아요.
-              </p>
+              <div className="dq-exchange-copy">
+                <p>
+                  나에게 두 장인 카드가
+                  <br />
+                  누군가에겐 마지막 한 장일 테니까.
+                </p>
+                <a className="dq-text-link" href={links.collection}>
+                  내 카드로 교환 시작 <ArrowUpRight size={19} />
+                </a>
+              </div>
             </div>
-            <ExchangeDemo />
-            <div className="dq-section-bottom">
-              <span>
-                <ShieldCheck size={18} /> 모든 참여자가 조건에 동의해야 교환이
-                확정돼요.
-              </span>
-              <a className="dq-text-link" href="/app/relay">
-                이어 바꾸기 살펴보기 <ArrowUpRight size={17} />
-              </a>
+            <figure className="dq-exchange-photo">
+              <img
+                src={media + "exchange-promo.webp"}
+                width="1024"
+                height="500"
+                alt="실물 카드를 서로 건네는 장면과 내 카드로 원하는 카드를 문구가 담긴 DAVAQ 스토어 교환 홍보 이미지"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                최근 스토어 소개에 사용한 DAVAQ 교환 캠페인 이미지
+              </figcaption>
+            </figure>
+            <div className="dq-trade-steps">
+              <article>
+                <span>01</span>
+                <h3>내 카드를 올리고</h3>
+                <p>
+                  교환, 제안 받기, 무료 나눔.
+                  <br />
+                  원하는 방식으로 카드를 공개하세요.
+                </p>
+              </article>
+              <article>
+                <span>02</span>
+                <h3>마음에 드는 오퍼를 고르고</h3>
+                <p>
+                  같은 카드의 여러 오퍼를 모아 보고
+                  <br />
+                  나에게 맞는 조건을 선택하세요.
+                </p>
+              </article>
+              <article>
+                <span>03</span>
+                <h3>대화로 연결되세요</h3>
+                <p>
+                  카드 상태와 전달 방법을 확인하고
+                  <br />
+                  서로의 컬렉션을 완성하세요.
+                </p>
+              </article>
             </div>
           </div>
         </section>
         <section
-          id="nearby"
-          className="dq-section dq-shell"
-          aria-labelledby="nearby-title"
+          className="dq-feed dq-wrap dq-section"
+          id="feed"
+          aria-labelledby="feed-title"
         >
-          <div className="dq-section-heading">
-            <div>
-              <div className="dq-eyebrow">발견한 다음도, 한곳에서</div>
-              <h2 id="nearby-title">
-                어디에 있는지 보고,
-                <br />
-                어떻게 바꿀지 이야기해요.
-              </h2>
+          <div className="dq-feed-copy">
+            <p className="dq-kicker">03 / SCROLL. DISCOVER. CONNECT.</p>
+            <h2 id="feed-title">
+              살 계획 없어도,
+              <br />
+              넘겨보는 재미.
+            </h2>
+            <p className="dq-description">
+              한 장씩, 크게. 위로 넘길 때마다 새로운 카드가 나타나요. 취향에
+              닿는 카드에서 좋아요를 누르고, 댓글로 이야기를 시작하세요.
+            </p>
+            <div className="dq-feed-benefits">
+              <div>
+                <span>01</span>
+                <p>
+                  <strong>등록하지 않아도, 바로 탐색</strong>오퍼가 없는
+                  카드까지 전체 카탈로그에서 발견해요.
+                </p>
+              </div>
+              <div>
+                <span>02</span>
+                <p>
+                  <strong>보는 사람마다 새로운 순서</strong>내 피드를 둘러보고
+                  새로고침하면 다시 새롭게.
+                </p>
+              </div>
+              <div>
+                <span>03</span>
+                <p>
+                  <strong>“나 이 카드 있는데!”</strong>발견한 카드에 내 오퍼를
+                  올려 교환을 시작해요.
+                </p>
+              </div>
             </div>
+            <a className="dq-button dq-button-black" href={links.feed}>
+              내 취향의 카드 만나기 <ArrowUpRight size={20} />
+            </a>
           </div>
-          <div className="dq-feature-grid">
-            <article className="dq-feature">
-              <MapPreview />
-              <div className="dq-feature-copy">
-                <span className="dq-feature-kicker">
-                  <MapPin size={16} /> 교환 지도
-                </span>
-                <h3>내 주변에 있는 원하는 것</h3>
-                <p>
-                  공개된 대략적인 위치로 근처 물건을 찾고,
-                  <br className="dq-desktop-break" /> 구체적인 만날 장소는
-                  참여자끼리 정해요.
-                </p>
-                <a className="dq-text-link" href="/app/map">
-                  지도에서 찾아보기 <ArrowUpRight size={17} />
-                </a>
-              </div>
-            </article>
-            <article className="dq-feature">
-              <div className="dq-chat-preview" aria-label="교환 채팅 예시">
-                <div className="dq-chat-title">
-                  <MessageCircle size={19} />
-                  <strong>우리의 교환 이야기</strong>
-                  <span className="dq-example">대화 예시</span>
-                </div>
-                <div className="dq-bubble">카메라 구성품이 모두 있나요?</div>
-                <div className="dq-bubble dq-bubble-mine">
-                  네! 구성품 사진도 보내드릴게요.
-                </div>
-                <div className="dq-bubble">
-                  토요일 오후, 역 앞에서 어떠세요?
-                </div>
-                <div className="dq-chat-check">
-                  <Check size={15} /> 확인한 조건으로, 서로 동의한 뒤 교환
-                </div>
-              </div>
-              <div className="dq-feature-copy">
-                <span className="dq-feature-kicker">
-                  <MessageCircle size={16} /> DavaQ 메신저
-                </span>
-                <h3>채팅으로 확인하고 함께 결정</h3>
-                <p>
-                  사진과 대화로 상태·구성·일정을 확인하세요.
-                  <br className="dq-desktop-break" /> 필요하면 음성·영상 통화로
-                  더 자세히 이야기해요.
-                </p>
-                <a className="dq-text-link" href="/app/chats">
-                  메신저 열기 <ArrowUpRight size={17} />
-                </a>
-              </div>
-            </article>
-          </div>
+          <FeedPreview />
         </section>
-        <section className="dq-shell" aria-labelledby="q-title">
-          <div className="dq-agent-section">
-            <div>
-              <div className="dq-eyebrow">기다리는 동안에도, Q</div>
-              <h2 id="q-title">
-                소원은 남겨두고,
-                <br />새 연결은 Q에게 받으세요.
-              </h2>
-              <p>
-                내 AI에서 자동 매칭을 켜두면,
+        <section className="dq-collection" aria-labelledby="collection-title">
+          <div className="dq-wrap">
+            <div className="dq-collection-heading">
+              <p className="dq-kicker">EVERY CARD HAS A NEXT CHAPTER.</p>
+              <h2 id="collection-title">
+                다음 한 장은,
                 <br />
-                새로운 교환 후보를 찾았을 때 Q 대화로 알려줘요.
-              </p>
-              <a href="/app/wishes" className="dq-agent-link">
-                내 소원함 열기 <ArrowUpRight size={18} />
+                생각보다 가까이.
+              </h2>
+              <a className="dq-text-link" href={links.feed}>
+                카드 둘러보기 <ArrowUpRight size={19} />
               </a>
             </div>
-            <div className="dq-agent-example">
-              <div className="dq-notification">
-                <QAvatar />
-                <div>
-                  <div className="dq-notification-title">
-                    <strong>나의 Q</strong>
-                    <span>알림 예시</span>
-                  </div>
-                  <p>
-                    소원으로 이어지는
-                    <br />
-                    <strong>새 교환 후보를 찾았어요.</strong>
-                  </p>
-                  <span className="dq-notification-action">
-                    내가 줄 것 · 받을 것 확인하기 <ArrowRight size={15} />
+            <div className="dq-card-shelf">
+              {[4, 1, 0, 3, 2, 5].map((index) => (
+                <a
+                  href={cardFeedLink(index)}
+                  key={index}
+                  aria-label={`${cards[index].name} 같은 카드 피드 둘러보기`}
+                >
+                  <CardImage index={index} />
+                  <span>
+                    {cards[index].name}
+                    <ArrowUpRight size={14} />
                   </span>
-                </div>
-              </div>
-              <p className="dq-agent-note">추천은 Q가, 제안과 결정은 내가.</p>
+                </a>
+              ))}
             </div>
           </div>
         </section>
-        <section className="dq-faq dq-shell" aria-labelledby="faq-title">
-          <h2 id="faq-title">시작하기 전에 궁금한 것</h2>
+        <section className="dq-faq dq-wrap" aria-labelledby="faq-title">
           <div>
-            {questions.map(({ question, answer }) => (
-              <details key={question}>
-                <summary>
-                  {question}
-                  <ChevronDown size={19} />
-                </summary>
-                <p>{answer}</p>
-              </details>
-            ))}
+            <p className="dq-kicker">A FEW THINGS TO KNOW</p>
+            <h2 id="faq-title">가볍게 시작하세요.</h2>
+          </div>
+          <div className="dq-faq-list">
+            <details>
+              <summary>
+                카드를 먼저 등록해야 하나요?
+                <ChevronDown size={20} />
+              </summary>
+              <p>
+                아니요. 카드 등록 없이 피드를 둘러볼 수 있어요. 마음에 드는
+                카드를 발견하면 오퍼를 확인하거나 내가 가진 카드를 등록해 교환을
+                시작하세요.
+              </p>
+            </details>
+            <details>
+              <summary>
+                교환 외에 무료 나눔도 가능한가요?
+                <ChevronDown size={20} />
+              </summary>
+              <p>
+                네. 내 카드를 교환용으로 공개하거나 제안을 받고, 무료 나눔으로
+                올릴 수도 있어요. 실제 카드의 상태와 전달 방법은 상대방과 대화로
+                확인하세요.
+              </p>
+            </details>
+            <details>
+              <summary>
+                표시되는 가격은 어떤 가격인가요?
+                <ChevronDown size={20} />
+              </summary>
+              <p>
+                카드 정보와 참고 시세는 TCGIndex의 카탈로그 자료를 사용해요.
+                판본과 카드 상태에 따라 실제 거래 조건은 달라질 수 있습니다.
+              </p>
+            </details>
+            <details>
+              <summary>
+                어디에서 이용할 수 있나요?
+                <ChevronDown size={20} />
+              </summary>
+              <p>
+                PC와 모바일 브라우저에서 바로 시작할 수 있어요. 모바일에서는
+                웹앱을 홈 화면에 추가할 수 있어요. 앱은 iPhone의 경우
+                TestFlight, Android는 APK로 설치할 수 있습니다. 현재는 베타
+                버전으로 제공해요.
+              </p>
+            </details>
           </div>
         </section>
-        <section className="dq-final dq-shell">
-          <span className="dq-eyebrow">나의 첫 소원</span>
-          <h2>
-            사고 싶던 그 물건,
-            <br />
-            <em>Q에게 보여주세요.</em>
-          </h2>
-          <a className="dq-primary" href={start}>
-            갖고 싶은 것 Q에게 보내기 <ArrowUpRight size={20} />
-          </a>
-          <p>사진이나 설명을 보내고, 초안을 확인하면 시작이에요.</p>
+        <section
+          className="dq-final-cta"
+          id="download"
+          aria-labelledby="download-title"
+        >
+          <div className="dq-wrap">
+            <p className="dq-kicker">YOUR NEXT CARD IS OUT THERE.</p>
+            <h2 id="download-title">
+              카드 한 장이,
+              <br />
+              새로운 연결이 되는 곳.
+            </h2>
+            <DownloadButtons />
+            <div className="dq-install-guides">
+              <div>
+                <h3>iPhone · TestFlight로 설치</h3>
+                <p>
+                  다운로드 버튼에서 TestFlight를 받은 뒤, 같은 페이지의
+                  ‘TestFlight에서 보기’를 눌러 DAVAQ를 설치하세요. 별도 초대
+                  이메일 없이 참여할 수 있어요.
+                </p>
+              </div>
+              <div>
+                <h3>Android · APK로 설치</h3>
+                <p>
+                  Android 기기에서 APK 파일(약 141MB)을 내려받아 열어 주세요.
+                  설치 시 해당 브라우저의 ‘이 출처 허용’ 안내가 표시될 수
+                  있어요. Google Play로 설치한 테스터는 아래 테스트 페이지에서
+                  업데이트해 주세요.
+                </p>
+                <a href={links.androidTest} target="_blank" rel="noreferrer">
+                  Google Play 내부 테스트 페이지 <ArrowUpRight size={14} />
+                </a>
+              </div>
+            </div>
+            <a className="dq-web-alternative" href={links.start}>
+              <Smartphone size={17} /> 설치 없이 웹에서 시작하기{" "}
+              <ArrowUpRight size={17} />
+            </a>
+            <div className="dq-big-wordmark" aria-hidden="true">
+              DAVAQ
+            </div>
+          </div>
         </section>
       </main>
-      <footer className="dq-footer dq-shell">
-        <a href="/" className="dq-brand">
-          DavaQ<span>다바꿔</span>
-        </a>
-        <span>갖고 싶은 것과, 내가 가진 것을 잇다.</span>
-        <span>© {new Date().getFullYear()} DavaQ</span>
+      <footer className="dq-footer dq-wrap">
+        <div>
+          <a className="dq-wordmark" href="/">
+            DAVAQ
+          </a>
+          <p>찾고. 바꾸고. 빠져들고.</p>
+        </div>
+        <div className="dq-footer-links">
+          <a href={links.start}>
+            웹앱 열기 <ArrowUpRight size={15} />
+          </a>
+          <a href="https://tcgindex.org" target="_blank" rel="noreferrer">
+            카드 데이터 · TCGIndex <ArrowUpRight size={15} />
+          </a>
+        </div>
+        <div className="dq-footer-bottom">
+          <span>
+            © {new Date().getFullYear()} DAVAQ. For the love of cards.
+          </span>
+          <p>
+            카드 이미지와 명칭의 권리는 각 권리자에게 있습니다. DAVAQ는 카드
+            발행사와 별개의 서비스입니다.
+          </p>
+        </div>
       </footer>
     </div>
   );

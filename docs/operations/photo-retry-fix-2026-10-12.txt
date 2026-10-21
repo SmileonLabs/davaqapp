@@ -1,0 +1,11 @@
+Photo retransmission fixes — 2026-10-12
+
+Confirmed paths: album grouping previously hid pending/failed individual operations behind an acknowledged representative, losing their visible retry controls. Native upload XHR had no deadline; an indefinitely stalled transfer retained the upload lock. Upload retry previously retained the picker asset rather than the prepared compressed/edited file.
+
+Changes: group only acknowledged photos; failed/pending/temp photos remain separate with individual delivery/retry states and rejoin the album on acknowledgement. Capture prepared image file before network I/O, reuse it on retry without picker/recompression, preserve remaining album tail, and retain original album ID/index/caption. Each photo transfer has a 90-second deadline independent of user selection/editing, with a rejected deadline race for stalled URL requests. Timeout is distinct from explicit cancellation and retains failed assets. Native PUT XHR also has a 90-second timeout for images/files/video. Manual message retry local-storage failures show feedback instead of an unhandled rejection.
+
+Validation: TypeScript check passed. 16 album/transfer tests passed, including prepared file reuse, stalled transfer timeout, successful-prefix exclusion, cancellation and failed photo visibility/regrouping. Web export checked separately. Physical device fault injection still requires testing.
+
+Not deployed: currently distributed Android 23 / iOS 14 were built before these fixes. Upload-before-message failed-photo retry state remains session-local; durable uploaded message outbox survives restart, but this change does not promise recovery of unsent photo selections after app termination.
+
+Release follow-up: these fixes are now deployed to Android internal test 1.0.0 (24) and iOS internal TestFlight 1.0.0 (15). See photo-retry-release-2026-10-12.txt. Web/PWA production unchanged.

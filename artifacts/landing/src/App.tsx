@@ -1,31 +1,25 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
-import NotFound from "@/pages/not-found";
-
-const queryClient = new QueryClient();
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route component={NotFound} />
+      <Route>
+        <main style={{ padding: "80px 24px", fontFamily: "sans-serif" }}>
+          <h1>페이지를 찾을 수 없습니다.</h1>
+          <a href="/">DAVAQ 홈으로 돌아가기</a>
+        </main>
+      </Route>
     </Switch>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <Router />
+    </WouterRouter>
   );
 }
 

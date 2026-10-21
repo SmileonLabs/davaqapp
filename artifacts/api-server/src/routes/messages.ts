@@ -1,3 +1,4 @@
+import { publicDavaqAvatar } from "../lib/davaqAvatarPolicy";
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
@@ -11,12 +12,14 @@ import {
   characterProfilesTable,
   usersTable,
 } from "@workspace/db";
+import { enqueueMessagePush } from "../lib/chatPushOutbox";
+import { parseChangeRevision, readRoomChangePage } from "../lib/chatChangeFeed";
 import { requireAuth } from "../lib/auth";
+import { countMessageReaders } from "../lib/readReceiptPolicy";
 import { publicAccountKind } from "../lib/publicUser";
 import { scheduleLinkPreview } from "../lib/linkPreview";
 import { safeLinkPreviewImageUrl } from "../lib/linkPreviewImagePolicy";
 import { buildLinkPreviewRoomFailureLog } from "../lib/linkPreviewLogging";
-import { sendPushToUsers } from "../lib/push";
 import { getTypingUserIds, markTyping } from "../lib/typing";
 import { runDungeonTurn } from "../lib/dungeon";
 import { publishRealtimeEvent } from "../lib/realtime";
@@ -39,7 +42,6 @@ import {
   allocateRoomMessageSeq,
   getMessageReadTarget,
   getRoomMemberReadSeqs,
-  setMemberReadSeq,
   type ReadTarget,
 } from "../lib/readReceipts";
 import {
@@ -227,19 +229,20 @@ async function serializeMessages(
           .where(inArray(usersTable.id, Array.from(userIds)))
       : [];
   const userById = new Map(users.map((user) => [user.id, user]));
-  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
+  const profileById = new Map(profiles.map((profile) => [profile.id, {
+    ...profile,
+    profileImageUrl: publicDavaqAvatar(
+      profile.type === "fan" && profile.profileImageUrl === userById.get(profile.ownerUserId)?.profileImageUrl ? null : profile.profileImageUrl,
+      profile.metadata, profile.id,
+    ),
+  }]));
   const activeIdentityByUserId = await getActiveCharacterIdentityMap(Array.from(userIds));
 
   return messages
     .filter((message) => !deletedForViewer.has(message.id))
     .map((message) => {
       const deleted = !!message.deletedAt;
-      const readCount = memberReadSeqs.filter(
-        (mr) =>
-          mr.isReadReceiptParticipant &&
-          mr.userId !== message.senderId &&
-          mr.lastReadSeq >= message.roomSeq,
-      ).length;
+      const readCount = countMessageReaders(message, memberReadSeqs);
       const reply = message.replyToMessageId
         ? replyById.get(message.replyToMessageId)
         : null;
@@ -396,15 +399,16 @@ async function publishRoomRealtimeEvent(
   });
 }
 
-function dispatchMessageRealtimeAndPush(args: {
+function dispatchMessageRealtime(args: {
   roomId: string;
   actorUserId: string;
   message: DbMessage;
   sender: DbUser | undefined;
+  senderProfile?: CharacterProfileView;
   preview: string;
   log: { error: (obj: unknown, msg?: string) => void };
 }): void {
-  const { roomId, actorUserId, message, sender, preview, log } = args;
+  const { roomId, actorUserId, message, sender, senderProfile, preview, log } = args;
   void (async () => {
     try {
       const recipients = await getRoomDeliveryRecipients(roomId, actorUserId);
@@ -417,17 +421,12 @@ function dispatchMessageRealtimeAndPush(args: {
           messageId: message.id,
           messageType: message.type,
           roomSeq: message.roomSeq,
+          ...(senderProfile ? { message: serializeCreatedMessage(message, sender, senderProfile) } : {}),
         },
       });
-      if (recipients.pushUserIds.length === 0) return;
-      await sendPushToUsers(recipients.pushUserIds, {
-        title: sender?.nickname ?? "새 메시지",
-        body: preview.length > 80 ? `${preview.slice(0, 80)}...` : preview,
-        url: `/chat/${roomId}`,
-        tag: `room-${roomId}`,
-      });
+
     } catch (err) {
-      log.error({ err }, "Failed to dispatch message push");
+      log.error({ err }, "Failed to dispatch message realtime event");
     }
   })();
 }
@@ -442,6 +441,28 @@ async function advanceReadPointer(
 ): Promise<boolean> {
   return advanceMemberReadSeq(roomId, userId, target);
 }
+
+// Read the head, event page and message bodies in one PostgreSQL snapshot.
+// A room revision is allocated by deferred triggers and cannot become visible
+// ahead of an earlier transaction for that room.
+router.get("/rooms/:id/changes", requireAuth, async (req, res): Promise<void> => {
+  const roomId = String(req.params.id);
+  const userId = req.dbUser!.id;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomId)) {
+    res.status(400).json({ error: "invalid room id" }); return;
+  }
+  const after = parseChangeRevision(req.query.afterRevision);
+  if (after === undefined) { res.status(400).json({ error: "invalid afterRevision" }); return; }
+  const profile = await resolveCharacterProfileActor(userId, req.header("x-character-profile-id"));
+  const snapshot = await readRoomChangePage(db, roomId, userId, profile.id, after);
+  if (!snapshot) { res.status(403).json({ error: "Not a member" }); return; }
+  const readCursors = await getRoomMemberReadSeqs(roomId);
+  const messages = await serializeMessages(snapshot.messages, userId, readCursors);
+  const visible = new Set(messages.map(message => message.id));
+  res.set("Cache-Control", "no-store");
+  res.json({ protocol: 1, revision: snapshot.revision, snapshotRoomSeq: snapshot.snapshotRoomSeq, reset: snapshot.reset, hasMore: snapshot.hasMore,
+    messages, removedMessageIds: snapshot.ids.filter(id => !visible.has(id)), readCursors });
+});
 
 router.get(
   "/rooms/:id/messages",
@@ -642,9 +663,10 @@ router.post(
         .set({ hiddenAt: null })
         .where(eq(chatRoomMembersTable.roomId, raw));
 
-      // The sender has implicitly read their own message — advance their read marker
-      // so it never counts as unread (prevents self-notifications across devices).
-      await setMemberReadSeq(tx, raw, userId, { id: created.id, roomSeq });
+      await enqueueMessagePush(tx, created, actorProfile.displayName, preview);
+
+      // Sending is not proof of viewing earlier incoming messages.
+      // Own messages are already excluded from unread counts.
       return {
         message: created,
         created: true,
@@ -732,7 +754,7 @@ router.post(
       room?.type === "direct" &&
       input.type === "text"
     ) {
-      void handleAnotherMeAfterUserMessage({
+      if (process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true") void handleAnotherMeAfterUserMessage({
         roomId: raw,
         senderUserId: userId,
         content: input.content,
@@ -746,11 +768,12 @@ router.post(
     }
 
     if (createdResult.created) {
-      dispatchMessageRealtimeAndPush({
+      dispatchMessageRealtime({
         roomId: raw,
         actorUserId: userId,
         message,
         sender,
+        senderProfile: actorProfile,
         preview,
         log: req.log,
       });
@@ -1053,7 +1076,8 @@ router.post(
       forwarded.value.type,
       forwarded.value.content,
     );
-    const activeProfileId = (await ensureCharacterProfileState(userId)).activeProfile.id;
+    const forwardProfile = (await ensureCharacterProfileState(userId)).activeProfile;
+    const activeProfileId = forwardProfile.id;
     const directRoom = await getDirectRoomPeer(targetRoomId, userId);
     if (directRoom.isDirect && !directRoom.peerId) {
       res.status(409).json({ error: "Invalid direct room membership" });
@@ -1124,10 +1148,8 @@ router.post(
         .update(chatRoomMembersTable)
         .set({ hiddenAt: null })
         .where(eq(chatRoomMembersTable.roomId, targetRoomId));
-      await setMemberReadSeq(tx, targetRoomId, userId, {
-        id: created.id,
-        roomSeq,
-      });
+      await enqueueMessagePush(tx, created, forwardProfile.displayName, preview);
+      // Forwarding from another room must not mark this destination as read.
       return {
         message: created,
         created: true,
@@ -1173,7 +1195,7 @@ router.post(
       );
     }
     if (createdResult.created) {
-      dispatchMessageRealtimeAndPush({
+      dispatchMessageRealtime({
         roomId: targetRoomId,
         actorUserId: userId,
         message,
@@ -1194,7 +1216,8 @@ router.post(
     const messageId = Array.isArray(req.params.messageId)
       ? req.params.messageId[0]
       : req.params.messageId;
-    const { code } = req.body ?? {};
+    const { code, remove = false } = req.body ?? {};
+    if (typeof remove !== "boolean") { res.status(400).json({ error: "invalid remove" }); return; }
 
     if (typeof code !== "string" || !isValidStickerCode(code)) {
       res.status(400).json({ error: "invalid sticker" });
@@ -1227,7 +1250,13 @@ router.post(
     }
 
     const now = new Date();
-    await db
+    if (remove) {
+      // Explicit removal is idempotent and cannot remove a different reaction
+      // chosen on another device after this request was composed.
+      await db.delete(messageStickersTable).where(and(
+        eq(messageStickersTable.messageId, messageId), eq(messageStickersTable.userId, userId), eq(messageStickersTable.code, code),
+      ));
+    } else await db
       .insert(messageStickersTable)
       .values({ messageId, userId, code, createdAt: now })
       .onConflictDoUpdate({
@@ -1286,6 +1315,7 @@ router.patch(
       void publishRoomRealtimeEvent(raw, userId, "message.read", {
         messageId,
         lastReadSeq: target.roomSeq,
+        readCursors: await getRoomMemberReadSeqs(raw),
       }).catch((err) =>
         req.log.error(
           { err, roomId: raw, messageId },

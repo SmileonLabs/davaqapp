@@ -17,6 +17,7 @@ async function buildAll() {
   await esbuild({
     entryPoints: {
       index: path.resolve(artifactDir, "src/index.ts"),
+      "scripts/provisionCollectorLounge": path.resolve(artifactDir, "src/scripts/provisionCollectorLounge.ts"),
       "scripts/initializeKnowledgeGraph": path.resolve(artifactDir, "src/scripts/initializeKnowledgeGraph.ts"),
       "scripts/callMigrationReadiness": path.resolve(artifactDir, "src/scripts/callMigrationReadiness.ts"),
     },

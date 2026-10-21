@@ -130,9 +130,9 @@
       if (values.some((v) => v.precision === "area"))
         L.circle([p.lat, p.lng], {
           radius: 650,
-          color: "#8c77de",
+          color: "#777777",
           weight: 1,
-          fillColor: "#b8a4fc",
+          fillColor: "#aaaaaa",
           fillOpacity: 0.14,
           interactive: false,
         }).addTo(group);

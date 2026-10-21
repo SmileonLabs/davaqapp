@@ -9,13 +9,14 @@ import {
   AndroidAudioTypePresets,
   registerGlobals,
 } from "@livekit/react-native";
-import { Room, RoomEvent, Track, type LocalVideoTrack } from "livekit-client";
+import { Room, RoomEvent, Track, createLocalVideoTrack, type LocalVideoTrack } from "livekit-client";
 import { PermissionsAndroid, Platform } from "react-native";
 import {
   createAudioPlayer,
   setAudioModeAsync,
   type AudioPlayer,
 } from "expo-audio";
+import { createToneController } from "./callToneController";
 import {
   isCallForegroundServiceAvailable,
   startCallForegroundService,
@@ -49,11 +50,12 @@ let audioSessionGeneration: number | null = null;
 let foregroundServiceGeneration: number | null = null;
 let nativeResourceOperations: Promise<void> = Promise.resolve();
 let audioModeReady = false;
+let audioModePending: Promise<void> | null = null;
 let cameraFacingMode: "user" | "environment" = "user";
 let videoPreparePromise: Promise<void> | null = null;
 
-let ringbackPlayer: AudioPlayer | null = null;
-let ringtonePlayer: AudioPlayer | null = null;
+const ringbackTone = createCallToneController();
+const incomingTone = createCallToneController();
 
 const ROOM_DISCONNECT_TIMEOUT_MS = 4_000;
 
@@ -248,28 +250,26 @@ async function stopOwnedForegroundService(expectedGeneration?: number): Promise<
 // idempotent; we don't block the call on it.
 async function ensureAudioMode(): Promise<void> {
   if (audioModeReady) return;
-  audioModeReady = true;
-  try {
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      shouldPlayInBackground: true,
-      interruptionMode: "duckOthers",
-    });
-  } catch {
-    audioModeReady = false;
-  }
+  if (audioModePending) return audioModePending;
+  audioModePending = setAudioModeAsync({
+    playsInSilentMode: true,
+    shouldPlayInBackground: true,
+    interruptionMode: "duckOthers",
+  }).then(() => { audioModeReady = true; }).finally(() => { audioModePending = null; });
+  return audioModePending;
 }
 
-function startLoop(asset: number): AudioPlayer | null {
-  try {
-    void ensureAudioMode();
-    const player = createAudioPlayer(asset);
-    player.loop = true;
-    player.play();
-    return player;
-  } catch {
-    return null;
-  }
+function createCallToneController() {
+  return createToneController({
+    prepare: ensureAudioMode,
+    create: (asset: number) => {
+      const player = createAudioPlayer(asset);
+      player.loop = true;
+      return player;
+    },
+    dispose: (player: AudioPlayer) => { stopLoop(player); },
+    onError: (error: unknown) => console.warn("Call tone playback failed", error instanceof Error ? error.message : "unknown"),
+  });
 }
 
 function stopLoop(player: AudioPlayer | null): null {
@@ -289,25 +289,23 @@ export function primeAudioPlayback(): void {
   // (the web build's primeAudioPlayback unlocks the AudioContext on that
   // gesture); native has no such autoplay restriction, so there is nothing to
   // unlock. Kept for interface parity with voiceCall.web.ts.
-  void ensureAudioMode();
+  void ensureAudioMode().catch(error => console.warn("Call audio preparation failed", error instanceof Error ? error.message : "unknown"));
 }
 
 export function startRingback(): void {
-  stopRingback();
-  ringbackPlayer = startLoop(require("../assets/sounds/ringback.wav"));
+  ringbackTone.start(require("../assets/sounds/ringback.wav"));
 }
 
 export function stopRingback(): void {
-  ringbackPlayer = stopLoop(ringbackPlayer);
+  ringbackTone.stop();
 }
 
 export function startRingtone(): void {
-  stopRingtone();
-  ringtonePlayer = startLoop(require("../assets/sounds/ringtone.wav"));
+  incomingTone.start(require("../assets/sounds/ringtone.wav"));
 }
 
 export function stopRingtone(): void {
-  ringtonePlayer = stopLoop(ringtonePlayer);
+  incomingTone.stop();
 }
 
 function cameraOptions() {
@@ -350,23 +348,66 @@ async function ensureAndroidCallPermissions(media: CallMedia): Promise<boolean> 
   );
 }
 
+let cameraCaptureEpoch = 0;
+
+async function nativeMediaDeadline<T>(work: Promise<T>, milliseconds: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([work, new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("camera_prepare_timeout")), milliseconds);
+    })]);
+  } finally { if (timer) clearTimeout(timer); }
+}
+
+/** Own the capture separately so a timeout/hangup cannot leak a late native camera. */
 async function enableCameraWithRetry(
   r: Room,
   generation = roomGeneration,
+  diagnostic: CallDiagnostic = () => {},
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    if (room !== r || generation !== roomGeneration) return false;
-    try {
+  const epoch = ++cameraCaptureEpoch;
+  let cancelled = false;
+  let captured: LocalVideoTrack | undefined;
+  const current = () => room === r && generation === roomGeneration && epoch === cameraCaptureEpoch;
+  const stopOwned = () => { try { captured?.stop(); } catch {} };
+  try {
+    if (!current()) return false;
+    const existing = r.localParticipant.getTrackPublication(Track.Source.Camera);
+    if (existing?.track && existing.track.mediaStreamTrack?.readyState !== "ended") {
       await r.localParticipant.setCameraEnabled(true, cameraOptions());
-      if (r.localParticipant.getTrackPublication(Track.Source.Camera)?.track) return true;
-    } catch {}
-    await delay(350 + attempt * 250);
+      return current() && hasLocalTrack(r, Track.Source.Camera);
+    }
+    diagnostic("native_camera_capture_start");
+    const capture = createLocalVideoTrack({
+      ...cameraOptions(), resolution: { width: 640, height: 360, frameRate: 15 },
+    });
+    void capture.then(track => {
+      if (cancelled || !current()) track.stop();
+    }, () => {});
+    captured = await nativeMediaDeadline(capture, 12_000);
+    if (!current()) { stopOwned(); return false; }
+    diagnostic("native_camera_capture_ready");
+    const publication = r.localParticipant.publishTrack(captured, { source: Track.Source.Camera });
+    void publication.then(() => {
+      if (cancelled || !current()) {
+        stopOwned();
+        void r.localParticipant.unpublishTrack(captured!).catch(() => {});
+      }
+    }, () => {});
+    await nativeMediaDeadline(publication, 20_000);
+    if (!current()) { stopOwned(); return false; }
+    diagnostic("native_camera_publish_result", { cameraPublished: true });
+    return true;
+  } catch (error) {
+    cancelled = true;
+    stopOwned();
+    if (captured) void r.localParticipant.unpublishTrack(captured).catch(() => {});
+    if (current()) {
+      diagnostic("native_camera_capture_failed", { errorName: error instanceof Error ? error.name : "unknown" });
+      diagnostic("native_camera_publish_result", { cameraPublished: false });
+    }
+    return false;
   }
-  return (
-    room === r &&
-    generation === roomGeneration &&
-    !!r.localParticipant.getTrackPublication(Track.Source.Camera)?.track
-  );
 }
 
 function hasLocalTrack(r: Room, source: Track.Source): boolean {
@@ -398,7 +439,7 @@ async function cleanupJoinAttempt(targetRoom: Room | null, generation: number): 
 export async function joinCall(
   url: string,
   token: string,
-  options: { media?: CallMedia; cameraEnabled?: boolean; onDiagnostic?: CallDiagnostic } = {},
+  options: { callId?: string; media?: CallMedia; cameraEnabled?: boolean; onDiagnostic?: CallDiagnostic } = {},
 ): Promise<CallJoinResult> {
   // Claim the generation before awaiting cleanup. A leave/new join that happens
   // while cleanup is pending advances the fence, so this attempt can never
@@ -523,13 +564,11 @@ export async function joinCall(
     if (generation !== roomGeneration || room !== r) throw new Error("stale_join_attempt");
     const microphonePublished = hasLocalTrack(r, Track.Source.Microphone);
     diagnostic("native_microphone_publish_result", { microphonePublished });
-    let cameraPublished = false;
-    if (cameraRequested && cameraPermissionGranted) {
-      cameraPublished = await enableCameraWithRetry(r, generation);
-      if (generation !== roomGeneration || room !== r) throw new Error("stale_join_attempt");
-      diagnostic("native_camera_publish_result", { cameraPublished });
-    }
-    return { room: r, media, microphonePublished, cameraPublished };
+    // Camera permission/capture can take seconds. Expose the connected audio
+    // room immediately and fence any late camera against hangup or camera-off.
+    const cameraPending = cameraRequested && cameraPermissionGranted;
+    if (cameraPending) void enableCameraWithRetry(r, generation, diagnostic);
+    return { room: r, media, microphonePublished, cameraPublished: false, cameraPending };
   } catch (err) {
     const message = errorMessage(err);
     if (message === "microphone_permission_denied") {
@@ -637,6 +676,7 @@ export async function setCameraEnabled(enabled: boolean): Promise<boolean> {
       if (room !== r || generation !== roomGeneration) return false;
       return enableCameraWithRetry(r, generation);
     } else {
+      cameraCaptureEpoch += 1;
       await r.localParticipant.setCameraEnabled(false, cameraOptions());
       return true;
     }

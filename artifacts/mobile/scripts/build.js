@@ -79,7 +79,7 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     if (!html.includes('name="viewport"')) html = html.replace("</head>", `    ${viewport}\n  </head>`);
 
     const headMeta = [
-      '<meta name="theme-color" content="#F7F6FB">',
+      '<meta name="theme-color" content="#000000">',
       '<meta name="apple-mobile-web-app-capable" content="yes">',
       '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
       '<meta name="mobile-web-app-capable" content="yes">',
@@ -92,9 +92,12 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     }
 
     const assetBase = basePath || "";
+    // Change the filename as well as the query to invalidate legacy favicon caches.
+    html = html.replace(/<link\b(?=[^>]*\brel=["'](?:shortcut )?icon["'])[^>]*>/gi, "");
+    html = html.replace("</head>", `    <link rel="icon" type="image/png" sizes="64x64" href="${assetBase}/davaq-favicon-20261013.png?v=mono-r12">\n  </head>`);
     const headLinks = [
-      `<link rel="manifest" href="${assetBase}/manifest.webmanifest?v=20260912-davaq">`,
-      `<link rel="apple-touch-icon" sizes="180x180" href="${assetBase}/davaq-apple-touch-icon.png?v=20260912-davaq">`,
+      `<link rel="manifest" href="${assetBase}/manifest.webmanifest?v=20261013-davaq">`,
+      `<link rel="apple-touch-icon" sizes="180x180" href="${assetBase}/davaq-apple-touch-icon.png?v=20261013-davaq">`,
     ];
     for (const link of headLinks) {
       const rel = link.match(/rel="([^"]+)"/)?.[1];
@@ -107,8 +110,25 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     // ScrollView/FlatList screens remain scrollable inside this fixed shell.
     const MARKER = "anotherme-pwa-layout-fix";
     if (!html.includes(MARKER) && html.includes("</head>")) {
-      const style = `    <style id="${MARKER}">\n      :root { background: #F7F6FB; color-scheme: light; }\n      html, body { width: 100%; max-width: 100%; height: 100%; min-height: 100dvh; margin: 0; overflow: hidden; }\n      body { background: #F7F6FB; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overscroll-behavior: none; }\n      #root { width: 100%; height: 100%; min-height: 100dvh; overflow: auto; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }\n    </style>\n  </head>`;
-      html = html.replace("</head>", style);
+      const style = `    <style id="${MARKER}">\n      :root { background: #000000; color-scheme: light; }\n      html, body { width: 100%; max-width: 100%; height: var(--davaq-visible-height, 100dvh); min-height: 0; margin: 0; overflow: hidden; }\n      body { background: #000000; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overscroll-behavior: none; }\n      #root { width: 100%; height: var(--davaq-visible-height, 100dvh); min-height: 0; overflow: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }\n    </style>\n  </head>`;
+      html = html.replace("</head>", style + `<script>
+      (function () {
+        var viewport = window.visualViewport;
+        function resize() {
+          if (document.hidden || (viewport && viewport.scale !== 1)) return;
+          var height = viewport ? viewport.height : window.innerHeight;
+          if (!Number.isFinite(height) || height < 120) return;
+          document.documentElement.style.setProperty('--davaq-visible-height', height + 'px');
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('pageshow', resize);
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) { resize(); requestAnimationFrame(resize); }
+        });
+        if (viewport) viewport.addEventListener('resize', resize);
+      })();
+    </script>`);
     }
 
     // The native splash is configured in app.json. Mirror it in the exported
@@ -116,10 +136,10 @@ function patchExportedHtml(indexHtmlPath, basePath) {
     // while the JavaScript bundle and authentication provider initialize.
     const SPLASH_MARKER = "anotherme-boot-splash";
     if (!html.includes(`id="${SPLASH_MARKER}"`) && /<body[^>]*>/i.test(html)) {
-      const splash = `<div id="${SPLASH_MARKER}" aria-hidden="true"><img src="${assetBase}/davaq-icon-512.png" alt=""></div>
+      const splash = `<div id="${SPLASH_MARKER}" aria-hidden="true"><img src="${assetBase}/davaq-splash-20261013.png" alt=""></div>
     <style>
-      #${SPLASH_MARKER} { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; background: #F7F6FB; }
-      #${SPLASH_MARKER} img { width: min(44vw, 224px); height: auto; display: block; }
+      #${SPLASH_MARKER} { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; background: #000000; }
+      #${SPLASH_MARKER} img { width: 240px; height: auto; display: block; }
     </style>
     <script>
       (() => {
@@ -148,6 +168,9 @@ function patchExportedHtml(indexHtmlPath, basePath) {
 function copyPwaShellAssets(outPath) {
   const publicDir = path.join(projectRoot, "public");
   const files = [
+    "favicon.ico",
+    "davaq-favicon-20261013.png",
+    "davaq-splash-20261013.png",
     "sw.js",
     "sw-cache-policy.js",
     "manifest.webmanifest",
@@ -247,6 +270,8 @@ function patchServiceWorker(outPath, basePath, version) {
   const scopePath = `${basePath || ""}/`;
   const assets = new Set([
     scopePath,
+    `${basePath}/davaq-favicon-20261013.png?v=mono-r12`,
+    `${basePath}/davaq-splash-20261013.png`,
     `${basePath}/sw-cache-policy.js`,
     `${basePath}/manifest.webmanifest`,
     `${basePath}/davaq-icon-192.png`,
@@ -349,25 +374,13 @@ async function main() {
       (clerkKey.startsWith("pk_live_") ? `${origin}/api/__clerk` : ""),
   };
 
-  // experiments.baseUrl is WEB-ONLY here, but expo-router bakes it into the
-  // NATIVE bundle too (production builds prefix/strip routes with it), which
-  // breaks the APK with a "+not-found" screen. So the committed app.json must
-  // NOT contain baseUrl. We inject it only for this web export and restore the
-  // file afterward (even on failure), so EAS native builds stay correct.
-  const appJsonPath = path.join(projectRoot, "app.json");
-  const originalAppJson = fs.readFileSync(appJsonPath, "utf8");
-  const appConfig = JSON.parse(originalAppJson);
-  appConfig.expo = appConfig.expo || {};
-  appConfig.expo.experiments = appConfig.expo.experiments || {};
-  appConfig.expo.experiments.baseUrl = basePath || "/";
-  fs.writeFileSync(appJsonPath, JSON.stringify(appConfig, null, 2) + "\n");
-
-  try {
-    await run(process.execPath, [path.join(path.dirname(require.resolve("expo/package.json")), "bin", "cli"), "export", "--clear", "-p", "web", "--output-dir", OUTPUT_DIR], env);
-  } finally {
-    // Always restore the committed app.json (no baseUrl) for native builds.
-    fs.writeFileSync(appJsonPath, originalAppJson);
-  }
+  // Pass the web-only base path through dynamic config. Never mutate app.json:
+  // native builds may run in parallel and must not inherit a /app route prefix.
+  env.DAVAQ_WEB_BASE_PATH = basePath || "/";
+  const exportArgs = [path.join(path.dirname(require.resolve("expo/package.json")), "bin", "cli"), "export"];
+  if (process.env.PWA_KEEP_METRO_CACHE !== "1") exportArgs.push("--clear");
+  exportArgs.push("-p", "web", "--output-dir", OUTPUT_DIR);
+  await run(process.execPath, exportArgs, env);
 
   const indexHtml = path.join(outPath, "index.html");
   if (!fs.existsSync(indexHtml)) {
@@ -387,11 +400,11 @@ async function main() {
   //     screen (there's no browser chrome to snap it back). Clamping the root
   //     elements pins the layout to the viewport.
   copyPwaShellAssets(outPath);
-  const mapAssets=path.join(outPath,'maps','leaflet');
-  fs.mkdirSync(mapAssets,{recursive:true});
-  const leafletRoot=path.dirname(require.resolve('leaflet/package.json'));
-  for(const name of ['leaflet.js','leaflet.css'])fs.copyFileSync(path.join(leafletRoot,'dist',name),path.join(mapAssets,name));
-  fs.copyFileSync(path.join(leafletRoot,'LICENSE'),path.join(mapAssets,'LICENSE'));
+  const leafletRoot = path.dirname(require.resolve("leaflet/package.json"));
+  const mapAssets = path.join(outPath, "maps", "leaflet");
+  fs.mkdirSync(mapAssets, { recursive: true });
+  fs.cpSync(path.join(leafletRoot, "dist"), mapAssets, { recursive: true });
+  fs.copyFileSync(path.join(leafletRoot, "LICENSE"), path.join(mapAssets, "LICENSE"));
   patchExportedHtml(indexHtml, basePath);
   patchExportedFontUrls(outPath, basePath, assetVersion);
   patchServiceWorker(outPath, basePath, assetVersion);

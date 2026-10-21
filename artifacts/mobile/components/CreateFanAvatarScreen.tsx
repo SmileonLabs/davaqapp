@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -40,6 +43,9 @@ function ChoiceRow({
   selected: number;
   onSelect: (value: number) => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   return (
     <View style={styles.section}>
       <Text style={styles.label}>{label}</Text>
@@ -70,6 +76,9 @@ function ChoiceRow({
 }
 
 export default function CreateFanAvatarScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
@@ -149,7 +158,7 @@ export default function CreateFanAvatarScreen() {
           hitSlop={12}
           onPress={() => router.back()}
         >
-          <Feather name="chevron-left" size={28} color="#fff" />
+          <Feather name="chevron-left" size={28} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.title}>새 FAN 만들기</Text>
         <View style={{ width: 28 }} />
@@ -180,7 +189,7 @@ export default function CreateFanAvatarScreen() {
           onChangeText={setDisplayName}
           maxLength={30}
           placeholder="이름 입력"
-          placeholderTextColor="#777184"
+          placeholderTextColor={styleColors.mutedForeground}
           style={styles.input}
         />
         <Text style={styles.label}>공개 핸들 (선택)</Text>
@@ -192,7 +201,7 @@ export default function CreateFanAvatarScreen() {
           autoCorrect={false}
           maxLength={24}
           placeholder="fan-name"
-          placeholderTextColor="#777184"
+          placeholderTextColor={styleColors.mutedForeground}
           style={styles.input}
         />
         <View style={styles.section}>
@@ -242,13 +251,13 @@ export default function CreateFanAvatarScreen() {
           ]}
         >
           {isCreatingFan ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={styleColors.foreground} />
           ) : (
             <>
               <Feather
                 name={canCreate ? "star" : "lock"}
                 size={18}
-                color="#fff"
+                color={styleColors.foreground}
               />
               <Text style={styles.submitText}>
                 {canCreate ? "FAN 소환하기" : "추가 조건 미달"}
@@ -261,8 +270,8 @@ export default function CreateFanAvatarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#05050B" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: styleColors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -270,29 +279,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 14,
   },
-  title: { color: "#fff", fontSize: 19, fontWeight: "800" },
+  title: { color: styleColors.foreground, fontSize: fontSizes.titleSmall, fontWeight: "800" },
   content: { paddingHorizontal: 20, gap: 12 },
-  lead: { color: "#BEB7CC", fontSize: 14, lineHeight: 21, marginBottom: 2 },
+  lead: { color: styleColors.mutedForeground, fontSize: fontSizes.label, lineHeight: 21, marginBottom: 2 },
   preview: {
     alignSelf: "center",
     width: 245,
     height: 350,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#58308A",
+    borderColor: styleColors.border,
     overflow: "hidden",
-    backgroundColor: "#05050A",
+    backgroundColor: styleColors.card,
     marginVertical: 4,
   },
-  label: { color: "#F5F1FF", fontSize: 13, fontWeight: "700" },
+  label: { color: styleColors.foreground, fontSize: fontSizes.detail, fontWeight: "700" },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderColor: "#49336A",
+    borderColor: styleColors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
-    color: "#fff",
-    backgroundColor: "#0D0B18",
+    color: styleColors.foreground,
+    backgroundColor: styleColors.card,
   },
   section: { gap: 9, marginTop: 6 },
   choiceRow: { gap: 8, paddingRight: 16 },
@@ -301,36 +310,36 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#3A3150",
+    borderColor: styleColors.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0D0B18",
+    backgroundColor: styleColors.card,
   },
-  choiceActive: { backgroundColor: "#743BF5", borderColor: "#B778FF" },
-  choiceText: { color: "#A9A1B8", fontSize: 13, fontWeight: "700" },
-  choiceTextActive: { color: "#fff" },
+  choiceActive: { backgroundColor: styleColors.primary, borderColor: styleColors.primary },
+  choiceText: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, fontWeight: "700" },
+  choiceTextActive: { color: styleColors.primaryForeground },
   genderRow: { flexDirection: "row", gap: 8 },
   genderButton: {
     flex: 1,
     minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#3A3150",
+    borderColor: styleColors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  genderButtonActive: { backgroundColor: "#743BF5", borderColor: "#B778FF" },
-  genderText: { color: "#A9A1B8", fontWeight: "800" },
+  genderButtonActive: { backgroundColor: styleColors.primary, borderColor: styleColors.primary },
+  genderText: { color: styleColors.mutedForeground, fontWeight: "800" },
   submit: {
     marginTop: 18,
     minHeight: 54,
     borderRadius: 18,
-    backgroundColor: "#743BF5",
+    backgroundColor: styleColors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
-  submitText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  submitText: { color: styleColors.primaryForeground, fontSize: fontSizes.body, fontWeight: "800" },
   disabled: { opacity: 0.45 },
 });

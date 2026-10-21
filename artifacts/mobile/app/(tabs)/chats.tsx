@@ -1,1 +1,1 @@
-export { InboxScreen as default } from "@/components/davaq/Tabs";
+export { InboxScreen as default } from "@/components/davaq/InboxScreen";

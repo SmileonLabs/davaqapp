@@ -1,0 +1,12 @@
+Noto Animated Emoji — Google and the Noto Emoji contributors
+Source: https://googlefonts.github.io/noto-emoji-animation/
+Official metadata: https://googlefonts.github.io/noto-emoji-animation/data/api.json
+Original animations: https://fonts.gstatic.com/s/e/notoemoji/latest/<code>/512.webp
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+DavaQ modifications: resized to 128 x 128, lossy WebP quality 72, grouped frames
+into intervals of at least 50 ms while preserving the total animation duration
+and transparent background. These are still multi-frame animated WebP assets.
+Generated with scripts/build-animated-sticker-pack.py on 2026-10-17.
+Attribution and license links are also available in the in-app sticker picker.

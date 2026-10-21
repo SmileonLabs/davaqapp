@@ -1,3 +1,13 @@
+import {CallContentFrame} from './CallContentFrame';
+import {useCallElapsed} from '@/hooks/useCallElapsed';
+import {callPrimaryStatus,cameraAllowed,callPeerId} from '@/lib/callPresentation';
+import {CallCameraPreview} from './CallCameraPreview';
+import {CallEndSheet,type CallOutcome} from './CallEndSheet';
+import {CallAudioOutput} from './CallAudioOutput';
+import { useCallScreenAwake } from '@/hooks/useCallScreenAwake';
+import { shouldKeepCallScreenAwake } from '@/lib/callScreenAwake';
+import { FloatingCall } from "./FloatingCall";
+import { isGroupCallBusy } from "@/lib/groupCallActions";
 import React, {
   createContext,
   useCallback,
@@ -8,9 +18,10 @@ import React, {
 } from "react";
 import { ActivityIndicator, AppState, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { DisconnectReason, RoomEvent, Track, type Room } from "livekit-client";
 import {
+  useGetMe,
   type Call,
   type CallWithCaller,
 } from "@workspace/api-client-react";
@@ -31,9 +42,11 @@ import {
   type CallMedia,
   voiceCallSupported,
 } from "@/lib/voiceCall";
+import { endSystemCall, markSystemCallActive, reportSystemIncomingCall, subscribeSystemCallActions } from "@/lib/systemCalls";
 import { cancelIncomingCallNotification } from "@/lib/callNotifications";
 import { useColors } from "@/hooks/useColors";
 import { Avatar } from "@/components/Avatar";
+import { IncomingCallScreen } from "@/components/IncomingCallScreen";
 import { CallVideoView } from "@/components/CallVideoView";
 import {
   acceptTrackedCall,
@@ -262,6 +275,7 @@ interface CallContextValue {
   joinFromCard: (callId: string, peerName: string, media?: CallMedia) => Promise<boolean>;
   declineFromCard: (callId: string) => Promise<boolean>;
   supported: boolean;
+  busy: boolean;
 }
 
 const CallContext = createContext<CallContextValue | null>(null);
@@ -286,6 +300,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         joinFromCard: async () => false,
         declineFromCard: async () => false,
         supported: voiceCallSupported,
+        busy: false,
       }}
     >
       {isSignedIn ? <CallManager>{children}</CallManager> : children}
@@ -294,19 +309,31 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 }
 
 function CallManager({ children }: { children: React.ReactNode }) {
+  const {data:callOwner}=useGetMe();
+  const callOwnerId=callOwner?.id;
   const { equippedStar } = usePlayMode();
   const callIdentityLabel = equippedStar ? `통화 프로필 · STAR ${equippedStar.displayName}` : "통화 프로필 · FAN";
   const colors = useColors();
 
   const [mode, setMode] = useState<CallMode>("idle");
+  useCallScreenAwake(shouldKeepCallScreenAwake(mode));
+  const [minimized, setMinimized] = useState(false);
+  useEffect(() => { if (mode !== "active") setMinimized(false); }, [mode]);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const [incoming, setIncoming] = useState<CallWithCaller | null>(null);
+  const [systemRingFallbackId, setSystemRingFallbackId] = useState<string | null>(null);
+  const [systemRingingCallId, setSystemRingingCallId] = useState<string | null>(null);
   const [peerName, setPeerName] = useState("");
   const [muted, setMutedState] = useState(false);
   const [callMedia, setCallMedia] = useState<CallMedia>("audio");
+  const [cameraPreview,setCameraPreview]=useState<{intent:'accept'|'enable';callId:string}|null>(null);
+  const [controlsVisible,setControlsVisible]=useState(true);
+  const [callOutcome,setCallOutcome]=useState<CallOutcome|null>(null);
+  const endReasonRef=useRef('ended');
   const [liveRoom, setLiveRoom] = useState<Room | null>(null);
   const [cameraOn, setCameraOnState] = useState(true);
   const [cameraPreparing, setCameraPreparing] = useState(false);
+  const [microphonePreparing, setMicrophonePreparing] = useState(false);
   const [cameraIssue, setCameraIssue] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [audioPath, setAudioPath] = useState<AudioPathState>("waiting_for_participant");
@@ -350,7 +377,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (modeRef.current !== "idle") return;
+    if (modeRef.current !== "idle" || isGroupCallBusy()) return;
     const next = incomingList?.[0];
     if (next) {
       sessionGenerationRef.current += 1;
@@ -363,9 +390,32 @@ function CallManager({ children }: { children: React.ReactNode }) {
       setCallMedia(next.media ?? "audio");
       setCameraOnState((next.media ?? "audio") === "video");
       cameraWantedRef.current = (next.media ?? "audio") === "video";
+      setCallOutcome(null);
       setMode("incoming");
     }
   }, [incomingList]);
+
+  useEffect(() => {
+    if (!incoming || mode !== "incoming") return;
+    let disposed = false;
+    void reportSystemIncomingCall({
+      callId: incoming.id, callerName: incoming.caller.nickname,
+      chatRoomId: incoming.chatRoomId ?? null, media: incoming.media ?? "audio",
+      expiresAt: Date.parse(incoming.createdAt) + RING_TIMEOUT_MS,
+    }).then(reported => {
+      if (!disposed) {
+        if (reported) setSystemRingingCallId(incoming.id);
+        else setSystemRingFallbackId(incoming.id);
+      }
+    });
+    return () => { disposed = true; };
+  }, [incoming, mode]);
+
+  useEffect(() => {
+    if (mode === "active" && activeCall?.id) {
+      void markSystemCallActive(activeCall.id).catch(() => void endSystemCall(activeCall.id));
+    }
+  }, [mode, activeCall?.id]);
 
   useEffect(() => installCallReliabilityFlushTriggers(), []);
 
@@ -393,6 +443,9 @@ function CallManager({ children }: { children: React.ReactNode }) {
     disconnectHandlingRef.current = false;
   }, []);
 
+  const callClock=useCallElapsed(activeCall?.id,mode==='active'&&!!liveRoom&&liveRoom.remoteParticipants.size>0&&['ready','remote_muted','local_muted'].includes(audioPath));
+  const presentation=useRef({name:peerName,mode,media:callMedia,seconds:callClock.seconds});
+  presentation.current={name:peerName,mode,media:callMedia,seconds:callClock.seconds};
   const reset = useCallback(async (expectedGeneration?: number): Promise<boolean> => {
     if (
       expectedGeneration !== undefined &&
@@ -400,6 +453,11 @@ function CallManager({ children }: { children: React.ReactNode }) {
     ) {
       return false;
     }
+    const ended=activeCallRef.current??incomingRef.current;
+    if(ended&&presentation.current.mode!=='idle')setCallOutcome({name:presentation.current.name,peerId:callPeerId(ended,callOwnerId),roomId:ended.chatRoomId??undefined,media:presentation.current.media,reason:endReasonRef.current,seconds:presentation.current.seconds});
+    endReasonRef.current='ended';setCameraPreview(null);setControlsVisible(true);
+    const endingSystemCallId = activeCallRef.current?.id ?? mediaJoinCallIdRef.current ?? incomingRef.current?.id;
+    if (endingSystemCallId) void endSystemCall(endingSystemCallId);
     const resetGeneration = ++sessionGenerationRef.current;
     clearDisconnectHandling();
     expectedDisconnectRef.current = true;
@@ -416,6 +474,8 @@ function CallManager({ children }: { children: React.ReactNode }) {
     finalRejoinAttemptsRef.current = 0;
     attemptIdRef.current = undefined;
     diagnosticAttemptIdRef.current = createCallAttemptId();
+    setSystemRingingCallId(null);
+    setSystemRingFallbackId(null);
     setActiveCall(null);
     setIncoming(null);
     setPeerName("");
@@ -423,6 +483,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
     setLiveRoom(null);
     setCameraOnState(true);
     setCameraPreparing(false);
+    setMicrophonePreparing(false);
     setCameraIssue(null);
     cameraWantedRef.current = true;
     mutedRef.current = false;
@@ -441,7 +502,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
       expectedDisconnectTimerRef.current = null;
     }, 1000);
     return true;
-  }, [clearDisconnectHandling]);
+  }, [clearDisconnectHandling,callOwnerId]);
 
   // A signed-out/unmounted call manager must not leave the Android foreground
   // service running after its React owner disappears.
@@ -472,19 +533,24 @@ function CallManager({ children }: { children: React.ReactNode }) {
           details,
         });
         if (generation !== sessionGenerationRef.current) return;
-        if (phase === "web_camera_capture_start") setCameraIssue(null);
-        if (phase === "web_camera_capture_failed") {
+        if (phase === "web_microphone_capture_start") setMicrophonePreparing(true);
+        if (phase === "web_microphone_capture_ready" || phase === "web_microphone_publish_failed") setMicrophonePreparing(false);
+        // Native and browser camera preparation have the same asynchronous UI
+        // lifecycle; neither may keep a connected microphone behind joining UI.
+        const cameraPhase = phase.replace(/^native_camera_/, "web_camera_");
+        if (cameraPhase === "web_camera_capture_start") setCameraIssue(null);
+        if (cameraPhase === "web_camera_capture_failed") {
           setCameraIssue(details?.errorName === "NotAllowedError"
             ? "카메라 권한을 허용한 뒤 카메라 버튼을 눌러주세요."
             : "카메라를 켜지 못했어요. 권한과 다른 앱의 카메라 사용을 확인한 뒤 다시 눌러주세요.");
         }
-        if (phase === "web_camera_capture_still_pending") {
+        if (cameraPhase === "web_camera_capture_still_pending") {
           setCameraIssue("카메라 권한 창을 확인해 주세요. 계속 대기하면 통화를 마친 뒤 앱을 다시 열어주세요.");
         }
-        if (phase === "web_camera_publish_still_pending") {
+        if (cameraPhase === "web_camera_publish_still_pending") {
           setCameraIssue("카메라 영상 전송 준비가 지연되고 있어요. 잠시 후 카메라 버튼을 다시 눌러주세요.");
         }
-        if (phase === "web_camera_publish_result") {
+        if (cameraPhase === "web_camera_publish_result") {
           cameraOutcomeRef.current = { generation, published: details?.cameraPublished === true };
           setCameraPreparing(false);
           if (details?.cameraPublished === true) setCameraIssue(null);
@@ -553,6 +619,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
   const failCallLocally = useCallback(
     async (callId: string | null, role: string, err: unknown, generation?: number) => {
       if (generation !== undefined && generation !== sessionGenerationRef.current) return;
+      endReasonRef.current='failed';
       if (callId) {
         const message = err instanceof Error ? err.message : String(err);
         reportCallDiagnostic(callId, {
@@ -566,7 +633,10 @@ function CallManager({ children }: { children: React.ReactNode }) {
       }
       const didReset = await reset(generation);
       if (!didReset) return;
-      crossAlert("통화 연결 실패", "통화 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      const name = err instanceof Error ? err.name : "";
+      crossAlert("통화 연결 실패", name === "MicrophoneCaptureTimeout" || name === "NotAllowedError"
+        ? "마이크 사용 권한이 필요해요. 브라우저의 사이트 권한에서 마이크를 허용한 뒤 다시 전화해 주세요."
+        : "통화 연결에 실패했습니다. 잠시 후 다시 시도해주세요.");
     },
     [reset],
   );
@@ -574,11 +644,12 @@ function CallManager({ children }: { children: React.ReactNode }) {
   // Ring the incoming ringtone (벨소리) while the incoming modal is up, and stop
   // it the moment we leave the incoming state (accept/decline/timeout/cancel).
   useEffect(() => {
-    if (mode === "incoming") {
+    if (mode === "incoming" && systemRingingCallId !== incoming?.id &&
+        (Platform.OS !== "ios" || systemRingFallbackId === incoming?.id)) {
       startRingtone();
       return () => stopRingtone();
     }
-  }, [mode]);
+  }, [mode, systemRingingCallId, systemRingFallbackId, incoming?.id]);
 
   // Local safety net for missed realtime/poll updates. The server remains
   // authoritative, but the phone should never keep ringing past its ring window.
@@ -590,6 +661,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
     const timer = setTimeout(() => {
       if (modeRef.current !== "incoming") return;
       stopRingtone();
+      void endSystemCall(incoming.id);
       void cancelIncomingCallNotification();
       setIncoming(null);
       setMode("idle");
@@ -664,6 +736,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
       // dismiss the modal and any full-screen notification on this device.
       if (ended || watched.status !== "ringing") {
         stopRingtone();
+        void endSystemCall(watched.id);
         void cancelIncomingCallNotification();
         setIncoming(null);
         setMode("idle");
@@ -679,6 +752,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
     }
 
     if (ended) {
+      endReasonRef.current=watched.status;
       void reset(generation);
     }
   }, [watchId, watched, joinAcceptedOutgoing, reset]);
@@ -1067,7 +1141,8 @@ function CallManager({ children }: { children: React.ReactNode }) {
       if (!voiceCallSupported) {
         return;
       }
-      if (modeRef.current !== "idle") return;
+      if (modeRef.current !== "idle" || isGroupCallBusy()) return;
+      setCallOutcome(null);endReasonRef.current='ended';
       const generation = ++sessionGenerationRef.current;
       const attemptId = createCallAttemptId();
       attemptIdRef.current = attemptId;
@@ -1135,7 +1210,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
   // card; the callee joining a ringing call also accepts it (server-side).
   const joinFromCard = useCallback(
     async (callId: string, peer: string, media: CallMedia = "audio") => {
-      if (!voiceCallSupported) return false;
+      if (!voiceCallSupported || isGroupCallBusy()) return false;
       if (!canApplyCallCardAction(modeRef.current, incomingRef.current?.id, callId)) return false;
       // Already in a call (outgoing/joining/active) → ignore. If a matching incoming
       // modal is up, clear it so we don't show both the modal and the overlay.
@@ -1239,8 +1314,8 @@ function CallManager({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const handleAccept = useCallback(async () => {
-    if (!incoming) return;
+  const handleAccept = useCallback(async (withCamera=false) => {
+    if (!incoming||mediaJoinCallIdRef.current===incoming.id||modeRef.current!=='incoming') return;
     const currentIncoming = incoming;
     const generation = sessionGenerationRef.current;
     const attemptId = attemptIdRef.current;
@@ -1250,12 +1325,12 @@ function CallManager({ children }: { children: React.ReactNode }) {
     const initialMedia = currentIncoming.media ?? "audio";
     const onDiagnostic = diagnosticFor(currentIncoming.id, "callee", generation);
     onDiagnostic("accept_gesture", { media: initialMedia });
-    if (initialMedia === "video") void prepareVideoCall(onDiagnostic).catch(() => {});
+    if (cameraAllowed(initialMedia,withCamera)) void prepareVideoCall(onDiagnostic).catch(() => {});
     setIncoming(null);
     setActiveCall(currentIncoming);
     setCallMedia(initialMedia);
-    setCameraOnState(initialMedia === "video");
-    cameraWantedRef.current = initialMedia === "video";
+    setCameraOnState(cameraAllowed(initialMedia,withCamera));
+    cameraWantedRef.current = cameraAllowed(initialMedia,withCamera);
     stopRingtone();
     void cancelIncomingCallNotification();
     mediaJoinCallIdRef.current = currentIncoming.id;
@@ -1272,21 +1347,22 @@ function CallManager({ children }: { children: React.ReactNode }) {
       shouldMarkFailed = true;
       if (!isCurrentJoin()) return;
       const media = session.call.media ?? currentIncoming.media ?? "audio";
-      if (media === "video" && initialMedia !== "video") void prepareVideoCall(onDiagnostic).catch(() => {});
+      if (cameraAllowed(media,withCamera) && initialMedia !== "video") void prepareVideoCall(onDiagnostic).catch(() => {});
       if (!isCurrentJoin()) return;
       setActiveCall(session.call);
       setCallMedia(media);
-      setCameraOnState(media === "video");
-      cameraWantedRef.current = media === "video";
+      setCameraOnState(cameraAllowed(media,withCamera));
+      cameraWantedRef.current = cameraAllowed(media,withCamera);
       const joined = await joinCall(session.url, session.token, {
         media,
+        cameraEnabled:cameraAllowed(media,withCamera),
         onDiagnostic,
       });
       if (!isCurrentJoin()) {
         await leaveCall(joined.room);
         return;
       }
-      validateJoinResult(joined, currentIncoming.id, "callee");
+      validateJoinResult(joined, currentIncoming.id, "callee",cameraAllowed(media,withCamera));
       liveRoomRef.current = joined.room;
       setLiveRoom(joined.room);
       applyJoinedCameraState(joined);
@@ -1308,6 +1384,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
     const attemptId = attemptIdRef.current;
     setIncoming(null);
     setMode("idle");
+    if (id) void endSystemCall(id);
     void cancelIncomingCallNotification();
     if (id) {
       try {
@@ -1318,6 +1395,7 @@ function CallManager({ children }: { children: React.ReactNode }) {
 
   const handleEnd = useCallback(async () => {
     if (expectedDisconnectRef.current) return;
+    endReasonRef.current=modeRef.current==='outgoing'?'cancelled':'ended';
     expectedDisconnectRef.current = true;
     const generation = sessionGenerationRef.current;
     // join-from-card knows the call id before its accept/join response returns.
@@ -1342,6 +1420,19 @@ function CallManager({ children }: { children: React.ReactNode }) {
       await reset(generation);
     }
   }, [activeCall?.id, incoming?.id, reset]);
+
+  useEffect(() => subscribeSystemCallActions((event) => {
+    const currentId = activeCall?.id ?? mediaJoinCallIdRef.current ?? incoming?.id;
+    if (event.intent.callId !== currentId) return;
+    if (event.action === "end") void handleEnd();
+    if (event.action === "audioActivated") void resumeCallAudio();
+    if (event.action === "mute" && typeof event.muted === "boolean") {
+      const next = event.muted;
+      mutedRef.current = next;
+      setMutedState(next);
+      void setMuted(next).catch(() => { mutedRef.current = !next; setMutedState(!next); });
+    }
+  }), [activeCall?.id, incoming?.id, handleEnd]);
 
   const toggleMute = useCallback(async () => {
     const next = !muted;
@@ -1442,58 +1533,47 @@ function CallManager({ children }: { children: React.ReactNode }) {
     return isVideoCall ? "영상통화 중" : "통화 중";
   })();
 
+  const cameraPreviewSurface=<CallCameraPreview embedded visible={!!cameraPreview&&((cameraPreview.intent==='accept'&&mode==='incoming'&&incoming?.id===cameraPreview.callId)||(cameraPreview.intent==='enable'&&mode==='active'&&activeCall?.id===cameraPreview.callId))} confirmLabel={cameraPreview?.intent==='accept'?'카메라 켜고 받기':'카메라 켜기'} onCancel={()=>setCameraPreview(null)} onAudioOnly={cameraPreview?.intent==='accept'?()=>{setCameraPreview(null);void handleAccept(false);}:undefined} onConfirm={()=>{const intent=cameraPreview?.intent;setCameraPreview(null);if(intent==='accept')void handleAccept(true);else if(modeRef.current==='active')void toggleCamera();}}/>;
+  const primaryStatus=callPrimaryStatus(mode,recoveryStage,callClock.connected,callClock.label);
   return (
     <CallContext.Provider
-      value={{ startCall, joinFromCard, declineFromCard, supported: voiceCallSupported }}
+      value={{ startCall, joinFromCard, declineFromCard, supported: voiceCallSupported, busy: mode !== "idle" }}
     >
-      {children}
+      <CallContentFrame banner={minimized&&mode==='active'&&!isVideoCall&&<FloatingCall name={peerName} video={false} status={primaryStatus} onRestore={()=>setMinimized(false)} onEnd={()=>{void handleEnd();}}/>}>{children}</CallContentFrame>
+      {minimized && mode === "active" && isVideoCall && <FloatingCall name={peerName} video={isVideoCall} status={primaryStatus} onRestore={() => setMinimized(false)} onEnd={handleEnd}><CallVideoView room={liveRoom} cameraOn={false} /></FloatingCall>}
 
-      {/* Incoming call modal */}
-      <Modal visible={mode === "incoming"} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={[styles.card, { backgroundColor: colors.card }]}>
-            <Avatar
-              name={incoming?.caller.nickname ?? ""}
-              uri={incoming?.caller.profileImageUrl ?? undefined}
-              size={88}
-              crop="face"
-              characterType={incoming?.caller.profile?.type}
-            />
-            <Text style={[styles.name, { color: colors.foreground }]}>{peerName}</Text>
-            <Text style={[styles.sub, { color: colors.mutedForeground }]}>
-              {isVideoCall ? "영상통화 수신..." : "수신 전화..."}
-            </Text>
-            <View style={styles.actionRow}>
-              <CallButton color="#E5484D" icon="phone-off" label="거절" onPress={handleDecline} />
-              <CallButton
-                color="#30A46C"
-                icon={isVideoCall ? "video" : "phone"}
-                label="수락"
-                onPress={handleAccept}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <IncomingCallScreen
+        visible={mode === "incoming"}
+        overlay={cameraPreview?.intent==='accept'?cameraPreviewSurface:undefined}
+        onCloseOverlay={()=>setCameraPreview(null)}
+        name={peerName}
+        imageUri={incoming?.caller.profileImageUrl ?? undefined}
+        characterType={incoming?.caller.profile?.type}
+        video={isVideoCall}
+        onAccept={()=>{if(isVideoCall&&incoming)setCameraPreview({intent:'accept',callId:incoming.id});else void handleAccept(false);}}
+        onAcceptAudio={()=>{setCameraPreview(null);void handleAccept(false);}}
+        onDecline={handleDecline}
+      />
 
       {/* Outgoing / active call overlay */}
-      <Modal visible={mode === "outgoing" || mode === "joining" || mode === "active"} transparent animationType="fade">
-        <View style={[styles.overlay, { backgroundColor: "rgba(0,0,0,0.82)" }]}>
+      <Modal visible={!minimized && (mode === "outgoing" || mode === "joining" || mode === "active")} transparent animationType="fade" onRequestClose={() => { if(cameraPreview){setCameraPreview(null);return;}if (mode === "active") setMinimized(true); }}>
+        <View style={[styles.overlay, { backgroundColor: isVideoCall ? colors.mediaCanvas : colors.background }]}>
           {isVideoCall ? (
             <View style={styles.videoCallBody}>
-              <CallVideoView room={liveRoom} cameraOn={cameraOn} />
+              <CallVideoView room={liveRoom} cameraOn={cameraOn} onToggleControls={()=>setControlsVisible(v=>!v)} />
               <View style={styles.videoHeaderText}>
                 <Text style={[styles.name, styles.nameLight]}>{peerName}</Text>
                 <Text style={styles.statusLight}>
-                  {mode === "outgoing"
+                  {microphonePreparing ? "마이크 사용 권한을 허용해 주세요."
+                    : mode === "outgoing"
                     ? connecting
                       ? "통화 생성 중..."
                       : "영상통화 연결 중..."
                     : mode === "joining"
                       ? "영상통화 연결 중..."
-                      : activeStatus}
+                      : primaryStatus}
                 </Text>
-                <Text style={styles.identityLight}>{callIdentityLabel}</Text>
+                <Text style={styles.identityLight}>{activeStatus}</Text><Text style={styles.identityLight}>{callIdentityLabel}</Text>
                 {cameraPreparing && <Text style={styles.webCallHint}>카메라를 준비하고 있어요. 음성 통화는 계속할 수 있어요.</Text>}
                 {cameraIssue && <Text style={styles.webCallHint}>{cameraIssue}</Text>}
                 {showWebCallHint && (
@@ -1505,70 +1585,79 @@ function CallManager({ children }: { children: React.ReactNode }) {
           ) : (
             <View style={styles.callBody}>
               <Avatar name={peerName} size={104} crop="face" characterType="fan" />
-              <Text style={[styles.name, styles.nameLight]}>{peerName}</Text>
-              <Text style={styles.statusLight}>
-                {mode === "outgoing"
+              <Text style={[styles.name, { color: colors.foreground }]}>{peerName}</Text>
+              <Text style={[styles.statusLight, { color: colors.mutedForeground }]}>
+                {microphonePreparing ? "마이크 사용 권한을 허용해 주세요."
+                  : mode === "outgoing"
                   ? connecting
                     ? "통화 생성 중..."
                     : "통화 연결 중..."
                   : mode === "joining"
                     ? "통화 연결 중..."
-                    : activeStatus}
+                    : primaryStatus}
               </Text>
-              <Text style={styles.identityLight}>{callIdentityLabel}</Text>
+              <Text style={[styles.identityLight,{color:colors.mutedForeground}]}>{activeStatus}</Text><Text style={[styles.identityLight, { color: colors.mutedForeground }]}>{callIdentityLabel}</Text>
               {showWebCallHint && (
-                <Text style={styles.webCallHint}>웹/PWA는 화면을 내리면 마이크가 멈출 수 있어요.</Text>
+                <Text style={[styles.webCallHint, { color: colors.mutedForeground }]}>웹/PWA는 화면을 내리면 마이크가 멈출 수 있어요.</Text>
               )}
-              {connecting && <ActivityIndicator color="#fff" style={{ marginTop: 12 }} />}
+              {connecting && <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />}
             </View>
           )}
+          {mode==='active'&&controlsVisible&&<CallAudioOutput callId={activeCall?.id}/>}
           <View style={styles.bottomControls}>
+            {isVideoCall&&<CallButton labelColor={colors.mediaForeground} color={colors.primary} icon="sliders" label={controlsVisible?"숨기기":"조작"} onPress={()=>setControlsVisible(v=>!v)}/>}
+            {mode === "active" && <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground} color={colors.primary} icon="minimize-2" label="채팅 보기" onPress={() => setMinimized(true)} />}
             {needsAudioGesture && (
-              <CallButton
-                color="#6D35D5"
+              <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground}
+                color={colors.primary}
                 icon="volume-2"
                 label="소리 재생"
                 onPress={handleResumeAudio}
               />
             )}
-            {isVideoCall && (
+            {isVideoCall && controlsVisible && (
               <>
-                <CallButton
-                  color={cameraOn ? "#3A3A3A" : "#7A7A7A"}
+                <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground}
+                  color={cameraOn ? colors.primary : colors.mutedForeground}
                   icon={cameraOn ? "video" : "video-off"}
                   label={cameraOn ? "카메라" : "꺼짐"}
-                  onPress={toggleCamera}
+                  onPress={()=>{if(mode!=='active'||cameraPreparing)return;if(cameraOn)void toggleCamera();else if(activeCall)setCameraPreview({intent:'enable',callId:activeCall.id});}}
                 />
-                <CallButton
-                  color="#3A3A3A"
+                <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground}
+                  color={colors.primary}
                   icon="rotate-cw"
                   label="전환"
                   onPress={handleSwitchCamera}
                 />
               </>
             )}
-            {mode === "active" && (
-              <CallButton
-                color={muted ? "#7A7A7A" : "#3A3A3A"}
+            {mode === "active" && (!isVideoCall||controlsVisible) && (
+              <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground}
+                color={muted ? colors.mutedForeground : colors.primary}
                 icon={muted ? "mic-off" : "mic"}
                 label={muted ? "음소거됨" : "마이크"}
                 onPress={toggleMute}
               />
             )}
-            <CallButton color="#E5484D" icon="phone-off" label="종료" onPress={handleEnd} />
+            <CallButton labelColor={isVideoCall ? colors.mediaForeground : colors.foreground} color={colors.destructive} icon="phone-off" label="종료" onPress={handleEnd} />
           </View>
+          {cameraPreview?.intent==='enable'&&cameraPreviewSurface}
         </View>
       </Modal>
+
+      <CallEndSheet outcome={mode==='idle'?callOutcome:null} onClose={()=>setCallOutcome(null)} onRetry={()=>{const item=callOutcome;if(!item)return;setCallOutcome(null);const generation=sessionGenerationRef.current;const until=Date.now()+1500;setTimeout(()=>{if(generation===sessionGenerationRef.current&&modeRef.current==='idle'&&AppState.currentState==='active'&&Date.now()<until)void startCall(item.peerId,item.name,item.roomId,item.media);},250);}}/>
     </CallContext.Provider>
   );
 }
 
 function CallButton({
+  labelColor,
   color,
   icon,
   label,
   onPress,
 }: {
+  labelColor: string;
   color: string;
   icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
@@ -1581,7 +1670,7 @@ function CallButton({
           <View style={[styles.btn, { backgroundColor: color, opacity: pressed ? 0.8 : 1 }]}>
             <Feather name={icon} size={26} color="#fff" />
           </View>
-          <Text style={styles.btnLabel}>{label}</Text>
+          <Text style={[styles.btnLabel, { color: labelColor }]}>{label}</Text>
         </>
       )}
     </Pressable>

@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -40,6 +43,9 @@ function ProfileRow({
   onCustomize: () => void;
   onArchive: () => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const characterImageUrl = profile.profileImageUrl !== accountProfileImageUrl ? profile.profileImageUrl : null;
   const status =
     profile.status === "torimia"
@@ -87,13 +93,13 @@ function ProfileRow({
           <Text style={styles.primaryActionText}>{profile.isActive ? "사용 중" : "이 프로필 사용"}</Text>
         </Pressable>
         {profile.type === "fan" || profile.profileImageUrl?.startsWith("anotherme-avatar:") ? <Pressable disabled={busy} onPress={onCustomize} style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}>
-          <Feather name="sliders" size={17} color="#C8B7E5" />
+          <Feather name="sliders" size={17} color={styleColors.mutedForeground} />
         </Pressable> : null}
         <Pressable disabled={busy} onPress={onEdit} style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}>
-          <Feather name="edit-2" size={17} color="#C8B7E5" />
+          <Feather name="edit-2" size={17} color={styleColors.mutedForeground} />
         </Pressable>
         <Pressable disabled={busy} onPress={onArchive} style={({ pressed }) => [styles.iconAction, pressed && styles.pressed]}>
-          <Feather name="archive" size={17} color="#B4AABD" />
+          <Feather name="archive" size={17} color={styleColors.mutedForeground} />
         </Pressable>
       </View>
     </View>
@@ -101,6 +107,9 @@ function ProfileRow({
 }
 
 export default function ProfilesScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: me } = useGetMe();
@@ -181,20 +190,20 @@ export default function ProfilesScreen() {
           hitSlop={12}
           onPress={goBack}
         >
-          <Feather name="arrow-left" size={29} color="#FFFFFF" />
+          <Feather name="arrow-left" size={29} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.title}>프로필 관리</Text>
         <View style={{ width: 29 }} />
       </View>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#9B57FF" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={styleColors.primary} />}
       >
         <Text style={styles.lead}>활동할 모드를 선택한 뒤, 그 모드 안에서 캐릭터 프로필을 전환하세요.</Text>
         <View style={styles.tabs}>
           {(["fan", "star"] as const).map((item) => (
             <Pressable key={item} onPress={() => setMode(item)} style={[styles.tab, mode === item && styles.tabActive]}>
-              <Feather name={item === "fan" ? "heart" : "star"} size={17} color={mode === item ? "#FFFFFF" : "#837A90"} />
+              <Feather name={item === "fan" ? "heart" : "star"} size={17} color={mode === item ? styleColors.primaryForeground : styleColors.mutedForeground} />
               <Text style={[styles.tabText, mode === item && styles.tabTextActive]}>{item.toUpperCase()}</Text>
             </Pressable>
           ))}
@@ -217,7 +226,7 @@ export default function ProfilesScreen() {
             <Feather
               name={mode === "fan" && !canAddFan ? "lock" : "plus"}
               size={16}
-              color="#FFFFFF"
+              color={styleColors.foreground}
             />
             <Text style={styles.addButtonText}>
               {mode === "fan"
@@ -229,7 +238,7 @@ export default function ProfilesScreen() {
           </Pressable>
         </View>
         {isLoading ? (
-          <View style={styles.center}><ActivityIndicator color="#9B57FF" /></View>
+          <View style={styles.center}><ActivityIndicator color={styleColors.primary} /></View>
         ) : visibleProfiles.length ? (
           <View style={styles.list}>
             {visibleProfiles.map((profile) => (
@@ -247,7 +256,7 @@ export default function ProfilesScreen() {
           </View>
         ) : (
           <View style={styles.empty}>
-            <Feather name={mode === "fan" ? "heart" : "star"} size={29} color="#8D43FF" />
+            <Feather name={mode === "fan" ? "heart" : "star"} size={29} color={styleColors.primary} />
             <Text style={styles.emptyTitle}>{mode.toUpperCase()} 프로필이 없어요</Text>
             <Text style={styles.emptyBody}>
               {mode === "fan"
@@ -261,30 +270,30 @@ export default function ProfilesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#030309" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: styleColors.background },
   header: { minHeight: 62, paddingHorizontal: 18, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { color: "#FFFFFF", fontSize: 21, fontFamily: "Inter_700Bold" },
+  title: { color: styleColors.foreground, fontSize: fontSizes.titleLarge, fontFamily: fonts.bold },
   content: { paddingHorizontal: 18, gap: 18 },
-  lead: { color: "#A8A0B4", fontSize: 13, lineHeight: 20 },
-  tabs: { padding: 4, borderRadius: 16, borderWidth: 1, borderColor: "#34234D", backgroundColor: "#090812", flexDirection: "row" },
+  lead: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, lineHeight: 20 },
+  tabs: { padding: 4, borderRadius: 16, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, flexDirection: "row" },
   tab: { flex: 1, minHeight: 46, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
-  tabActive: { backgroundColor: "#6F31EE" },
-  tabText: { color: "#837A90", fontFamily: "Inter_700Bold", fontSize: 14 },
-  tabTextActive: { color: "#FFFFFF" },
+  tabActive: { backgroundColor: styleColors.primary },
+  tabText: { color: styleColors.mutedForeground, fontFamily: fonts.bold, fontSize: fontSizes.label },
+  tabTextActive: { color: styleColors.primaryForeground },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   sectionCopy: { flex: 1 },
-  sectionTitle: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 18 },
-  sectionSub: { color: "#8E879A", fontSize: 11, marginTop: 4 },
-  addButton: { minHeight: 40, paddingHorizontal: 13, borderRadius: 12, backgroundColor: "#7838F4", flexDirection: "row", alignItems: "center", gap: 5 },
-  addButtonLocked: { backgroundColor: "#3B3150" },
-  addButtonText: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 12 },
+  sectionTitle: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.heading },
+  sectionSub: { color: styleColors.mutedForeground, fontSize: fontSizes.small, marginTop: 4 },
+  addButton: { minHeight: 40, paddingHorizontal: 13, borderRadius: radii.control, backgroundColor: styleColors.primary, flexDirection: "row", alignItems: "center", gap: 5 },
+  addButtonLocked: { backgroundColor: styleColors.secondary },
+  addButtonText: { color: styleColors.primaryForeground, fontFamily: fonts.bold, fontSize: fontSizes.caption },
   list: { gap: 12 },
-  profileCard: { padding: 14, borderRadius: 18, borderWidth: 1, borderColor: "#272032", backgroundColor: "#0B0A13", gap: 13 },
-  profileCardActive: { borderColor: "#7E3CEB", backgroundColor: "#100B1D" },
+  profileCard: { padding: 14, borderRadius: 18, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, gap: 13 },
+  profileCardActive: { borderColor: styleColors.primary, backgroundColor: styleColors.secondary },
   profileMain: { flexDirection: "row", alignItems: "center", gap: 13 },
-  avatarRing: { width: 66, height: 66, borderRadius: 33, overflow: "hidden", borderWidth: 1, borderColor: "#493267", backgroundColor: "#05050A" },
-  avatarRingActive: { borderColor: "#BB54FF", borderWidth: 2 },
+  avatarRing: { width: 66, height: 66, borderRadius: 33, overflow: "hidden", borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.secondary },
+  avatarRingActive: { borderColor: styleColors.primary, borderWidth: 2 },
   avatar: { width: "100%", height: "100%" },
   fanAvatarFaceCrop: {
     position: "absolute",
@@ -295,19 +304,19 @@ const styles = StyleSheet.create({
   },
   identity: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  profileName: { flexShrink: 1, color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 17 },
-  typeBadge: { borderRadius: 7, backgroundColor: "#4C218C", paddingHorizontal: 7, paddingVertical: 3 },
-  typeBadgeText: { color: "#E8D7FF", fontFamily: "Inter_700Bold", fontSize: 10 },
-  handle: { color: "#B3A9C2", fontSize: 12, marginTop: 4 },
-  meta: { color: "#8E839D", fontSize: 11, marginTop: 4 },
+  profileName: { flexShrink: 1, color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.headingSmall },
+  typeBadge: { borderRadius: 7, backgroundColor: styleColors.primary, paddingHorizontal: 7, paddingVertical: 3 },
+  typeBadgeText: { color: styleColors.primaryForeground, fontFamily: fonts.bold, fontSize: fontSizes.tiny },
+  handle: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, marginTop: 4 },
+  meta: { color: styleColors.mutedForeground, fontSize: fontSizes.small, marginTop: 4 },
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  primaryAction: { flex: 1, minHeight: 40, borderRadius: 11, backgroundColor: "#6F31EE", alignItems: "center", justifyContent: "center" },
-  primaryActionText: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 12 },
-  iconAction: { width: 40, height: 40, borderRadius: 11, borderWidth: 1, borderColor: "#342A43", alignItems: "center", justifyContent: "center" },
+  primaryAction: { flex: 1, minHeight: 40, borderRadius: 11, backgroundColor: styleColors.primary, alignItems: "center", justifyContent: "center" },
+  primaryActionText: { color: styleColors.primaryForeground, fontFamily: fonts.bold, fontSize: fontSizes.caption },
+  iconAction: { width: 40, height: 40, borderRadius: 11, borderWidth: 1, borderColor: styleColors.border, alignItems: "center", justifyContent: "center" },
   center: { minHeight: 180, alignItems: "center", justifyContent: "center" },
-  empty: { minHeight: 210, padding: 28, borderRadius: 20, borderWidth: 1, borderColor: "#2D2440", backgroundColor: "#0A0912", alignItems: "center", justifyContent: "center", gap: 9 },
-  emptyTitle: { color: "#FFFFFF", fontFamily: "Inter_700Bold", fontSize: 16 },
-  emptyBody: { color: "#968EA0", fontSize: 12, lineHeight: 18, textAlign: "center" },
+  empty: { minHeight: 210, padding: 28, borderRadius: radii.card, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, alignItems: "center", justifyContent: "center", gap: 9 },
+  emptyTitle: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.input },
+  emptyBody: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, lineHeight: 18, textAlign: "center" },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.72 },
 });

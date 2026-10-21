@@ -1,3 +1,5 @@
+import { endSystemCall } from "./systemCalls";
+import { incomingCallDeadline } from "./incomingCallDeadline";
 // FCM background/quit-state handler. Imported by the app entry (index.js) BEFORE
 // React renders, so it is registered in the headless JS context Android spins up
 // for a killed/backgrounded app. A high-priority DATA-ONLY FCM message (sent by
@@ -24,6 +26,7 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
   // lifecycle payload reaches a device later, clear only that call's notification.
   const terminalCallId = terminalCallIdFromData(data);
   if (terminalCallId) {
+    await endSystemCall(terminalCallId);
     await cancelIncomingCallNotification(terminalCallId);
     await clearPendingCallIntent(terminalCallId);
     return;
@@ -33,9 +36,13 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
   if (!callId) return;
   await displayIncomingCallNotification({
     callId,
-    callerName: typeof data.callerName === "string" ? data.callerName : "수신 전화",
+    callerName:
+      typeof data.callerName === "string" ? data.callerName : "수신 전화",
     chatRoomId:
-      typeof data.chatRoomId === "string" && data.chatRoomId ? data.chatRoomId : null,
+      typeof data.chatRoomId === "string" && data.chatRoomId
+        ? data.chatRoomId
+        : null,
     media: data.media === "video" ? "video" : "audio",
+    expiresAt: incomingCallDeadline(data.expiresAt),
   });
 });

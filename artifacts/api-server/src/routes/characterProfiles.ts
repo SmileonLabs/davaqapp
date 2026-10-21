@@ -23,6 +23,10 @@ import { listPublicStarFeedPostsByAuthor } from "../lib/starFeed";
 import { equipAvatarItem, listAvatarCatalog, purchaseAvatarItem } from "../lib/avatarCatalog";
 
 const router: IRouter = Router();
+router.use((req, res, next) => {
+  if (process.env.DAVAQ_LEGACY_PERSONA_ENABLED !== "true" && (/\/(avatar|inventory)(\/|$)/.test(req.path) || (req.method === "POST" && req.path === "/users/me/profiles"))) { res.status(404).json({ error: "DAVAQ_FEATURE_NOT_AVAILABLE" }); return; }
+  next();
+});
 const activateSchema = z.object({ profileId: z.uuid() });
 const publicProfileQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(60).optional().default(30),
@@ -121,6 +125,7 @@ router.patch("/users/me/profiles/:profileId", requireAuth, async (req, res): Pro
   try {
     res.json(await updateCharacterProfile(req.dbUser!.id, parsedId.data, parsedBody.data));
   } catch (error) {
+    if ((error as Error & { code?: string }).code === "INVALID_DAVAQ_AVATAR") { res.status(400).json({ error: "INVALID_DAVAQ_AVATAR" }); return; }
     if ((error as Error & { code?: string }).code === "PROFILE_NOT_FOUND") {
       res.status(404).json({ error: "PROFILE_NOT_FOUND" });
       return;

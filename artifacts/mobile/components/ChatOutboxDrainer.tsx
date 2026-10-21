@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import { useAuth } from "@clerk/expo";
+import { clearChatHistoryForOwner, sweepExpiredChatHistory } from "@/lib/chatHistoryStore";
+import NetInfo from "@react-native-community/netinfo";
+import { useAuth } from "@/lib/davaqAuth";
 import { AppState, Platform } from "react-native";
 import {
   useGetMe,
@@ -15,6 +17,7 @@ import {
   type ChatOutboxDrainToken,
 } from "@/lib/chatOutboxPolicy";
 import {
+  subscribeChatOutboxChanges,
   clearChatOutboxForOwner,
   loadChatOutbox,
   removeChatOutboxEntry,
@@ -89,6 +92,7 @@ export function ChatOutboxDrainer() {
               type: entry.type,
               replyToMessageId: entry.replyToMessageId,
               clientMessageId: entry.clientMessageId,
+              metadata: entry.metadata,
             },
             {
               signal: controller.signal,
@@ -144,6 +148,7 @@ export function ChatOutboxDrainer() {
       lastAuthenticatedClerkUserId = null;
       if (previousOwnerId) {
         void clearChatOutboxForOwner(previousOwnerId).catch(() => undefined);
+        void clearChatHistoryForOwner(previousOwnerId).catch(() => undefined);
       }
       return;
     }
@@ -159,6 +164,7 @@ export function ChatOutboxDrainer() {
         lastAuthenticatedOutboxOwnerId = null;
         if (previousOwnerId) {
           void clearChatOutboxForOwner(previousOwnerId).catch(() => undefined);
+        void clearChatHistoryForOwner(previousOwnerId).catch(() => undefined);
         }
       }
       lastAuthenticatedClerkUserId = clerkUserId;
@@ -168,6 +174,7 @@ export function ChatOutboxDrainer() {
     lastAuthenticatedOutboxOwnerId = me.id;
     if (previousOwnerId && previousOwnerId !== me.id) {
       void clearChatOutboxForOwner(previousOwnerId).catch(() => undefined);
+        void clearChatHistoryForOwner(previousOwnerId).catch(() => undefined);
     }
   }, [clerkUserId, isLoaded, isSignedIn, me?.id]);
 
@@ -215,7 +222,8 @@ export function ChatOutboxDrainer() {
   useEffect(() => {
     // Sweep every stored account namespace on cold startup and auth changes;
     // pruning only the current user's key would leave signed-out users' message
-    // bodies on a shared device beyond the documented 24-hour retention.
+    // bodies on a shared device beyond the documented 30-day retention.
+    void sweepExpiredChatHistory().catch(() => undefined);
     void sweepExpiredChatOutboxes().catch(() => {
       // Storage may be unavailable in private browsing. Retry on the next
       // startup/session transition without preventing the active owner drain.
@@ -232,6 +240,13 @@ export function ChatOutboxDrainer() {
     noteChatResource("timers", 1);
 
     const resume = () => void flush();
+    const unsubscribeOutbox = subscribeChatOutboxChanges(ownerId => {
+      if (ownerId !== me.id) return;
+      hasPendingRef.current = true;
+      // Storage mutation may have occurred during a flush; the owner fence
+      // schedules a subsequent pass rather than dropping this wake-up.
+      queueMicrotask(() => void flush());
+    });
     let removeLifecycleListeners: () => void;
     if (Platform.OS === "web" && typeof window !== "undefined") {
       window.addEventListener("online", resume);
@@ -249,7 +264,11 @@ export function ChatOutboxDrainer() {
         if (state === "active") resume();
       });
       noteChatResource("listeners", 1);
+      const unsubscribeNetwork = NetInfo.addEventListener(state => {
+        if (state.isConnected && state.isInternetReachable !== false) resume();
+      });
       removeLifecycleListeners = () => {
+        unsubscribeNetwork();
         subscription.remove();
         noteChatResource("listeners", -1);
       };
@@ -257,6 +276,7 @@ export function ChatOutboxDrainer() {
 
     return () => {
       ownerFenceRef.current.setOwner(null);
+      unsubscribeOutbox();
       clearInterval(timer);
       noteChatResource("timers", -1);
       removeLifecycleListeners();

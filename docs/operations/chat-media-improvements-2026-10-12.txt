@@ -1,0 +1,35 @@
+DavaQ media UX implementation — 2026-10-12
+
+Implemented
+- Full-screen photo, video and send-preview modals have their own safe-area provider. Close controls sit below top safe area (minimum iOS fallback 44 + 8 px), with a 48 px minimum hit target.
+- Photo library selection (up to 10), direct camera capture, preview, ordering, removal, 90-degree rotation, center square crop, caption and original/compressed choice.
+- Standard photos become JPEG at quality .78, maximum long edge 2048; GIF/original mode preserves source format. Web HEIC is converted before processing. A bounded inline JPEG preview avoids waiting for the private full-image URL before showing something.
+- Each uploaded photo is queued immediately instead of waiting for the complete selection. Local upload previews/progress and cancellation are visible. Partial failures retain only unsent items for retry during the current app session.
+- Albums use occupied rows only, support 1/2/3/5/10 items and preserve selection order. Underlying messages still reference separately authorized object paths. The highest committed room sequence represents the album for read tracking; replies/unread markers map to that visible representative.
+- Gallery supports album paging, iOS native zoom, Android pinch/double tap/pan, web double click/trackpad zoom/drag, and platform sharing/save UI.
+- Video library/camera, send preview, caption, inline poster/duration, and native in-chat playback. Native video compression uses maxSize 1280 and leaves files under 2 MB unchanged; original is optional. Browser video remains original, explicitly stated in the preview.
+- Web pasted/dropped photos receive compression and album metadata. Cancelling/failing a file batch stops the remaining files.
+- Owner/profile/room changes clear local previews/retry UI and preserve existing abort/owner fences. Outbox persists album/preview metadata through message retries.
+- Android manifest retains allowBackup=false despite a transitive media dependency declaring true. Native dependency pinned to react-native-compressor 1.19.4.
+
+Verification
+- Mobile TypeScript check passed.
+- Web production export passed.
+- Android release JavaScript bundle and :app:compileReleaseKotlin passed with the new native media dependencies.
+- ARM64 libandroidlame.so from the new dependency passed the existing 16 KB ELF alignment verifier.
+- Album + existing message reliability tests: 46 passed.
+- Full reliability suite: 72 core + 7 service-worker tests passed.
+- Chat flow suite: 22 passed.
+- Media manifest policy tests: 2 passed.
+- Component render review with simulated 59 px top safe area: close button 64 x 48 px, top 68 px relative to modal frame. This is a layout review, not physical iPhone validation.
+
+Limits / release status
+- Existing upload limits remain 10 MB/photo after processing and 25 MB/video/file.
+- Browser video transcoding is not provided. Native video transcodes via the platform library; source codec/real-device behavior still needs device checks.
+- Uploads interrupted by force-quitting the app are not a durable background upload queue. Successfully uploaded/queued messages use the existing durable, idempotent outbox; unfinished local upload selections are retained only within the current app session.
+- No new iOS archive, physical iPhone/Android camera test, store upload or production web deployment has been performed for this change.
+
+Release progress (2026-10-12)
+- Android 1.0.0 (22): signed APK/AAB generated. Embedded production API/login checked; target SDK 36, valid release signature, 30 ARM64 ELF libraries and ZIP 16KB alignment passed. Google Play internal test release 14 published; Console confirms internally available at 2026-10-12 13:50 KST. Release name 1.0.0 (22) - chat media improvements. Only nonblocking deobfuscation-file warning; no support-device reductions. Evidence: evidence/android-22-internal-20261012.png.
+- iOS 1.0.0 (13): ARCHIVE SUCCEEDED and EXPORT SUCCEEDED. Apple processing/compliance complete; DavaQ Internal (3 testers, 13 builds) confirms Testing. Build UUID 836c0f44-a2c2-4ca8-9245-92906e3aa0f6. Archived production API/login and camera/photo/save permission texts verified. Evidence: evidence/ios-13-internal-20261012.png.
+- Web/PWA web-20261012-chat-media-r1: deployed. HTML SHA256 1aabedd0369009989783e505c4c24dd04b01224acb35380bfeee96c54c0eba57; live HTML and SW cache version verified; API health OK, container IDs/start times unchanged. Backup /opt/davaq-backups/web-20261012-chat-media-r1-1791779628.tar.gz. Temporary transfer files/key removed on CloudShell and server. Authenticated live media attachment menu verified, no console errors. Evidence: evidence/web-chat-media-deployed-20261012.png.

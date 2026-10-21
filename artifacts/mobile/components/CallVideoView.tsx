@@ -1,3 +1,4 @@
+import {CallVideoLayout} from './CallVideoLayout';
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
@@ -31,20 +32,22 @@ const REMOTE_CAMERA_SUBSCRIBE_RETRY_COUNT = 12;
 export function CallVideoView({
   room,
   cameraOn,
+  onToggleControls,
 }: {
   room: Room | null;
   cameraOn: boolean;
+  onToggleControls?:()=>void;
 }) {
   if (!room) return <VideoPlaceholder label="영상 연결 중..." />;
   return (
     <RoomContext.Provider value={room}>
       <RemoteCameraSubscriber room={room} />
-      <CallVideoTracks cameraOn={cameraOn} />
+      <CallVideoTracks cameraOn={cameraOn} onToggleControls={onToggleControls}/>
     </RoomContext.Provider>
   );
 }
 
-function CallVideoTracks({ cameraOn }: { cameraOn: boolean }) {
+function CallVideoTracks({ cameraOn,onToggleControls }: { cameraOn: boolean;onToggleControls?:()=>void }) {
   const refs = useTracks([Track.Source.Camera], {
     onlySubscribed: false,
     updateOnlyOn: VIDEO_TRACK_EVENTS,
@@ -53,20 +56,8 @@ function CallVideoTracks({ cameraOn }: { cameraOn: boolean }) {
   const remoteRef = trackRefs.find((ref) => !ref.participant.isLocal);
   const localRef = trackRefs.find((ref) => ref.participant.isLocal);
 
-  return (
-    <View style={styles.wrap}>
-      {remoteRef ? (
-        <VideoTrack trackRef={remoteRef} style={styles.remoteVideo} objectFit="cover" zOrder={0} />
-      ) : (
-        <VideoPlaceholder label="상대방 영상을 기다리는 중..." />
-      )}
-      {cameraOn && localRef ? (
-        <View style={styles.localPreview}>
-          <VideoTrack trackRef={localRef} style={styles.localVideo} objectFit="cover" mirror zOrder={1} />
-        </View>
-      ) : null}
-    </View>
-  );
+  const remoteOff=refs.some(ref=>!ref.participant.isLocal&&ref.publication?.isMuted);
+  return <CallVideoLayout onToggleControls={onToggleControls} remote={remoteRef&&!remoteRef.publication.isMuted?<VideoTrack trackRef={remoteRef} style={styles.remoteVideo} objectFit="cover" zOrder={0}/>:<VideoPlaceholder label={remoteOff?'상대방 카메라가 꺼져 있어요':'상대방 영상을 기다리는 중...'}/>} local={cameraOn&&localRef&&!localRef.publication.isMuted?<VideoTrack trackRef={localRef} style={styles.localVideo} objectFit="cover" mirror zOrder={1}/>:undefined}/>;
 }
 
 function subscribeRemoteCameraTracks(room: Room): void {

@@ -1,3 +1,4 @@
+import { CollectorLoungeShortcut } from './CollectorLounge';
 import React, {
   useMemo,
   useState,
@@ -22,6 +23,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useGetMe,
+  getGetMeQueryKey,
   useListRooms,
   getListRoomsQueryKey,
   type ChatRoom,
@@ -29,7 +31,7 @@ import {
 import { useScreenActive } from "@/hooks/useScreenActive";
 import { useColors } from "@/hooks/useColors";
 import { usePwaBottomInset } from "@/hooks/usePwaBottomInset";
-import { useDavaq, statusName, type Page, type Proposal } from "@/lib/davaq";
+import { useDavaq, statusName, type Page, type Trade } from "@/lib/tcg";
 import { roomDisplayName, isSameDay } from "@/lib/chatScreenUtils";
 import { Avatar } from "@/components/Avatar";
 import ChatScreen from "@/app/chat/[id]";
@@ -38,19 +40,18 @@ import {
   MessengerIconButton,
   MessengerSheet,
 } from "@/components/chat/MessengerUI";
-import {
-  AgentConversation,
-  PinnedAgentConversation,
-} from "./AgentConversation";
+import { AgentConversation, PinnedAgentConversation } from "../tcg/Assistant";
 
 const mainFilters = [
   ["all", "전체"],
+  ["collector_ai", "수집AI수다방"],
   ["unread", "안 읽음"],
   ["group", "그룹"],
   ["proposal", "제안"],
   ["ongoing", "진행 중"],
 ];
 const categories = [
+  ["collector_ai", "수집AI수다방"],
   ["fanclub", "팬클럽"],
   ["counseling", "고민상담"],
   ["friend_finding", "친구찾기"],
@@ -78,10 +79,11 @@ const RoomRow = React.memo(function RoomRow({
 }: {
   room: ChatRoom;
   viewerId?: string;
-  proposal?: Proposal;
+  proposal?: Trade;
   selected: boolean;
   onOpen: (id: string) => void;
 }) {
+  const router = useRouter();
   const c = useColors(),
     name = roomDisplayName(room, viewerId),
     other = room.members?.find((m) => m.id !== viewerId),
@@ -103,14 +105,35 @@ const RoomRow = React.memo(function RoomRow({
         },
       ]}
     >
-      {room.type === "group" ? (
-        <View style={[s.groupAvatar, { backgroundColor: c.accent }]}>
-          <Feather name="users" size={23} color={c.primary} />
-        </View>
-      ) : (
-        <Avatar uri={other?.profileImageUrl} name={name} size={50} />
-      )}
-      <View style={[s.roomText, { borderBottomColor: c.border }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          room.type === "group" ? "그룹 참여자 보기" : name + " 프로필 보기"
+        }
+        disabled={room.type !== "group" && !other}
+        onPress={(event) => {
+          event.stopPropagation();
+          if (room.type === "group")
+            router.push({
+              pathname: "/group/members",
+              params: { id: room.id },
+            });
+          else if (other)
+            router.push({
+              pathname: "/profile/[userId]",
+              params: { userId: other.id },
+            });
+        }}
+      >
+        {room.type === "group" ? (
+          <View style={[s.groupAvatar, { backgroundColor: c.accent }]}>
+            <Feather name="users" size={23} color={c.primary} />
+          </View>
+        ) : (
+          <Avatar uri={other?.profileImageUrl} name={name} size={50} />
+        )}
+      </Pressable>
+      <View style={s.roomText}>
         <View style={s.between}>
           <Text
             numberOfLines={1}
@@ -157,25 +180,27 @@ const RoomRow = React.memo(function RoomRow({
     </Pressable>
   );
 });
-export function InboxScreen() {
+export function InboxScreen({ preview = false }: { preview?: boolean } = {}) {
   const c = useColors(),
     router = useRouter(),
     focused = useScreenActive(),
     insets = useSafeAreaInsets(),
     pwa = usePwaBottomInset(),
     { width } = useWindowDimensions(),
-    wide = Platform.OS === "web" && width >= 960;
-  const me = useGetMe(),
+    wide = !preview && Platform.OS === "web" && width >= 960;
+  const me = useGetMe({
+      query: { queryKey: getGetMeQueryKey(), enabled: !preview },
+    }),
     rooms = useListRooms({
       query: {
         queryKey: getListRoomsQueryKey(),
-        enabled: focused,
+        enabled: focused && !preview,
         staleTime: 15000,
-        refetchInterval: focused ? 30000 : false,
+        refetchInterval: focused && !preview ? 30000 : false,
         refetchIntervalInBackground: false,
       },
     }),
-    proposals = useDavaq<Page<Proposal>>("/exchange/proposals", focused);
+    proposals = useDavaq<Page<Trade>>("/tcg/trades", focused && !preview);
   const [filter, setFilter] = useState("all"),
     [text, setText] = useState(""),
     [menu, setMenu] = useState(false),
@@ -195,15 +220,16 @@ export function InboxScreen() {
   const rows = useMemo(
     () =>
       (rooms.data ?? []).filter((r) => {
+        if (r.id === "00000000-0000-4000-8000-00000000c100") return false;
         const p = proposalByRoom.get(r.id);
         return (
           (filter === "all" ||
             (filter === "unread" && (r.unreadCount ?? 0) > 0) ||
             (filter === "group" && r.type === "group") ||
-            (filter === "proposal" && p?.status === "negotiating") ||
+            (filter === "proposal" && p?.status === "proposed") ||
             (filter === "ongoing" &&
               p &&
-              ["reserved", "in_progress"].includes(p.status)) ||
+              ["confirmed", "disputed"].includes(p.status)) ||
             (r as ChatRoom & { category?: string }).category === filter) &&
           (!search ||
             [roomDisplayName(r, me.data?.id), r.lastMessage]
@@ -218,14 +244,23 @@ export function InboxScreen() {
     () => (rooms.data ?? []).filter((r) => (r.unreadCount ?? 0) > 0).length,
     [rooms.data],
   );
-  const refresh = useCallback(() => {
-    void rooms.refetch();
-    void proposals.refetch();
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshLock = useRef(false);
+  const refresh = useCallback(async () => {
+    if (refreshLock.current) return;
+    refreshLock.current = true;
+    setRefreshing(true);
+    try {
+      await Promise.all([rooms.refetch(), proposals.refetch()]);
+    } finally {
+      refreshLock.current = false;
+      setRefreshing(false);
+    }
   }, [rooms.refetch, proposals.refetch]);
   useFocusEffect(
     useCallback(() => {
-      void rooms.refetch();
-    }, [rooms.refetch]),
+      if (!preview) void rooms.refetch();
+    }, [rooms.refetch, preview]),
   );
   useEffect(() => {
     if (!focused || Platform.OS !== "web") return;
@@ -264,7 +299,7 @@ export function InboxScreen() {
   const bottom = 72 + (Platform.OS === "web" ? pwa : insets.bottom);
   return (
     <View style={[s.root, { backgroundColor: c.card, paddingBottom: bottom }]}>
-      <Stack.Screen options={{ headerShown: false }} />
+      {!preview ? <Stack.Screen options={{ headerShown: false }} /> : null}
       <View
         testID="messenger-sidebar"
         style={[
@@ -328,6 +363,9 @@ export function InboxScreen() {
         <View style={[s.filterLine, { borderBottomColor: c.border }]}>
           <ScrollView
             horizontal
+            alwaysBounceVertical={false}
+            directionalLockEnabled
+            contentInsetAdjustmentBehavior="never"
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 12, gap: 4 }}
             style={{ flex: 1 }}
@@ -384,6 +422,13 @@ export function InboxScreen() {
         <FlatList
           showsVerticalScrollIndicator={false}
           testID="conversation-list"
+          style={{ flex: 1 }}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustKeyboardInsets={false}
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
           data={rows}
           keyExtractor={(r) => r.id}
           renderItem={renderItem}
@@ -391,20 +436,17 @@ export function InboxScreen() {
           maxToRenderPerBatch={8}
           windowSize={5}
           keyboardShouldPersistTaps="handled"
-          refreshing={rooms.isRefetching}
-          onRefresh={refresh}
+          refreshing={refreshing}
+          onRefresh={() => void refresh()}
           contentContainerStyle={{ paddingBottom: 20 }}
           ListHeaderComponent={
-            filter === "all" && !search ? (
-              <PinnedAgentConversation
-                compact
-                selected={wide && selected === "q"}
-                onPress={() => open("q")}
-              />
-            ) : null
+            <>
+              {["all", "group", "collector_ai"].includes(filter) && (!search || "수집ai수다방 ai 수집가 라운지 도감파 일러스트파 시세파".includes(search)) ? <CollectorLoungeShortcut joined={(rooms.data??[]).some(r=>r.id==="00000000-0000-4000-8000-00000000c100")} unreadCount={(rooms.data??[]).find(r=>r.id==="00000000-0000-4000-8000-00000000c100")?.unreadCount??0} onOpen={()=>open("00000000-0000-4000-8000-00000000c100")} /> : null}
+              {filter === "all" && !search ? <PinnedAgentConversation compact selected={wide && selected === "q"} onPress={() => open("q")} /> : null}
+            </>
           }
           ListEmptyComponent={
-            rooms.isPending ? (
+            filter === "collector_ai" ? <View /> : rooms.isPending ? (
               <View style={{ padding: 16, gap: 20 }}>
                 {[0, 1, 2, 3].map((i) => (
                   <View
@@ -599,7 +641,7 @@ export function InboxScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, flexDirection: "row", minHeight: 0 },
   sidebar: { minHeight: 0 },
-  detail: { flex: 1, minWidth: 0, overflow: "hidden" },
+  detail: { flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -652,7 +694,6 @@ const s = StyleSheet.create({
   roomText: {
     flex: 1,
     minWidth: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: 18,
     paddingRight: 16,
     gap: 6,

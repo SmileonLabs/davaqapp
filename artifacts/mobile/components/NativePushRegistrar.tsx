@@ -1,7 +1,12 @@
+import { notifyChatPush, chatRoomFromPush } from "@/lib/chatPushRefresh";
+import { customFetch } from "@workspace/api-client-react";
+import { isGroupCallId, dispatchGroupCallAction } from "@/lib/groupCallActions";
 import { useEffect, useRef } from "react";
-import { useAuth } from "@clerk/expo";
+import { endSystemCall, subscribeSystemCallActions, setApplePushOwner, clearApplePushOwner, subscribeApplePushToken } from "@/lib/systemCalls";
+import { useAuth } from "@/lib/davaqAuth";
 import { useRouter } from "expo-router";
-import { AppState } from "react-native";
+import { getApplePushCredentials } from "@/lib/applePush";
+import { AppState, Platform } from "react-native";
 import { getCall, useGetMe, useRegisterPushToken } from "@workspace/api-client-react";
 import { useCall } from "@/components/CallProvider";
 import {
@@ -40,6 +45,8 @@ import { pushRegistrationCoordinator } from "@/lib/pushRegistrationCoordinator";
  */
 export function NativePushRegistrar() {
   const { isSignedIn, getToken, userId: clerkUserId } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const router = useRouter();
   const { data: me } = useGetMe();
   // A profile switch temporarily evicts /users/me from React Query. Preserve
@@ -90,13 +97,22 @@ export function NativePushRegistrar() {
   useEffect(() => {
     if (!nativePushSupported) return;
     if (!ownerId) {
+      void endSystemCall();
       void setCurrentNativePushOwner(null);
       void cancelIncomingCallNotification();
       return;
     }
     const effectOwnerToken = ownerTokenRef.current;
     if (!effectOwnerToken || effectOwnerToken.ownerId !== ownerId) return;
-    const capturedBearer = getToken().catch(() => null);
+    let capturedBearer = getTokenRef.current().catch(() => null);
+    const effectClerkUserId = clerkUserId;
+    const refreshBearer = () => {
+      if (ownerIdentityRef.current.clerkUserId === effectClerkUserId &&
+          ownerIdentityRef.current.ownerId === ownerId) {
+        capturedBearer = getTokenRef.current().catch(() => null);
+      }
+    };
+    const bearerTimer = setInterval(refreshBearer, 30_000);
     const refreshOwnerLease = () => void setCurrentNativePushOwner(ownerId);
     refreshOwnerLease();
     const ownerLeaseTimer = setInterval(
@@ -104,13 +120,15 @@ export function NativePushRegistrar() {
       NATIVE_PUSH_OWNER_REFRESH_INTERVAL_MS,
     );
     const appStateSubscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") refreshOwnerLease();
+      if (state === "active") { refreshOwnerLease(); refreshBearer(); }
     });
     return () => {
       clearInterval(ownerLeaseTimer);
+      clearInterval(bearerTimer);
       appStateSubscription.remove();
       pushRegistrationCoordinator.clearIfCurrent(effectOwnerToken);
       // A late cleanup must not erase a lease already rebound to account B.
+      void endSystemCall();
       void clearCurrentNativePushOwner(ownerId);
       void cancelIncomingCallNotification();
       void pushRegistrationCoordinator
@@ -123,7 +141,7 @@ export function NativePushRegistrar() {
         })
         .catch(() => undefined);
     };
-  }, [getToken, ownerId]);
+  }, [ownerId]);
 
   // Reset the registration guard so a later sign-in / re-enable re-registers.
   useEffect(() => {
@@ -141,7 +159,7 @@ export function NativePushRegistrar() {
   // Refresh on foreground at a bounded interval so an APK whose initial
   // registration failed does not remain permanently unreachable for calls.
   useEffect(() => {
-    if (!nativePushSupported) return;
+    if (!nativePushSupported || Platform.OS === "ios") return;
     if (!ownerId || !me?.notificationEnabled) return;
     let mounted = true;
     let registrationInFlight = false;
@@ -188,10 +206,55 @@ export function NativePushRegistrar() {
     };
   }, [me?.notificationEnabled, ownerId]);
 
+  // iOS uses APNs directly for alerts and PushKit for calls. Store credentials
+  // independently of FCM configuration and message-notification preferences.
+  useEffect(() => {
+    if (Platform.OS !== "ios" || !ownerId) return;
+    const effectOwnerToken = ownerTokenRef.current;
+    if (!effectOwnerToken) return;
+    let mounted = true;
+    let inFlight = false;
+    const registered = new Set<string>();
+    let capturedBearer = getTokenRef.current().catch(() => null);
+    const effectClerkUserId = clerkUserId;
+    const refresh = async () => {
+      if (!mounted || inFlight) return;
+      if (ownerIdentityRef.current.clerkUserId === effectClerkUserId &&
+          ownerIdentityRef.current.ownerId === ownerId) {
+        capturedBearer = getTokenRef.current().catch(() => null);
+      }
+      inFlight = true;
+      try {
+        await setApplePushOwner(ownerId);
+        const tokens = await getApplePushCredentials();
+        for (const token of tokens) {
+          if (!mounted || registered.has(token)) continue;
+          const saved = await pushRegistrationCoordinator.enqueue(effectOwnerToken, () => registerRef.current({ data: { token } }));
+          if (saved) registered.add(token);
+        }
+      } catch (error) {
+        console.warn("Apple push registration failed", error instanceof Error ? error.message : "unknown");
+      } finally { inFlight = false; }
+    };
+    void refresh();
+    const tokenListener = subscribeApplePushToken(() => void refresh());
+    const stateListener = AppState.addEventListener("change", state => { if (state === "active") void refresh(); });
+    const retry = setInterval(() => void refresh(), 30_000);
+    return () => {
+      mounted = false;
+      clearInterval(retry); tokenListener(); stateListener.remove();
+      void clearApplePushOwner(ownerId);
+      void pushRegistrationCoordinator.enqueueCleanup(async () => {
+        const bearer = await capturedBearer;
+        await Promise.all(Array.from(registered).map(token => revokePushRegistrationWithBearer(token, bearer)));
+      }).catch(() => {});
+    };
+  }, [ownerId]);
+
   // FCM can rotate device tokens. Keep the server-side token list fresh instead
   // of waiting until the old token starts failing during sends.
   useEffect(() => {
-    if (!nativePushSupported) return;
+    if (!nativePushSupported || Platform.OS === "ios") return;
     if (!ownerId || !me?.notificationEnabled) return;
     return subscribePushTokenRefresh((token) => {
       const ownerToken = ownerTokenRef.current;
@@ -215,6 +278,7 @@ export function NativePushRegistrar() {
     if (!nativePushSupported || !ownerId) return;
 
     const navigate = (url: string) => {
+      notifyChatPush(chatRoomFromPush({ url }));
       routerRef.current.navigate(url as any);
     };
 
@@ -222,6 +286,7 @@ export function NativePushRegistrar() {
     if (!initialNotificationHandled.current) {
       initialNotificationHandled.current = true;
       void (async () => {
+        await setCurrentNativePushOwner(ownerId);
         const url = await getInitialNotificationUrl();
         if (url) navigate(url);
       })();
@@ -235,6 +300,10 @@ export function NativePushRegistrar() {
 
     const isStillRinging = async (intent: IncomingCallIntent) => {
       try {
+        if (isGroupCallId(intent.callId)) {
+          const group = await customFetch<{ status: string; expiresAt: number }>(`/api/group-calls/${intent.callId}`, { responseType: "json" });
+          return group.status === "active" && group.expiresAt > Date.now();
+        }
         const call = await getCall(intent.callId);
         return call.status === "ringing";
       } catch {
@@ -245,12 +314,14 @@ export function NativePushRegistrar() {
 
     const accept = async (intent: IncomingCallIntent) => {
       await cancelIncomingCallNotification();
+      if (isGroupCallId(intent.callId)) return dispatchGroupCallAction(intent.callId, "join");
       return joinRef.current(intent.callId, intent.callerName, intent.media);
     };
     const decline = async (intent: IncomingCallIntent) => {
       await cancelIncomingCallNotification();
       // Tell the server so the call records as "declined" instead of ringing
       // out to "missed" on the caller's side.
+      if (isGroupCallId(intent.callId)) return dispatchGroupCallAction(intent.callId, "decline");
       return declineRef.current(intent.callId);
     };
 
@@ -261,6 +332,15 @@ export function NativePushRegistrar() {
       onDecline: (intent) => {
         void decline(intent);
       },
+    });
+    const unsubSystem = subscribeSystemCallActions((event) => {
+      if (event.action === "accept") {
+        void accept(event.intent).then(handled => {
+          if (!handled) void endSystemCall(event.intent.callId);
+        }).catch(() => void endSystemCall(event.intent.callId));
+      } else if (event.action === "decline") {
+        void decline(event.intent).catch(() => {});
+      }
     });
     const unsubIncoming = subscribeForegroundIncomingCall((intent) => {
       void (async () => {
@@ -309,6 +389,7 @@ export function NativePushRegistrar() {
     })();
 
     return () => {
+      unsubSystem();
       unsubActions();
       unsubIncoming();
       appStateSubscription.remove();

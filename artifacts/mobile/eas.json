@@ -11,10 +11,6 @@
       "pnpm": "10.26.1",
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.anothermeai.app",
-        "EXPO_PUBLIC_DOMAIN": "davaq.anothermeai.app"
       }
     },
     "preview": {
@@ -25,8 +21,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.anothermeai.app",
-        "EXPO_PUBLIC_DOMAIN": "davaq.anothermeai.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.app",
+        "EXPO_PUBLIC_DOMAIN": "davaq.app"
       }
     },
     "preview-arm": {
@@ -37,8 +33,8 @@
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.anothermeai.app",
-        "EXPO_PUBLIC_DOMAIN": "davaq.anothermeai.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.app",
+        "EXPO_PUBLIC_DOMAIN": "davaq.app"
       }
     },
     "preview-arm64": {
@@ -49,8 +45,8 @@
         "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.anothermeai.app",
-        "EXPO_PUBLIC_DOMAIN": "davaq.anothermeai.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.app",
+        "EXPO_PUBLIC_DOMAIN": "davaq.app"
       }
     },
     "production": {
@@ -61,12 +57,33 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.anothermeai.app",
-        "EXPO_PUBLIC_DOMAIN": "davaq.anothermeai.app"
+        "EXPO_PUBLIC_API_BASE_URL": "https://davaq.app",
+        "EXPO_PUBLIC_DOMAIN": "davaq.app"
+      }
+    },
+    "development-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "testflight": {
+      "extends": "production",
+      "distribution": "store",
+      "environment": "preview",
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "testflight": {
+      "ios": {
+        "ascAppId": "6821069081",
+        "appleTeamId": "B763M3724N"
+      }
+    }
   }
 }

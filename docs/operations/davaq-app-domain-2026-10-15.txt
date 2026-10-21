@@ -1,0 +1,59 @@
+davaq.app service connection — 2026-10-15 KST
+
+Cloudflare zone 1adc4b4562adc5b527ce8b7d5e3fb271 in the user's account.
+Added proxied A records @ and www -> verified running EC2 IP 3.36.44.173.
+Cloudflare SSL/TLS changed Full -> Full (strict).
+Let's Encrypt certificates obtained for davaq.app and www.davaq.app.
+Root serves existing DavaQ landing; /app/ serves current PWA; /api/ existing API.
+www redirects with 308 to https://davaq.app preserving URI.
+Old davaq.anothermeai.app retained for installed native apps and existing OAuth
+provider callback registrations. No database migration/reset or new auth instance.
+New web origin added to production CORS_ALLOWED_ORIGINS alongside the existing one.
+Only DavaQ API recreated for the environment update. All other running container
+IDs/start times unchanged, including shared edge, AnotherMe and TCGIndex services.
+
+Backup: /opt/davaq-backups/domain-20261015-1792028105/{Caddyfile,davaq.env}
+Host edge source: /opt/anotherme-release-c560697/docker/Caddyfile
+IMPORTANT: the running edge's individual /etc/caddy/Caddyfile bind mount references
+an older inode (preexisting stale bind). Updating source and reloading that mounted
+path initially did not apply new routes. No shared edge restart was performed.
+Copied current complete host source into persistent Caddy config volume:
+/config/davaq-domain-20261015.Caddyfile, validated and gracefully reloaded it.
+Host source also contains the same domain routes for future container recreation.
+
+Restart protection:
+/opt/davaq-domain-routing/ensure-routes.py
+/etc/systemd/system/davaq-domain-routing.{service,timer}
+Timer checks every 60 seconds after a 30-second boot delay. It reads current active
+HTTP host routes via the local Caddy admin API. Only if both desired domains remain
+in the authoritative host source and active routes are missing does it copy,
+validate and reload that source. Does not restart containers. Existing container
+restart may briefly lose routes until the next check (up to roughly one minute).
+When edge mount lifecycle is corrected, this narrowly scoped guard can be disabled.
+Initial guard run passed and timer enabled.
+
+Validation:
+https://davaq.app/ landing opened in browser.
+https://davaq.app/app/ -> /app/sign-in with email, Google, Apple controls; no console errors.
+Health with Origin https://davaq.app: 200 {status:ok}
+Unauthenticated /api/users/me with new Origin:401, not CORS rejection.
+Social providers endpoint:200 {google:true,apple:true}.
+Untrusted Origin health request:403 (allowlist protection retained).
+Direct origin --resolve certificate-validated HTTPS health:200.
+Old-origin health:200. www /app/:308 -> https://davaq.app/app/.
+PWA manifest: start_url /app/, scope /app/, display standalone.
+User-specific sign-in and two-device calls/messages were not exercised in this turn.
+New browser origin requires fresh sign-in and a separate PWA installation if desired;
+old-origin installed PWAs/caches/push subscriptions remain separate browser storage.
+
+Source default origins updated and exact-origin allow/deny/explicit-env checks passed.
+No mobile store build or native base-URL change in this domain-only connection.
+CloudShell temporary key pair and uploaded deployment script removed.
+Evidence: evidence/davaq-app-https-20261015.png, evidence/davaq-app-login-20261015.png
+
+Native release completed 2026-10-15:
+Android 1.0.0 (32): signed AAB/APK verified; Play internal release 24 published and Console confirms available to internal testers.
+iOS 1.0.0 (23): archive/export/upload succeeded; signature verified; ASC build 1cc714eb-5b2b-441b-9275-66c424475479 processed and DavaQ Internal (3 testers) confirms TESTING / 90 days.
+Both embedded production API uses https://davaq.app; feed/post/invite/wallet URLs updated. Existing invitation domain remains accepted for compatibility. Provider-registered OAuth browser/callback host retained deliberately to preserve login compatibility with existing registrations.
+Validation: mobile TypeScript, 5 focused release/invite tests, Android standalone/signature/16KB checks; iOS codesign deep strict verification passed. Physical device cross-platform calls and login remain tester verification.
+Local artifacts and console screenshots: .local/releases/domain-20261015/.

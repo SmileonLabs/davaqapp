@@ -7,6 +7,7 @@ export interface IncomingCallIntent {
   callerName: string;
   chatRoomId: string | null;
   media: "audio" | "video";
+  expiresAt?: number;
 }
 
 export interface PendingCallAction {

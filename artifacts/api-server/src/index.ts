@@ -1,12 +1,15 @@
+import { startShopDeliveryWorker } from './lib/shop/delivery';
+import { startCollectorLoungeWorker } from './lib/collectorLounge/worker';
+import {startCollectorDirectWorker} from './lib/collectorLounge/direct';
 import { createServer } from "node:http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { attachRealtimeServer } from "./lib/realtime";
 import { startOntologySyncWorker } from "./lib/ontologySync";
 import { startCallLifecycleWorker } from "./routes/calls";
-import { startDavaqAgentWorker } from "./lib/davaqAgent";
-import { startAgentConversationWorker } from "./lib/agentConversation";
-import { startBrandWorker } from "./lib/brandExchange";
+
+import { startChatOutboxWorker } from "./lib/chatOutboxWorker";
+import { startTcgWorker } from "./lib/tcgWorker";
 
 const rawPort = process.env["PORT"] ?? "8080";
 
@@ -28,10 +31,16 @@ server.once("error", (err) => {
 // before replicas start. App startup only begins request-serving workers.
 startOntologySyncWorker(logger);
 startCallLifecycleWorker(logger);
-startDavaqAgentWorker();
-startBrandWorker();
-startAgentConversationWorker();
+startTcgWorker();
+const stopShopDeliveryWorker=startShopDeliveryWorker();
+server.once("close",stopShopDeliveryWorker);
+const stopCollectorLoungeWorker = startCollectorLoungeWorker();
+const stopCollectorDirectWorker = startCollectorDirectWorker();
+server.once("close",()=>stopCollectorDirectWorker?.());
+server.once("close", () => stopCollectorLoungeWorker?.());
+const stopChatOutboxWorker = startChatOutboxWorker();
+server.once("close", stopChatOutboxWorker);
 
-server.listen(port, () => {
+server.listen({ port, host: process.env.HOST }, () => {
   logger.info({ port }, "Server listening");
 });

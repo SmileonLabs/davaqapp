@@ -1,3 +1,4 @@
+import { publicDavaqAvatar } from "./davaqAvatarPolicy";
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import {
@@ -9,6 +10,7 @@ import {
   fanCharacterProfilesTable,
   fanProfilesTable,
   officialAiAccountsTable,
+  chatUploadOwnersTable,
   officialAiCharacterProfilesTable,
   starCharacterProfilesTable,
   starFeedPostsTable,
@@ -30,6 +32,12 @@ import {
   initializeFanAvatarLoadout,
   normalizeFanAvatarCustomization,
 } from "./avatarCatalog";
+
+const legacyPersonasEnabled = process.env.DAVAQ_LEGACY_PERSONA_ENABLED === "true";
+function davaqPortrait(url: string | null, metadata?: Record<string, unknown>, identity?: string): string | null {
+  if (legacyPersonasEnabled) return url;
+  return publicDavaqAvatar(url, metadata, identity);
+}
 
 export interface CharacterProfileView {
   id: string;
@@ -82,6 +90,7 @@ export async function getActiveCharacterIdentityMap(
       profileImageUrl: characterProfilesTable.profileImageUrl,
       statusMessage: characterProfilesTable.statusMessage,
       accountProfileImageUrl: usersTable.profileImageUrl,
+      metadata: characterProfilesTable.metadata,
     })
     .from(activeCharacterProfilesTable)
     .innerJoin(
@@ -92,7 +101,7 @@ export async function getActiveCharacterIdentityMap(
     .where(inArray(activeCharacterProfilesTable.userId, uniqueIds));
 
   const recipes = new Map<string, string>();
-  await Promise.all(rows.filter((row) => row.type === "fan" && !row.profileImageUrl?.startsWith(AVATAR_RECIPE_PREFIX)).map(async (row) => {
+  if (legacyPersonasEnabled) await Promise.all(rows.filter((row) => row.type === "fan" && !row.profileImageUrl?.startsWith(AVATAR_RECIPE_PREFIX)).map(async (row) => {
     const appearance = await getCharacterAvatarAppearance(row.id);
     if (appearance) recipes.set(row.id, appearance.recipe);
   }));
@@ -105,10 +114,10 @@ export async function getActiveCharacterIdentityMap(
         type: row.type,
         handle: row.handle,
         displayName: row.displayName,
-        profileImageUrl: recipes.get(row.id) ?? (
+        profileImageUrl: davaqPortrait(recipes.get(row.id) ?? (
           row.type === "fan" && row.profileImageUrl === row.accountProfileImageUrl
             ? null
-            : row.profileImageUrl),
+            : row.profileImageUrl), row.metadata, row.id),
         statusMessage: row.statusMessage,
       },
     ]),
@@ -187,11 +196,11 @@ async function ensureLegacyProfileRows(userId: string): Promise<void> {
       .values({ profileId: fanProfile.id, legacyFanUserId: userId })
       .onConflictDoNothing();
 
-    const legacyStars = await tx
+    const legacyStars = legacyPersonasEnabled ? await tx
       .select()
       .from(starProfilesTable)
       .where(eq(starProfilesTable.userId, userId))
-      .orderBy(asc(starProfilesTable.createdAt));
+      .orderBy(asc(starProfilesTable.createdAt)) : [];
 
     for (const star of legacyStars) {
       await tx
@@ -330,10 +339,10 @@ async function readCharacterProfileState(userId: string): Promise<CharacterProfi
     type: profile.type,
     handle: profile.handle,
     displayName: profile.displayName,
-    profileImageUrl:
+    profileImageUrl: davaqPortrait(
       profile.type === "fan" && profile.profileImageUrl === account?.profileImageUrl
         ? null
-        : profile.profileImageUrl,
+        : profile.profileImageUrl, profile.metadata, profile.id),
     statusMessage: profile.statusMessage,
     status: profile.status,
     level: profile.level,
@@ -350,8 +359,12 @@ async function readCharacterProfileState(userId: string): Promise<CharacterProfi
 }
 
 export async function ensureCharacterProfileState(userId: string): Promise<CharacterProfileState> {
+  if (!legacyPersonasEnabled) {
+    const [selection] = await db.select({ id: activeCharacterProfilesTable.activeProfileId }).from(activeCharacterProfilesTable).where(eq(activeCharacterProfilesTable.userId, userId));
+    if (selection) return readCharacterProfileState(userId);
+  }
   await ensureLegacyProfileRows(userId);
-  await ensureUserAvatarProfiles(userId);
+  if (legacyPersonasEnabled) await ensureUserAvatarProfiles(userId);
   return readCharacterProfileState(userId);
 }
 
@@ -579,7 +592,7 @@ export async function updateCharacterProfile(
 ): Promise<CharacterProfileState> {
   await ensureLegacyProfileRows(userId);
   const [target] = await db
-    .select({ type: characterProfilesTable.type })
+    .select({ type: characterProfilesTable.type, metadata: characterProfilesTable.metadata })
     .from(characterProfilesTable)
     .where(
       and(
@@ -594,14 +607,18 @@ export async function updateCharacterProfile(
     (error as Error & { code?: string }).code = "PROFILE_NOT_FOUND";
     throw error;
   }
+  if (!legacyPersonasEnabled && changes.profileImageUrl) {
+    const [upload] = await db.select().from(chatUploadOwnersTable).where(and(eq(chatUploadOwnersTable.objectPath, changes.profileImageUrl), eq(chatUploadOwnersTable.userId, userId)));
+    if (!upload || !upload.contentType.startsWith("image/")) throw Object.assign(new Error("DavaQ-owned image upload required"), { code: "INVALID_DAVAQ_AVATAR" });
+  }
   // FAN portraits are derived from the avatar loadout. Ignore the legacy
   // profileImageUrl field so older clients cannot overwrite the recipe.
-  const safeChanges = target.type === "fan"
+  const safeChanges = legacyPersonasEnabled && target.type === "fan"
     ? Object.fromEntries(Object.entries(changes).filter(([key]) => key !== "profileImageUrl"))
     : changes;
   const [updated] = await db
     .update(characterProfilesTable)
-    .set({ ...safeChanges, updatedAt: new Date() })
+    .set({ ...safeChanges, ...(!legacyPersonasEnabled && changes.profileImageUrl !== undefined ? { metadata: { ...target.metadata, avatarSource: "davaq" } } : {}), updatedAt: new Date() })
     .where(
       and(
         eq(characterProfilesTable.id, profileId),
@@ -615,7 +632,7 @@ export async function updateCharacterProfile(
     (error as Error & { code?: string }).code = "PROFILE_NOT_FOUND";
     throw error;
   }
-  if (target.type === "fan") await getCharacterAvatarAppearance(profileId);
+  if (legacyPersonasEnabled && target.type === "fan") await getCharacterAvatarAppearance(profileId);
   return readCharacterProfileState(userId);
 }
 
@@ -626,7 +643,7 @@ export async function getPublicCharacterProfile(viewerUserId: string, profileId:
     .where(and(eq(characterProfilesTable.id, profileId), isNull(characterProfilesTable.archivedAt)))
     .limit(1);
   if (!profile || (profile.status !== "active" && profile.ownerUserId !== viewerUserId)) return null;
-  const avatarAppearance = await getCharacterAvatarAppearance(profile.id);
+  const avatarAppearance = legacyPersonasEnabled ? await getCharacterAvatarAppearance(profile.id) : null;
   const [ownerAccount] = await db
     .select({ profileImageUrl: usersTable.profileImageUrl })
     .from(usersTable)
@@ -676,7 +693,7 @@ export async function getPublicCharacterProfile(viewerUserId: string, profileId:
     type: profile.type,
     handle: profile.handle,
     displayName: profile.displayName,
-    profileImageUrl: avatarAppearance?.recipe ?? safeProfileImageUrl,
+    profileImageUrl: davaqPortrait(avatarAppearance?.recipe ?? safeProfileImageUrl, profile.metadata, profile.id),
     statusMessage: profile.statusMessage,
     level: profile.level,
     xp: profile.xp,
@@ -684,9 +701,9 @@ export async function getPublicCharacterProfile(viewerUserId: string, profileId:
     jobStage: profile.jobStage,
     jobLabel: metadataJobLabel || normalizedJobKey || fallbackJobLabel,
     characterImageUrl:
-      avatarAppearance?.recipe ?? (profile.type === "fan"
+      legacyPersonasEnabled ? avatarAppearance?.recipe ?? (profile.type === "fan"
         ? safeMetadataCharacterImage
-        : safeMetadataCharacterImage ?? safeProfileImageUrl),
+        : safeMetadataCharacterImage ?? safeProfileImageUrl) : davaqPortrait(profile.profileImageUrl, profile.metadata, profile.id),
     avatarAppearance,
     stats: profile.stats,
     metadata: profile.metadata,

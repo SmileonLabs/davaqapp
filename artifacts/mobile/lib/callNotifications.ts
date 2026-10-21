@@ -1,6 +1,8 @@
-// Native incoming-call notifications via notifee. Android uses a high-importance
-// full-screen notification; iOS remains a standard notification only. This does
-// not implement PushKit or CallKit. Metro picks callNotifications.web.ts on web.
+import { stashNotificationRoute } from "./notificationIntent";
+// Android incoming-call notifications use Notifee. iOS reports CallKit calls;
+// native PushKit starts that UI before React on a background/cold launch.
+// Notifee is an alert fallback when CallKit is unavailable. Metro uses the web
+// implementation for browsers.
 
 import notifee, {
   AndroidCategory,
@@ -10,12 +12,15 @@ import notifee, {
   type Event,
 } from "@notifee/react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { incomingCallDeadline, incomingCallRemaining } from "./incomingCallDeadline";
+import { reportSystemIncomingCall } from "./systemCalls";
 
 export interface IncomingCallIntent {
   callId: string;
   callerName: string;
   chatRoomId: string | null;
   media: "audio" | "video";
+  expiresAt?: number;
 }
 
 export interface PendingCallAction {
@@ -70,7 +75,7 @@ async function stashPendingCallAction(action: PendingCallAction): Promise<void> 
   try {
     await AsyncStorage.setItem(
       PENDING_KEY,
-      JSON.stringify({ ...action, expiresAt: Date.now() + RING_TIMEOUT_MS }),
+      JSON.stringify({ ...action, expiresAt: incomingCallDeadline(action.intent.expiresAt) }),
     );
   } catch {}
 }
@@ -84,6 +89,7 @@ function intentFromData(data: Record<string, unknown> | undefined): IncomingCall
     callerName: typeof data.callerName === "string" ? data.callerName : "수신 전화",
     chatRoomId: typeof data.chatRoomId === "string" ? data.chatRoomId : null,
     media: data.media === "video" ? "video" : "audio",
+    expiresAt: incomingCallDeadline(data.expiresAt),
   };
 }
 
@@ -163,7 +169,10 @@ async function handleEvent(
   const intent = intentFromData(
     detail.notification?.data as Record<string, unknown> | undefined,
   );
-  if (!intent) return;
+  if (!intent) {
+    await stashNotificationRoute(detail.notification?.data);
+    return;
+  }
   const actionId = detail.pressAction?.id ?? "default";
   const action: "accept" | "decline" = actionId === "decline" ? "decline" : "accept";
   await cancelIncomingCallNotification(intent.callId);
@@ -203,11 +212,13 @@ export async function displayIncomingCallNotification(
   try {
     const tracked = await readTrackedIncomingCalls();
     const displayedAt = tracked[intent.callId]?.displayedAt ?? Date.now();
-    const remaining = displayedAt + RING_TIMEOUT_MS - Date.now();
+    const deadline = incomingCallDeadline(intent.expiresAt);
+    const remaining = incomingCallRemaining(deadline, displayedAt);
     if (remaining <= 0) {
       await cancelIncomingCallNotification(intent.callId);
       return;
     }
+    if (await reportSystemIncomingCall({ ...intent, expiresAt: deadline })) return;
     await notifee.displayNotification({
       id: notificationId(intent.callId),
       title: intent.callerName,
@@ -217,6 +228,7 @@ export async function displayIncomingCallNotification(
         callerName: intent.callerName,
         chatRoomId: intent.chatRoomId ?? "",
         media: intent.media,
+        expiresAt: String(deadline),
       },
       android: {
         channelId: CHANNEL_ID,

@@ -7,7 +7,7 @@ const TTL_SECONDS = Math.ceil(TTL_MS / 1000) + 1;
 const rooms = new Map<string, Map<string, number>>();
 
 function key(roomId: string): string {
-  return `typing:${roomId}`;
+  return `davaq:typing:${roomId}`;
 }
 
 function markLocalTyping(roomId: string, userId: string, expiresAt: number): void {

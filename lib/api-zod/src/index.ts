@@ -5,6 +5,7 @@ export * from "./generated/types";
 // schema export; a query-only shape remains available as a generated type where
 // applicable (for example, `ListClanMemoriesQueryParams`).
 export {
+  FetchRoomChangesParams,
   FetchRoomMessagesParams,
   ListClanMemoriesParams,
   UnpinRoomMessageParams,

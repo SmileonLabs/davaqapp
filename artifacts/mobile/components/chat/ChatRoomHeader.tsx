@@ -27,6 +27,7 @@ export function ChatRoomHeader({
   anotherMeEnabled,
   anotherMePending,
   onBack,
+  onOpenIdentity,
   onToggleAnotherMe,
   onStartCall,
   onInvite,
@@ -48,6 +49,7 @@ export function ChatRoomHeader({
   anotherMeEnabled: boolean;
   anotherMePending: boolean;
   onBack: () => void;
+  onOpenIdentity?: () => void;
   onToggleAnotherMe: (enabled: boolean) => void;
   onStartCall: (media: CallMedia) => void;
   onInvite: () => void;
@@ -72,7 +74,7 @@ export function ChatRoomHeader({
         label={embedded ? "대화 닫기" : "채팅 목록으로"}
         onPress={onBack}
       />
-      <View style={s.center}>
+      <Pressable style={s.center} onPress={onOpenIdentity} disabled={!onOpenIdentity} accessibilityRole="button" accessibilityLabel={isGroupRoom ? "그룹 참여자 보기" : "상대 프로필 보기"}>
         <View>
           {avatar ??
             (isGroupRoom || isDungeon ? (
@@ -115,7 +117,7 @@ export function ChatRoomHeader({
             {subtitle}
           </Text>
         </View>
-      </View>
+      </Pressable>
       <View style={s.actions}>
         {showAnotherMeToggle && width > 640 && (
           <Pressable

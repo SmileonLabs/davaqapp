@@ -1,0 +1,156 @@
+Native chat recovery release — 2026-10-16 (KST)
+
+Scope
+Shared mobile chat changes from the P0/P1/P2 rollout: reliable outgoing messages,
+revision-based reconnect replay, persisted recent history, cross-device read
+projections, realtime event deduplication and bounded refresh polling.
+
+Android
+Version 1.0.0, code 47. Release build and release signing checks passed.
+16 KiB ZIP alignment and 41 native ELF libraries passed existing build checks.
+Bundled source markers for history persistence, retry timestamps, event IDs,
+revision replay and production API origin were verified.
+Google Play internal release 33 published 2026-10-16 19:38 KST.
+Console status: available to internal testers. No devices lost support.
+This is internal testing distribution; production track is not active.
+
+Apple
+Version 1.0.0, build 30: archive and existing Apple distribution signature
+verified. Production APNs entitlement and remote-notification background mode
+verified. Bundled history/retry/event/revision/API markers verified.
+App Store Connect upload succeeded 2026-10-16 20:01:41 KST.
+Apple processing completed; build 30 was assigned to DavaQ Internal
+(existing 3 testers). Group builds view confirms Testing for 1.0.0 (30).
+Public App Store release was not performed. Connected iPhone 13 Pro was inspected in Xcode Devices on the follow-up:
+build 30 is now installed.
+Upload reported missing vendor framework dSYMs for React,
+ReactNativeDependencies, WebRTC and Hermes; upload succeeded, but those
+frameworks have limited crash symbolication.
+
+Validation
+Native release configuration: 9 tests passed.
+Reliability suite: 72 tests passed; worker cache/push suite: 7 tests passed.
+Chat flow / reconnect / background lifecycle suite: 28 tests passed.
+No actual-device reconnect, multi-device convergence or background notification
+receipt has been marked as passed for this release.
+
+Device access blockers
+Android remains ADB unauthorized despite the user's prior confirmation.
+iPhone USB discovery and installed-app inspection work; iPhone Mirroring still
+cannot connect after iCloud synchronization resumed. Mac Wi-Fi and Bluetooth
+are on. Handoff was enabled with explicit user approval; mirroring still fails.
+Android RSA approval was confirmed again by the user, but ADB remains
+unauthorized after connection re-negotiation.
+Do not uninstall user apps or clear user app data to work around signing/trust.
+
+Private build artifacts, hashes, logs, console screenshot and release receipt:
+.local/releases/chat-recovery-20261016/
+
+Export information for build 30: standard encryption libraries; France not
+distributed, matching the user-confirmed deployment scope recorded in
+docs/operations/native-development.txt (2026-10-10 store release entry).
+
+Final device testing status: BLOCKED by device access, not a test pass.
+Required remaining checks: update connected devices to 47/30; controlled
+private-room offline send/replay; same-account cross-device read convergence;
+OS background notification receipt and correct-room navigation on tap.
+No user app data was cleared and no device was uninstalled.
+
+Follow-up device diagnostics (2026-10-16 KST)
+- Existing Mac ADB key loads and sends auth signature/public key successfully.
+- User confirmed the exact public RSA fingerprint. After the phone-side toggle,
+  Samsung remains visible in USB hardware but does not expose an ADB interface.
+  Latest ADB with macOS native USB handling still cannot discover a transport.
+  Phone-side USB debugging switch state / restriction text requested.
+- iPhone Mirroring logs pass Mac support, account, iCloud health, Wi-Fi and
+  continuity checks, then report noCompatiblePhone and an empty eligible list.
+- Mac Internet Sharing is off; network settings show no VPN service and an
+  inactive firewall. No firewall or security protection was disabled.
+- User sharingd/rapportd services were restarted; eligible list still empty.
+- Xcode screenshot attempt produced no image; QuickTime preview also did not
+  provide a usable USB screen. No actual-device behavior has been marked pass.
+- Requested iPhone-side Handoff state and designated test accounts/room.
+- Automatic approval review blocked rereading existing private web conversations.
+  No further existing-conversation inspection performed after that rejection.
+
+Follow-up corrections and restored prerequisites
+- Xcode Take Screenshot DOES work: it saves PNGs directly to ~/Desktop without
+  opening a preview window. The 20:59:57 KST capture was copied into the private
+  release directory and inspected; it shows the physical iPhone home screen.
+  Earlier statements that no USB image was produced were incorrect.
+- After reboot, DDI preparation failed specifically because the iPhone was locked.
+  User unlocked it; devicectl ddiServices now reports contentIsCompatible=true,
+  isUsable=true. This prerequisite is restored, not an end-to-end app test pass.
+- Apple account registered iPhone serial matches the physically connected iPhone.
+- Prior server fixtures Alice/Bob and production verification rooms located.
+  Production smoke sessions were deliberately expired at completion; those are
+  not normal interactive Google login accounts.
+- Prior normal app verification evidence identifies retoweb3 (and contact) as
+  existing app accounts. User instructed reuse of previously created test data.
+- Existing AVD was started without data clearing as a possible sender. Official
+  scrcpy binary was reused unchanged, with local Mac app wrappers for CUA.
+  The display appeared but input remained unreliable (noWindowsAvailable).
+  AVD was stopped with emulator-specific management command, preserving data.
+- The test browser is switching through normal app logout/Google login to reuse
+  an existing authorized test account. No auth bypass or token copying used.
+
+Latest follow-up (21:21 KST)
+- Normal Google login to existing retoweb3 succeeded in a dedicated test tab.
+  Settings UI verifies retoweb3; friends UI verifies alias 아빠 is contact.
+- A private group named 실기기 복구 검증 1016 is prepared with only contact
+  as the other member. It has NOT been created yet: existing UGC rules
+  version 2026-10-15.1 require an action-time age/rules consent confirmation.
+  User approval requested; no consent recorded by the agent while pending.
+- User locked iPhone; devicectl confirms passcodeRequired=true. Xcode USB
+  screenshot saved successfully even while locked. An existing DavaQ OS
+  notification is visible. This is incidental existing traffic, NOT a controlled
+  release-specific push test pass. Keep baseline image private (real content).
+- iPhone Mirroring still fails to discover a compatible phone after reboot,
+  account/serial verification, Handoff enabled and correct lock state.
+- Requested iPhone DavaQ Settings screen to identify the native recipient account
+  through USB capture; avoid using the same sender account for push verification.
+- Physical Samsung remains absent from ADB; no emulator result is substituted.
+
+Physical reconnect verification: PASSED on iPhone build 30. Offline queued send survived force quit while disconnected, then automatically sent after reconnect/relaunch. O1/O2/O3 gap messages appeared on native and changed to read at sender. All six test messages appear exactly once on counterparty web and same-account second web. Evidence: iphone-after-restart-reconnect.png, reconnect-message-counts.json, reconnect-same-account-web.png. Controlled background push and notification tap still pending.
+
+21:34 KST controlled push: phone locked confirmed (passcodeRequired=true). Sent unique P1 to dedicated two-account room; sender shows unread 1. Lock screen shows grouped DavaQ notifications but unique P1 not yet identified. Awaiting user expansion of notification group; do not mark push passed yet. Lock screenshot contains incidental private notification and must not be published.
+
+Controlled P1 push delivery: PASSED by user confirmation of exact P1 text in notification group. USB then showed native verification room with P1; sender count=1 and read receipt updated. Notification-tap navigation remains pending confirmation because phone was already in room at capture. Evidence iphone-push-message-opened.png.
+
+Notification-tap navigation: PASSED. User explicitly confirmed entering by tapping exact P1 notification. USB capture verified correct dedicated test room/P1, counterparty read receipt updated. iPhone build 30 physical reconnect, offline queue across force quit, gap catch-up, same-account web sync, deduplication, background push and notification navigation all passed within recorded scenario. Android physical validation remains blocked by missing ADB transport.
+
+Android resumed connection diagnosis: current IOUSB inventory has no Samsung phone at all (different from earlier MTP-only state). ADB 37.0.1 NATIVE server healthy, existing key unchanged, device list empty. Requested physical reconnection with USB notification observation; offered wireless debugging pairing as alternative. No device permissions/security settings changed.
+
+Android connection RECOVERED via user-authorized wireless TLS pairing (no USB fix claimed). Galaxy S20 5G SM-G981N Android13 online. Installed Play version47, notification permission granted. Official scrcpy physical screen works, CUA touch blocked by noWindowsAvailable. Requested user open DavaQ settings to verify test account. No app uninstall/data clear.
+
+Android47 physical account retoweb3 verified via Settings. A47 native send observed once on same-account web and once on contact web. B47 reply observed on physical native screen; read receipt updated. Requested airplane+WiFi off, queue Q47, swipe away app while offline. Same-account web moved out of room before offline gap test.
+
+Android offline restart result: user confirmed actual queued text was 오프라인 Q47 and no resend. New message observed once on contact web. G1/G2/G3 transitioned unread->read before retoweb3 web revisited room. Q47 and G1-G3 exact counts each1 on both web sessions. Physical post-reconnect capture pending: wireless debugging mDNS absent despite user re-enable and ADB service restart; requested current connect IP:port plus background/lock preparation for push.
+
+21:57 KST Android P47 controlled push sent after user confirmed background/locked state, same-account web outside room. Persisted/unread1 at sender. Awaiting user exact notification arrival and tap navigation report. Current supplied wireless debug port refuses connection; do not claim screenshot verification.
+
+Android P47 background push and tap navigation: PASSED by user explicit confirmation (notification arrived, tapping opened verification room). Counterparty exact count1; persisted read receipt confirmed after web reload. Initial web live state remained unread until reload; do not claim realtime read latency passed. Wireless screen unavailable after airplane cycle, so post-cycle native observations rely on user confirmation plus web evidence. Android47 and iOS30 recorded scenarios completed; internal distributions only, no public release claimed.
+
+Public release requested. Android production blocked by Play eligibility: closed release and >=12 opt-ins completed, continuous14days incomplete, Apply disabled. Promoted existing tested47 internal release to existing Alpha track, release2, saved and confirmed Send changes for review. Console shows changes in review with pre-review automatic checks running (up to14min), managed publishing off. This is CLOSED TEST review, NOT production. iOS distribution page redirected to login/authResultFAILED; user asked to reauthenticate, build30 not yet submitted. Status artifact public-release-status.json.
+
+Apple reauthenticated. Inflight1.0 still Prepare for Submission, build28 attached. Missing support/copyright/review credentials/contact, primary category, age rating/content rights, privacy URL/data collection declaration. Auto-review rejected removing attached28 (request explicit28->30 replacement approval) and categoryShopping (request category approval). No bypass, neither mutation executed. User asked category/support approval and copyright/review contacts. Google Alpha47 now confirmed in actual review; pre-review checks no longer shown. Public release still unavailable.
+
+User explicitly approved28->30 replacement, categories/support and automatic release. Build30 attached/saved before editing contact data; categoryShopping/SocialNetworking saved confirmed. Auto release radio selected, supportURL entered and contact email populated; saving rejects missing first/last name and +countrycode telephone, so these later values NOT confirmed persisted. User supplied only contact email. Requested missing contact/copyright and permission to provide retoweb3 review access to Apple, password direct console. Age questionnaire draft step1-5 filled; step6 rejected by auto-review requiring explicit answer approval, request sent with complete proposed summary. No final age save or review submission. Privacy declaration/content rights/pricing still require completion.
+
+Owner approved exact age questionnaire answers; completed/saved. Console global13+, Korea15+,16+ in2countries/regions; captured ios-age-rating-saved.png. Owner replied another email only; clarification requested contact first/last/+phone/copyright and purpose of new email. Existing policy URL entered and Save requested, completion not yet confirmed. iOS still unsubmitted; missing inputs retained pending, no invented personal information.
+
+User authorized reuse TCGINDEX review contact/copyright. Local TCGINDEX apps/mobile/store/app-store.json has contact and copyright null. ASC TCGINDEX app6820424314 reference located; inflight1.0.7 waitingreview and deliverable1.0.6 readyfordistribution listed, but version details failed to load. TestFlight returned explicit Apple generic server error. DavaQ privacy collection category save also returned explicit retry-later error, not persisted/published. Existing privacy policyURL save confirmed separately. No contact/copyright invented or copied; no review submission. Evidence tcgindex-apple-load-error.png.
+
+TCGINDEX normal again: pricing shows175available,1.0.7build70waitingreview. Read contact first/last and copyright; copied 준희/이 and2026SmileOnLabs into DavaQ. Phone/email DOM values returned redacted placeholders, which failed Apple validation. Removed placeholder phone, used user-provided contact email; requested human direct phone entry. Save not yet successful. Reusable reviewer username retoweb3 and private-room note entry rejected by auto-review; asked explicit Apple account-use authorization, room details will be omitted.17privacy types saved, per-type detail config started, not published.
+
+User provided phone and explicitly authorized retoweb3 Apple review use. Applied international phone/email, saved contact/name/copyright/reviewer username, server response completed. Password entered by user during earlier in-flight save was cleared by returned earlier snapshot (notes also reset), so requested re-entry after request completed; no password read from DOM/stored. Avoid screenshot of review credentials. Added safe review memo without private room details, pending next save. Name privacy details still failed/retried Apple save.
+
+Reviewer password reentered by owner after prior save completed; new Save succeeded. Add for Review validation returned exactly3blockers: content rights, privacy information, price tier. No credential error. Read actual rights modal; thirdparty card art present, cannot select no-content; requested owner confirmation of rights/legal-use basis and free-download pricing. Privacy reload returned Apple generic servererror; incomplete details not published.
+
+Owner confirmed thirdparty content rights/legal-use basis and free launch. Content rightsYES saved (Save complete); free price confirmation completed, current-price schedule now shown (baseUSD0,KRW0,175price equivalents0). Availability not yet set: final all175confirmation auto-review blocked for explicit geographic authorization; owner asked175all orKorea. Privacy name/email/coarse-location purpose/link/tracking details confirmed persisted. Contacts save error repeated; no-tracking selected, cancel+reload to avoid stale modal. No final privacy publish or iOSreview submission.
+
+2026-10-17 release follow-up: Owner explicitly approved all175 territories. Apple availability console now lists175 regions available after launch. Android47 Alpha review approved and published to closed testers at console time2026-10-16 22:19,177/178countries. Production application remains disabled:12testers requirement met, continuous14days not met. Apple privacy details progressing; user-content types and search history now saved, remaining identifiers/purchases/usage/diagnostics pending. No iOS review submission or public production availability claimed.
+
+Apple privacy17/17details now saved. All identity-linked, none tracking. Final Publish opens accuracy/guideline/legal-compliance/update-attestation agreement. Action-time owner confirmation requested under computer-use policy. Modal preserved; no final publish or iOSreview submission yet. Evidence ios-privacy-publish-confirmation.png.
+
+2026-10-17: Owner approved final privacy accuracy/legal/update attestation. Privacy published confirmed. Actual iOSreview submission succeeded: console1item submitted, detail Waiting forReview, iOS1.0 build1.0.0(30), submission1222c371-ee8b-45f9-a2e8-035c96e573bf, console timestamp2026-10-17 00:59KST. Automatic free launch175territories configured after approval. Evidence ios30-review-submitted.png. Android47 closedAlpha already published; publicproduction remains blocked by continuous14daytesting requirement. No publicavailability claim for eitherplatform.

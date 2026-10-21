@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
@@ -65,6 +68,9 @@ function errorCode(error: unknown): string {
 }
 
 export default function AvatarCustomizationScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profileId } = useLocalSearchParams<{ profileId?: string }>();
@@ -210,7 +216,7 @@ export default function AvatarCustomizationScreen() {
   if (catalog.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#9B57FF" />
+        <ActivityIndicator color={styleColors.primary} />
         <Text style={styles.muted}>아바타를 불러오는 중이에요.</Text>
       </View>
     );
@@ -238,7 +244,7 @@ export default function AvatarCustomizationScreen() {
           hitSlop={12}
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" size={28} color="#fff" />
+          <Feather name="arrow-left" size={28} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.headerTitle}>아바타 꾸미기</Text>
         <View style={{ width: 28 }} />
@@ -267,7 +273,7 @@ export default function AvatarCustomizationScreen() {
               />
               {busy ? (
                 <View style={styles.busy}>
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={styleColors.foreground} />
                 </View>
               ) : null}
             </View>
@@ -300,7 +306,7 @@ export default function AvatarCustomizationScreen() {
                   <Feather
                     name={CATEGORY_ICON[item]}
                     size={13}
-                    color={category === item ? "#FFFFFF" : "#A69DB4"}
+                    color={category === item ? styleColors.primaryForeground : styleColors.mutedForeground}
                   />
                   <Text
                     numberOfLines={1}
@@ -374,11 +380,11 @@ export default function AvatarCustomizationScreen() {
                       />
                       {selected ? (
                         <View style={styles.selectedMark}>
-                          <Feather name="check" size={11} color="#fff" />
+                          <Feather name="check" size={11} color={styleColors.primaryForeground} />
                         </View>
                       ) : locked ? (
                         <View style={styles.lockedMark}>
-                          <Feather name="lock" size={10} color="#D8CFE4" />
+                          <Feather name="lock" size={10} color={styleColors.mutedForeground} />
                         </View>
                       ) : null}
                     </View>
@@ -407,11 +413,11 @@ export default function AvatarCustomizationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#040309" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: styleColors.background },
   center: {
     flex: 1,
-    backgroundColor: "#040309",
+    backgroundColor: styleColors.card,
     alignItems: "center",
     justifyContent: "center",
     gap: 14,
@@ -425,9 +431,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "800" },
-  title: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  muted: { color: "#A59DB2" },
+  headerTitle: { color: styleColors.foreground, fontSize: fontSizes.titleMedium, fontWeight: "800" },
+  title: { color: styleColors.foreground, fontSize: fontSizes.heading, fontWeight: "800" },
+  muted: { color: styleColors.mutedForeground },
   content: { flex: 1, minHeight: 0, paddingHorizontal: 14, gap: 12 },
   balance: {
     minHeight: 48,
@@ -435,13 +441,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#382650",
-    backgroundColor: "#0C0915",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
     borderRadius: 14,
     paddingHorizontal: 14,
   },
-  balanceLabel: { color: "#AAA2B7", fontSize: 12 },
-  balanceValue: { color: "#B774FF", fontSize: 16, fontWeight: "900" },
+  balanceLabel: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
+  balanceValue: { color: styleColors.primary, fontSize: fontSizes.input, fontWeight: "900" },
   workspace: { flex: 1, minHeight: 0, flexDirection: "row", gap: 11 },
   previewColumn: {
     width: "42%",
@@ -454,36 +460,36 @@ const styles = StyleSheet.create({
   hero: {
     width: "100%",
     aspectRatio: 0.7,
-    borderRadius: 20,
+    borderRadius: radii.card,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#5D318D",
-    backgroundColor: "#05050A",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
   },
   busy: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.48)",
+    backgroundColor: styleColors.card,
     alignItems: "center",
     justifyContent: "center",
   },
   stageBadge: {
     minHeight: 44,
     borderRadius: 13,
-    backgroundColor: "#24103F",
+    backgroundColor: styleColors.secondary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 8,
   },
-  stageText: { color: "#D9B6FF", fontSize: 12, fontWeight: "900" },
+  stageText: { color: styleColors.primary, fontSize: fontSizes.caption, fontWeight: "900" },
   stageClass: {
-    color: "#9F78CA",
-    fontSize: 10,
+    color: styleColors.primary,
+    fontSize: fontSizes.tiny,
     fontWeight: "700",
     marginTop: 1,
   },
   previewHint: {
-    color: "#7F768C",
-    fontSize: 10,
+    color: styleColors.mutedForeground,
+    fontSize: fontSizes.tiny,
     lineHeight: 14,
     textAlign: "center",
   },
@@ -493,23 +499,23 @@ const styles = StyleSheet.create({
     width: "48%",
     minHeight: 34,
     borderWidth: 1,
-    borderColor: "#352847",
+    borderColor: styleColors.border,
     borderRadius: 10,
-    backgroundColor: "#0C0A12",
+    backgroundColor: styleColors.card,
     paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 5,
   },
-  categoryButtonActive: { backgroundColor: "#7132EF", borderColor: "#A55EFF" },
-  categoryText: { color: "#9E96AA", fontSize: 10, fontWeight: "700" },
-  categoryTextActive: { color: "#fff" },
+  categoryButtonActive: { backgroundColor: styleColors.primary, borderColor: styleColors.primary },
+  categoryText: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny, fontWeight: "700" },
+  categoryTextActive: { color: styleColors.primaryForeground },
   guide: {
-    color: "#A59DB2",
-    fontSize: 10,
+    color: styleColors.mutedForeground,
+    fontSize: fontSizes.tiny,
     lineHeight: 15,
-    backgroundColor: "#0C0915",
+    backgroundColor: styleColors.card,
     borderRadius: 10,
     padding: 9,
     marginTop: 8,
@@ -520,28 +526,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  itemTitle: { color: "#F7F3FA", fontSize: 14, fontWeight: "900" },
-  itemCount: { color: "#8F859C", fontSize: 10 },
+  itemTitle: { color: styleColors.foreground, fontSize: fontSizes.label, fontWeight: "900" },
+  itemCount: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny },
   itemScroll: { flex: 1, minHeight: 0 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 7, paddingBottom: 18 },
   card: {
     width: "48%",
-    borderRadius: 12,
+    borderRadius: radii.control,
     borderWidth: 1,
-    borderColor: "#30243F",
-    backgroundColor: "#0C0914",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
     overflow: "hidden",
     padding: 4,
     paddingBottom: 7,
   },
-  cardActive: { borderColor: "#A951FF", backgroundColor: "#1B0B2C" },
+  cardActive: { borderColor: styleColors.primary, backgroundColor: styleColors.secondary },
   cardLocked: { opacity: 0.5 },
   cardPreview: {
     width: "100%",
     aspectRatio: 0.9,
-    borderRadius: 8,
+    borderRadius: radii.small,
     overflow: "hidden",
-    backgroundColor: "#05050A",
+    backgroundColor: styleColors.card,
   },
   selectedMark: {
     position: "absolute",
@@ -552,7 +558,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#853DFF",
+    backgroundColor: styleColors.primary,
   },
   lockedMark: {
     position: "absolute",
@@ -563,28 +569,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(14,10,20,0.82)",
+    backgroundColor: styleColors.card,
   },
   cardName: {
-    color: "#F6F1FA",
-    fontSize: 10,
+    color: styleColors.foreground,
+    fontSize: fontSizes.tiny,
     fontWeight: "800",
     marginHorizontal: 4,
     marginTop: 6,
   },
   cardMeta: {
-    color: "#968DA4",
-    fontSize: 9,
+    color: styleColors.mutedForeground,
+    fontSize: fontSizes.micro,
     marginHorizontal: 4,
     marginTop: 2,
   },
-  equipped: { color: "#C688FF", fontWeight: "800" },
-  empty: { width: "100%", color: "#8F859C", fontSize: 11, lineHeight: 18 },
+  equipped: { color: styleColors.primary, fontWeight: "800" },
+  empty: { width: "100%", color: styleColors.mutedForeground, fontSize: fontSizes.small, lineHeight: 18 },
   primary: {
-    backgroundColor: "#7132EF",
+    backgroundColor: styleColors.primary,
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  primaryText: { color: "#fff", fontWeight: "800" },
+  primaryText: { color: styleColors.primaryForeground, fontWeight: "800" },
 });

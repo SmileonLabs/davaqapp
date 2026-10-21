@@ -202,23 +202,6 @@ export class ObjectStorageService {
     return new Response(webStream, { headers });
   }
 
-  async brandVideoReadUrl(objectPath: string): Promise<string | null> {
-    if (!this.useS3()) return null;
-    const object = await this.getObjectEntityFile(objectPath);
-    if (object.backend !== "s3") return null;
-    return getSignedUrl(
-      this.createS3Client(),
-      new GetObjectCommand({
-        Bucket: this.getS3Bucket(),
-        Key: object.key,
-        ResponseContentType: "video/mp4",
-        ResponseContentDisposition: "inline",
-        ResponseCacheControl: "private, max-age=300",
-      }),
-      { expiresIn: 900 },
-    );
-  }
-
   async getObjectEntityUploadURL(): Promise<string> {
     if (this.useS3()) {
       const prefix = this.getS3Prefix();

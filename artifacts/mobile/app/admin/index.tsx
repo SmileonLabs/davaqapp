@@ -13,6 +13,7 @@ const links: AdminLink[] = [
   { label: "NFT 컬렉션", description: "컬렉션 등록·AI 분석·게시", icon: "box", route: "/settings/nft-admin" },
   { label: "Knowledge·온톨로지", description: "지식 소스와 검토 큐", icon: "database", route: "/settings/knowledge-admin" },
   { label: "피드·신고", description: "게시물과 신고 처리", icon: "flag", route: "/admin/moderation" },
+  { label: "DavaQ 신고", description: "사용자·카드 댓글·채팅 신고", icon: "shield", route: "/admin/content-reports" },
   { label: "검색·추천", description: "인기 검색어와 차단어", icon: "search" },
   { label: "감사 로그", description: "관리자 작업 변경 이력", icon: "file-text" },
   { label: "관리자 권한", description: "역할과 접근 범위", icon: "shield", route: "/admin/roles" },

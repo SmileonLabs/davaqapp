@@ -1,12 +1,24 @@
 import React from "react";
 import { AppState, Platform } from "react-native";
-import { useAuth } from "@clerk/expo";
-import { getListRoomsQueryKey, useListRooms } from "@workspace/api-client-react";
-import { clearChatNotifications } from "@/lib/chatNotifications";
+import { useAuth } from "@/lib/davaqAuth";
+import {
+  getListRoomsQueryKey,
+  getGetMeQueryKey,
+  useGetMe,
+  useListRooms,
+} from "@workspace/api-client-react";
 
-export function useUnreadMessageCount(): { count: number; refetch: () => void } {
+export function useUnreadMessageCount() {
   const { isSignedIn } = useAuth();
-  const { data: rooms = [], refetch, isSuccess } = useListRooms({
+  const { data: me } = useGetMe({
+    query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() },
+  });
+  const {
+    data: rooms = [],
+    refetch,
+    isSuccess,
+    dataUpdatedAt,
+  } = useListRooms({
     query: { enabled: !!isSignedIn, queryKey: getListRoomsQueryKey() },
   });
 
@@ -18,7 +30,11 @@ export function useUnreadMessageCount(): { count: number; refetch: () => void } 
     const appStateSub = AppState.addEventListener("change", (state) => {
       if (state === "active") refresh();
     });
-    if (Platform.OS === "web" && typeof window !== "undefined" && typeof document !== "undefined") {
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      typeof document !== "undefined"
+    ) {
       const onFocus = () => refresh();
       const onVisibility = () => {
         if (document.visibilityState === "visible") refresh();
@@ -37,15 +53,21 @@ export function useUnreadMessageCount(): { count: number; refetch: () => void } 
   const count = React.useMemo(
     () =>
       isSignedIn
-        ? rooms.reduce((sum, room) => sum + Math.max(0, room.unreadCount ?? 0), 0)
+        ? rooms.reduce(
+            (sum, room) => sum + Math.max(0, room.unreadCount ?? 0),
+            0,
+          )
         : 0,
     [isSignedIn, rooms],
   );
 
-  React.useEffect(() => {
-    if (!isSignedIn || !isSuccess || count !== 0) return;
-    void clearChatNotifications();
-  }, [count, isSignedIn, isSuccess]);
-
-  return { count, refetch: () => void refetch() };
+  const refreshUnread = React.useCallback(() => { void refetch(); }, [refetch]);
+  return {
+    count,
+    rooms,
+    ownerId: isSignedIn ? me?.id : undefined,
+    ready: !!isSignedIn && isSuccess,
+    dataUpdatedAt,
+    refetch: refreshUnread,
+  };
 }

@@ -28,7 +28,7 @@ function checkLocal(key: string, limit: number, windowSeconds: number): { count:
 
 export function rateLimit(options: RateLimitOptions) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const key = `rate-limit:${options.name}:${subject(req)}`;
+    const key = `davaq:rate-limit:${options.name}:${subject(req)}`;
     let result: { count: number; ttl: number };
     const redis = getRedis();
 

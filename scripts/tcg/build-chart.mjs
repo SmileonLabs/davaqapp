@@ -1,0 +1,10 @@
+import {createRequire} from 'node:module';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const source=process.argv[2] || '/Users/smileonlabs/Documents/tcgindex';
+const require=createRequire(resolve(source,'package.json'));
+const {build}=createRequire(resolve('artifacts/api-server/package.json'))('esbuild');
+const result=await build({entryPoints:['scripts/tcg/chart/entry.tsx'],bundle:true,write:false,minify:true,format:'iife',jsx:'automatic',nodePaths:[resolve(source,'apps/web/node_modules'),resolve(source,'node_modules')],define:{'process.env.NODE_ENV':'"production"'}});
+const css=readFileSync('scripts/tcg/chart/chart.css','utf8');
+const html='<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{--ui-surface:#fff;--ui-text:#111;--ui-text-muted:#777;--ui-border:#eee;--ui-brand:#111111;--ui-brand-soft:#f4f4f4;--ui-warning:#d49422;--ui-positive:#15803d;--ui-negative:#dc2626;--ui-shadow-color:#111;--ui-focus:#777}body{margin:0;font-family:system-ui,sans-serif}'+css+'</style></head><body><div id="root"></div><script>window.__DAVAQ_POINTS__=DAVAQ_POINTS_TOKEN;</script><script>'+result.outputFiles[0].text.replaceAll('</script','<\\/script')+'</script></body></html>';
+writeFileSync('artifacts/mobile/components/tcg/chart/template.ts','// TCGIndex ShopPriceHistoryChart; built by scripts/tcg/build-chart.mjs.\nexport const chartTemplate='+JSON.stringify(html)+';\n');

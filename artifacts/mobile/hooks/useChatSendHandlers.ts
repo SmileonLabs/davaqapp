@@ -1,3 +1,10 @@
+import { canDiscardFailedMessage } from "@/lib/chatFailedMessagePolicy";
+import { prepareChatImage } from "@/lib/chatImagePreparation";
+import { pickAndUploadVideo } from "@/lib/uploadFile";
+import type {
+  PreviewRequest,
+  MediaSelection,
+} from "@/components/ChatMediaPreview";
 import React, { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,7 +66,9 @@ type UploadTask = {
 type SendableMessageType = "text" | "sticker" | "image" | "file";
 
 function newClientMessageId(): string {
-  const randomId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const randomId =
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `m-${randomId}`;
 }
 
@@ -74,6 +83,7 @@ export function useChatSendHandlers({
   isDungeon,
   beginDungeonThinking,
   clearDungeonThinking,
+  ensureUgcConsent,
 }: {
   roomId: string;
   me: { id?: string } | null | undefined;
@@ -91,6 +101,7 @@ export function useChatSendHandlers({
   isDungeon: boolean;
   beginDungeonThinking: () => void;
   clearDungeonThinking: () => void;
+  ensureUgcConsent: () => Promise<boolean>;
 }) {
   const queryClient = useQueryClient();
   const [uploadTask, setUploadTask] = useState<UploadTask | null>(null);
@@ -121,7 +132,8 @@ export function useChatSendHandlers({
       const key = getFetchRoomMessagesQueryKey(entry.roomId);
       queryClient.setQueryData<Message[]>(key, (old = []) =>
         old.map((message) =>
-          message.id === entry.tempId || message.clientMessageId === entry.clientMessageId
+          message.id === entry.tempId ||
+          message.clientMessageId === entry.clientMessageId
             ? ({ ...message, _deliveryState: entry.deliveryState } as Message)
             : message,
         ),
@@ -131,9 +143,13 @@ export function useChatSendHandlers({
   );
 
   const replaceOptimisticMessage = React.useCallback(
-    (key: ReturnType<typeof getFetchRoomMessagesQueryKey>, created: Message) => {
-      queryClient.setQueryData<Message[]>(key, (old = []) =>
-        mergeChatMessages(old, [created]) as Message[],
+    (
+      key: ReturnType<typeof getFetchRoomMessagesQueryKey>,
+      created: Message,
+    ) => {
+      queryClient.setQueryData<Message[]>(
+        key,
+        (old = []) => mergeChatMessages(old, [created]) as Message[],
       );
     },
     [queryClient],
@@ -186,6 +202,7 @@ export function useChatSendHandlers({
               type: entry.type,
               replyToMessageId: entry.replyToMessageId,
               clientMessageId: entry.clientMessageId,
+              metadata: entry.metadata,
             },
             {
               signal: controller.signal,
@@ -203,7 +220,11 @@ export function useChatSendHandlers({
         } catch (error) {
           if (!ownerFenceRef.current.matchesEntry(ownerToken, entry)) return;
           const retryable = isRetryableChatDeliveryError(error);
-          const failed = markChatOutboxFailure(attempted, Date.now(), retryable);
+          const failed = markChatOutboxFailure(
+            attempted,
+            Date.now(),
+            retryable,
+          );
           try {
             await upsertChatOutboxEntry(entry.senderId, failed);
           } catch {
@@ -272,7 +293,9 @@ export function useChatSendHandlers({
       const ownerEntries = entries.filter((entry) =>
         ownerFenceRef.current.matchesEntry(ownerToken, entry),
       );
-      hasRoomOutboxRef.current = ownerEntries.some((entry) => entry.roomId === roomId);
+      hasRoomOutboxRef.current = ownerEntries.some(
+        (entry) => entry.roomId === roomId,
+      );
       const key = getFetchRoomMessagesQueryKey(roomId);
       const cached = queryClient.getQueryData<Message[]>(key) ?? [];
       const confirmedOperations = new Set(
@@ -334,28 +357,31 @@ export function useChatSendHandlers({
         if (pending.length > 0) {
           const key = getFetchRoomMessagesQueryKey(roomId);
           const hydrated = pending.map(
-            (entry): Message => ({
-              id: entry.tempId,
-              roomId: entry.roomId,
-              roomSeq: 0,
-              senderId: entry.senderId,
-              senderProfile: senderProfile ?? null,
-              authorKind: "user",
-              type: entry.type,
-              content: entry.content,
-              replyToMessageId: entry.replyToMessageId,
-              clientMessageId: entry.clientMessageId,
-              deletedAt: null,
-              stickerBadges: [],
-              linkPreview: null,
-              createdAt: new Date(entry.createdAt).toISOString(),
-              readCount: 0,
-              sender: (me as any) ?? undefined,
-              _deliveryState: entry.deliveryState,
-            } as Message),
+            (entry): Message =>
+              ({
+                id: entry.tempId,
+                roomId: entry.roomId,
+                roomSeq: 0,
+                senderId: entry.senderId,
+                senderProfile: senderProfile ?? null,
+                authorKind: "user",
+                type: entry.type,
+                content: entry.content,
+                replyToMessageId: entry.replyToMessageId,
+                clientMessageId: entry.clientMessageId,
+                metadata: entry.metadata,
+                deletedAt: null,
+                stickerBadges: [],
+                linkPreview: null,
+                createdAt: new Date(entry.createdAt).toISOString(),
+                readCount: 0,
+                sender: (me as any) ?? undefined,
+                _deliveryState: entry.deliveryState,
+              }) as Message,
           );
-          queryClient.setQueryData<Message[]>(key, (old = []) =>
-            mergeChatMessages(old, hydrated) as Message[],
+          queryClient.setQueryData<Message[]>(
+            key,
+            (old = []) => mergeChatMessages(old, hydrated) as Message[],
           );
         }
         if (pending.length > 0) void flushRoomOutbox();
@@ -396,15 +422,22 @@ export function useChatSendHandlers({
       content,
       type,
       errorMessage,
+      metadata,
       onError,
     }: {
       content: string;
       type: SendableMessageType;
       errorMessage: string;
+      metadata?: Record<string, unknown>;
       onError?: () => void;
     }): Promise<boolean> => {
       const ownerToken = ownerFenceRef.current.capture();
       if (!ownerToken) return false;
+      if (
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(ownerToken)
+      )
+        return false;
       forceStickToBottom();
       const activeReply = replyTo;
       const key = getFetchRoomMessagesQueryKey(roomId);
@@ -419,6 +452,7 @@ export function useChatSendHandlers({
         senderProfileId: ownerToken.profileId,
         content,
         type,
+        metadata,
         replyToMessageId: activeReply?.id ?? null,
         createdAt,
         attempts: 0,
@@ -436,6 +470,7 @@ export function useChatSendHandlers({
         authorKind: "user",
         type,
         content,
+        metadata,
         replyToMessageId: activeReply?.id ?? null,
         clientMessageId,
         replyTo: activeReply ? replyPreviewFromMessage(activeReply) : null,
@@ -452,17 +487,20 @@ export function useChatSendHandlers({
         // Persist before network I/O. If the app is killed or the response is
         // lost after the server commits, the exact same operation ID is retried.
         await upsertChatOutboxEntry(entry.senderId, entry);
-        if (!ownerFenceRef.current.matchesEntry(ownerToken, entry)) return false;
+        if (!ownerFenceRef.current.matchesEntry(ownerToken, entry))
+          return false;
         hasRoomOutboxRef.current = true;
-        queryClient.setQueryData<Message[]>(key, (old = []) =>
-          mergeChatMessages(old, [optimistic]) as Message[],
+        queryClient.setQueryData<Message[]>(
+          key,
+          (old = []) => mergeChatMessages(old, [optimistic]) as Message[],
         );
         if (onError) terminalCallbacksRef.current.set(clientMessageId, onError);
         clearReply();
         void deliverEntry(entry, ownerToken);
         return true;
       } catch (error) {
-        if (!ownerFenceRef.current.matchesEntry(ownerToken, entry)) return false;
+        if (!ownerFenceRef.current.matchesEntry(ownerToken, entry))
+          return false;
         onError?.();
         if (error instanceof ChatOutboxCapacityError) {
           crossAlert(
@@ -475,7 +513,17 @@ export function useChatSendHandlers({
         return false;
       }
     },
-    [clearReply, deliverEntry, forceStickToBottom, me, queryClient, replyTo, roomId, senderProfile],
+    [
+      clearReply,
+      deliverEntry,
+      ensureUgcConsent,
+      forceStickToBottom,
+      me,
+      queryClient,
+      replyTo,
+      roomId,
+      senderProfile,
+    ],
   );
 
   // Returns false so the composer can restore its input after a failed send.
@@ -484,14 +532,21 @@ export function useChatSendHandlers({
       const trimmed = content.trim();
       if (!trimmed) return false;
       if (isDungeon) beginDungeonThinking();
-      return sendOptimisticMessage({
+      const accepted = await sendOptimisticMessage({
         content: trimmed,
         type: "text",
         errorMessage: "메시지를 보내지 못했습니다. 다시 시도해주세요.",
         onError: clearDungeonThinking,
       });
+      if (!accepted) clearDungeonThinking();
+      return accepted;
     },
-    [beginDungeonThinking, clearDungeonThinking, isDungeon, sendOptimisticMessage],
+    [
+      beginDungeonThinking,
+      clearDungeonThinking,
+      isDungeon,
+      sendOptimisticMessage,
+    ],
   );
 
   const handleSendSticker = React.useCallback(
@@ -506,13 +561,47 @@ export function useChatSendHandlers({
   );
 
   const sendImageObjectPath = React.useCallback(
-    (objectPath: string) =>
+    (objectPath: string, metadata?: Record<string, unknown>) =>
       sendOptimisticMessage({
         content: objectPath,
+        metadata,
         type: "image",
         errorMessage: "사진을 보내지 못했습니다. 다시 시도해주세요.",
       }),
     [sendOptimisticMessage],
+  );
+
+  const handleSendGif = React.useCallback(
+    async (gif: import("@/lib/gifSearch").GifResult) => {
+      const token = ownerFenceRef.current.capture();
+      if (
+        !token ||
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(token)
+      )
+        return;
+      try {
+        if (!gif.url.startsWith("https://upload.wikimedia.org/"))
+          throw new Error("지원하지 않는 GIF 주소");
+        const response = await fetch(gif.url);
+        if (!response.ok) throw new Error("GIF 다운로드 실패");
+        const blob = await response.blob();
+        if (blob.type !== "image/gif" || blob.size > 8 * 1024 * 1024)
+          throw new Error("GIF 파일 형식 또는 크기 오류");
+        if (!ownerFenceRef.current.isCurrent(token)) return;
+        const path = await uploadBlob(blob, `gif-${gif.id}.gif`);
+        if (!ownerFenceRef.current.isCurrent(token)) return;
+        await sendImageObjectPath(path, {
+          imageWidth: gif.width,
+          imageHeight: gif.height,
+          caption: `${gif.title.slice(0, 80)} · ${gif.author.slice(0, 60)} · ${gif.license} · ${gif.source}`,
+        });
+      } catch {
+        if (ownerFenceRef.current.isCurrent(token))
+          crossAlert("GIF 전송 실패", "연결을 확인하고 다시 선택해 주세요.");
+      }
+    },
+    [ensureUgcConsent, sendImageObjectPath],
   );
 
   const sendUploadedFile = React.useCallback(
@@ -525,59 +614,110 @@ export function useChatSendHandlers({
           mime: picked.mimeType,
         }),
         type: "file",
+        metadata: {
+          videoThumbnail: picked.thumbnail,
+          videoDurationSec: picked.durationSec,
+          caption: picked.caption,
+        },
         errorMessage: "파일을 보내지 못했습니다. 다시 시도해주세요.",
       }),
     [sendOptimisticMessage],
   );
 
   const uploadAndSendImageBlob = React.useCallback(
-    async (blob: Blob, name = `image-${Date.now()}.jpg`) => {
+    async (
+      blob: Blob,
+      name = `image-${Date.now()}.jpg`,
+      album?: { albumId: string; albumIndex: number; albumTotal: number },
+    ): Promise<boolean> => {
       const ownerToken = ownerFenceRef.current.capture();
-      if (!ownerToken) return;
-      if (uploadTask) {
+      if (!ownerToken) return false;
+      if (
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(ownerToken)
+      )
+        return false;
+      if (uploadTask || uploadControllerRef.current) {
         crossAlert("업로드 중", "현재 업로드가 끝난 뒤 다시 시도해주세요.");
-        return;
+        return false;
       }
       const controller = new AbortController();
       uploadControllerRef.current = controller;
       setUploadTask({ kind: "image", progress: null, controller });
+      let inputUri: string | undefined;
+      let prepared: Awaited<ReturnType<typeof prepareChatImage>> | undefined;
       try {
+        if (Platform.OS === "web") {
+          inputUri = URL.createObjectURL(blob);
+          prepared = await prepareChatImage({
+            uri: inputUri,
+            width: 0,
+            height: 0,
+            fileName: name,
+            mimeType: blob.type,
+          });
+          blob = await (await fetch(prepared.uri)).blob();
+          name = prepared.fileName ?? name;
+        }
         const objectPath = await uploadBlob(blob, name, {
           signal: controller.signal,
-          onProgress: (progress) => {
-            if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+          onProgress: (progress: number) => {
+            if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
             setUploadTask((current) =>
-              current?.controller === controller ? { ...current, progress } : current,
+              current?.controller === controller
+                ? { ...current, progress }
+                : current,
             );
           },
         });
-        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-        await sendImageObjectPath(objectPath);
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
+        return await sendImageObjectPath(objectPath, {
+          ...album,
+          imageThumbnail: prepared?.thumbnail,
+          imageWidth: prepared?.width,
+          imageHeight: prepared?.height,
+        });
       } catch (error) {
-        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-        if (error instanceof UploadCancelledError) return;
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
+        if (error instanceof UploadCancelledError) return false;
         if (error instanceof ImageTooLargeError) {
-          crossAlert("사진 크기 초과", "사진 크기는 10MB를 초과할 수 없습니다.");
+          crossAlert(
+            "사진 크기 초과",
+            "사진 크기는 10MB를 초과할 수 없습니다.",
+          );
         } else {
           crossAlert("오류", "사진을 보내지 못했습니다. 다시 시도해주세요.");
         }
+        return false;
       } finally {
+        if (Platform.OS === "web") {
+          if (inputUri) URL.revokeObjectURL(inputUri);
+          if (prepared?.uri.startsWith("blob:") && prepared.uri !== inputUri)
+            URL.revokeObjectURL(prepared.uri);
+        }
         if (uploadControllerRef.current === controller) {
           uploadControllerRef.current = null;
         }
-        setUploadTask((current) => (current?.controller === controller ? null : current));
+        setUploadTask((current) =>
+          current?.controller === controller ? null : current,
+        );
       }
     },
-    [sendImageObjectPath, uploadTask],
+    [ensureUgcConsent, sendImageObjectPath, uploadTask],
   );
 
   const uploadAndSendFileBlob = React.useCallback(
-    async (file: File) => {
+    async (file: File): Promise<boolean> => {
       const ownerToken = ownerFenceRef.current.capture();
-      if (!ownerToken) return;
-      if (uploadTask) {
+      if (!ownerToken) return false;
+      if (
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(ownerToken)
+      )
+        return false;
+      if (uploadTask || uploadControllerRef.current) {
         crossAlert("업로드 중", "현재 업로드가 끝난 뒤 다시 시도해주세요.");
-        return;
+        return false;
       }
       const controller = new AbortController();
       uploadControllerRef.current = controller;
@@ -589,32 +729,40 @@ export function useChatSendHandlers({
           file.type || "application/octet-stream",
           {
             signal: controller.signal,
-            onProgress: (progress) => {
-              if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+            onProgress: (progress: number) => {
+              if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
               setUploadTask((current) =>
-                current?.controller === controller ? { ...current, progress } : current,
+                current?.controller === controller
+                  ? { ...current, progress }
+                  : current,
               );
             },
           },
         );
-        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-        await sendUploadedFile(picked);
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
+        return await sendUploadedFile(picked);
       } catch (error) {
-        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-        if (error instanceof UploadCancelledError) return;
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return false;
+        if (error instanceof UploadCancelledError) return false;
         if (error instanceof FileTooLargeError) {
-          crossAlert("파일 크기 초과", "파일 크기는 25MB를 초과할 수 없습니다.");
+          crossAlert(
+            "파일 크기 초과",
+            "파일 크기는 25MB를 초과할 수 없습니다.",
+          );
         } else {
           crossAlert("오류", "파일을 보내지 못했습니다. 다시 시도해주세요.");
         }
+        return false;
       } finally {
         if (uploadControllerRef.current === controller) {
           uploadControllerRef.current = null;
         }
-        setUploadTask((current) => (current?.controller === controller ? null : current));
+        setUploadTask((current) =>
+          current?.controller === controller ? null : current,
+        );
       }
     },
-    [sendUploadedFile, uploadTask],
+    [ensureUgcConsent, sendUploadedFile, uploadTask],
   );
 
   const handleWebUploadFiles = React.useCallback(
@@ -626,128 +774,374 @@ export function useChatSendHandlers({
         crossAlert("업로드 중", "현재 업로드가 끝난 뒤 다시 시도해주세요.");
         return;
       }
+      const imageCount = files.filter(isImageTransferFile).length;
+      if (imageCount > 10) {
+        crossAlert("사진 선택", "사진은 한 번에 10장까지 전송할 수 있습니다.");
+        return;
+      }
+      const albumId = newClientMessageId();
+      let imageIndex = 0;
       for (const file of files) {
         if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
         if (isImageTransferFile(file)) {
-          await uploadAndSendImageBlob(file, uploadFileName(file, "image"));
+          if (
+            !(await uploadAndSendImageBlob(
+              file,
+              uploadFileName(file, "image"),
+              { albumId, albumIndex: imageIndex++, albumTotal: imageCount },
+            ))
+          )
+            return;
         } else {
-          await uploadAndSendFileBlob(file);
+          if (!(await uploadAndSendFileBlob(file))) return;
         }
       }
     },
     [uploadAndSendFileBlob, uploadAndSendImageBlob, uploadTask],
   );
 
-  const handlePickImage = React.useCallback(async () => {
-    const ownerToken = ownerFenceRef.current.capture();
-    if (!ownerToken) return;
-    if (uploadTask) return;
-    const controller = new AbortController();
-    uploadControllerRef.current = controller;
-    setUploadTask({ kind: "image", progress: null, controller });
-    try {
-      const picked = await pickAndUploadImages({
-        signal: controller.signal,
-        onProgress: (progress) => {
-          if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-          setUploadTask((current) =>
-            current?.controller === controller ? { ...current, progress } : current,
-          );
-        },
-      });
-      if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-      if (!picked?.length) return;
-      for (const image of picked) {
+  type PhotoRetry = {
+    assets: import("expo-image-picker").ImagePickerAsset[];
+    original: boolean;
+    albumId: string;
+    offset: number;
+    total: number;
+    caption: string;
+  };
+  const [failedPhotos, setFailedPhotos] = React.useState<PhotoRetry | null>(
+    null,
+  );
+  const [uploadPreviews, setUploadPreviews] = React.useState<string[]>([]);
+  const [mediaPreview, setMediaPreview] = React.useState<PreviewRequest | null>(
+    null,
+  );
+  React.useEffect(() => {
+    setFailedPhotos(null);
+    setUploadPreviews([]);
+    setMediaPreview(null);
+    setUploadTask(null);
+  }, [roomId, me?.id, senderProfile?.id]);
+  const handlePickImage = React.useCallback(
+    async (camera = false, original = false, resume?: PhotoRetry) => {
+      const ownerToken = ownerFenceRef.current.capture();
+      if (!ownerToken) return;
+      if (
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(ownerToken)
+      )
+        return;
+      if (uploadTask || uploadControllerRef.current) return;
+      const controller = new AbortController();
+      uploadControllerRef.current = controller;
+      setUploadTask({ kind: "image", progress: null, controller });
+      let remaining = resume;
+      setFailedPhotos(null);
+      try {
+        const albumId = resume?.albumId ?? newClientMessageId();
+        let caption = resume?.caption ?? "";
+        if (resume) setUploadPreviews(resume.assets.map((asset) => asset.uri));
+        await pickAndUploadImages({
+          camera,
+          original: resume?.original ?? original,
+          assets: resume?.assets,
+          confirmAssets: resume
+            ? undefined
+            : (assets) =>
+                new Promise<MediaSelection | null>((resolve) => {
+                  const finish = (selection: MediaSelection | null) => {
+                    controller.signal.removeEventListener("abort", abort);
+                    setMediaPreview((current) =>
+                      current?.finish === finish ? null : current,
+                    );
+                    caption = selection?.caption ?? "";
+                    if (selection)
+                      remaining = {
+                        ...selection,
+                        albumId,
+                        offset: 0,
+                        total: selection.assets.length,
+                      };
+                    if (ownerFenceRef.current.isCurrent(ownerToken))
+                      setUploadPreviews(
+                        selection?.assets.map((asset) => asset.uri) ?? [],
+                      );
+                    resolve(selection);
+                  };
+                  const abort = () => finish(null);
+                  if (controller.signal.aborted) {
+                    resolve(null);
+                    return;
+                  }
+                  controller.signal.addEventListener("abort", abort, {
+                    once: true,
+                  });
+                  setMediaPreview({ assets, original, finish });
+                }),
+          onPrepared: (prepared) => {
+            // Retain the exact compressed/edited file before network I/O. Retry
+            // should not depend on a short-lived system picker URI or recompress.
+            if (
+              remaining?.assets.length &&
+              ownerFenceRef.current.isCurrent(ownerToken)
+            ) {
+              remaining = {
+                ...remaining,
+                assets: [prepared, ...remaining.assets.slice(1)],
+              };
+            }
+          },
+          onUploaded: async (image, index, total) => {
+            if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+            queryClient.setQueryData(
+              ["media-url", image.objectPath],
+              image.localUri,
+            );
+            const accepted = await sendImageObjectPath(image.objectPath, {
+              albumId,
+              albumIndex: index + (resume?.offset ?? 0),
+              albumTotal: resume?.total ?? total,
+              imageThumbnail: image.thumbnail,
+              imageWidth: image.width,
+              imageHeight: image.height,
+              caption:
+                index + (resume?.offset ?? 0) === 0 ? caption : undefined,
+            });
+            if (!accepted) throw new Error("image-message-not-queued");
+            if (remaining)
+              remaining = {
+                ...remaining,
+                assets: remaining.assets.slice(1),
+                offset: remaining.offset + 1,
+              };
+            if (ownerFenceRef.current.isCurrent(ownerToken))
+              setUploadPreviews((current) => current.slice(1));
+          },
+          signal: controller.signal,
+          onProgress: (progress: number) => {
+            if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+            setUploadTask((current) =>
+              current?.controller === controller
+                ? { ...current, progress }
+                : current,
+            );
+          },
+        });
         if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-        await sendImageObjectPath(image.objectPath);
-      }
-    } catch (error) {
-      if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-      if (error instanceof UploadCancelledError) return;
-      if (error instanceof PermissionDeniedError) {
-        crossAlert("권한 필요", "사진을 보내려면 사진 접근 권한을 허용해주세요.");
-      } else if (error instanceof ImageTooLargeError) {
-        crossAlert("사진 크기 초과", "사진 크기는 10MB를 초과할 수 없습니다.");
-      } else {
-        crossAlert("오류", "사진을 보내지 못했습니다. 다시 시도해주세요.");
-      }
-    } finally {
-      if (uploadControllerRef.current === controller) {
-        uploadControllerRef.current = null;
-      }
-      setUploadTask((current) => (current?.controller === controller ? null : current));
-    }
-  }, [sendImageObjectPath, uploadTask]);
-
-  const handlePickFile = React.useCallback(async () => {
-    const ownerToken = ownerFenceRef.current.capture();
-    if (!ownerToken) return;
-    if (uploadTask) return;
-    const controller = new AbortController();
-    uploadControllerRef.current = controller;
-    setUploadTask({ kind: "file", progress: null, controller });
-    try {
-      const picked = await pickAndUploadFile({
-        signal: controller.signal,
-        onProgress: (progress) => {
-          if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-          setUploadTask((current) =>
-            current?.controller === controller ? { ...current, progress } : current,
+      } catch (error) {
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+        if (error instanceof UploadCancelledError) return;
+        if (remaining?.assets.length) setFailedPhotos(remaining);
+        if (error instanceof PermissionDeniedError) {
+          crossAlert(
+            "권한 필요",
+            "사진을 보내려면 사진 접근 권한을 허용해주세요.",
           );
-        },
-      });
-      if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-      if (!picked) return;
-      await sendUploadedFile(picked);
-    } catch (error) {
-      if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-      if (error instanceof UploadCancelledError) return;
-      if (error instanceof FileTooLargeError) {
-        crossAlert("파일 크기 초과", "파일 크기는 25MB를 초과할 수 없습니다.");
-      } else {
-        crossAlert("오류", "파일을 보내지 못했습니다. 다시 시도해주세요.");
+        } else if (error instanceof ImageTooLargeError) {
+          crossAlert(
+            "사진 크기 초과",
+            "사진 크기는 10MB를 초과할 수 없습니다.",
+          );
+        } else {
+          crossAlert("오류", "사진을 보내지 못했습니다. 다시 시도해주세요.");
+        }
+      } finally {
+        if (uploadControllerRef.current === controller) {
+          uploadControllerRef.current = null;
+          setUploadPreviews([]);
+        }
+        setUploadTask((current) =>
+          current?.controller === controller ? null : current,
+        );
       }
-    } finally {
-      if (uploadControllerRef.current === controller) {
-        uploadControllerRef.current = null;
+    },
+    [ensureUgcConsent, sendImageObjectPath, uploadTask, queryClient],
+  );
+
+  const handlePickFile = React.useCallback(
+    async (video?: "camera" | "library") => {
+      const ownerToken = ownerFenceRef.current.capture();
+      if (!ownerToken) return;
+      if (
+        !(await ensureUgcConsent()) ||
+        !ownerFenceRef.current.isCurrent(ownerToken)
+      )
+        return;
+      if (uploadTask || uploadControllerRef.current) return;
+      const controller = new AbortController();
+      uploadControllerRef.current = controller;
+      setUploadTask({ kind: "file", progress: null, controller });
+      try {
+        const uploadOptions = {
+          confirmAssets: video
+            ? (assets: import("expo-image-picker").ImagePickerAsset[]) =>
+                new Promise<MediaSelection | null>((resolve) => {
+                  const finish = (selection: MediaSelection | null) => {
+                    controller.signal.removeEventListener("abort", abort);
+                    setMediaPreview((current) =>
+                      current?.finish === finish ? null : current,
+                    );
+                    resolve(selection);
+                  };
+                  const abort = () => finish(null);
+                  if (controller.signal.aborted) {
+                    resolve(null);
+                    return;
+                  }
+                  controller.signal.addEventListener("abort", abort, {
+                    once: true,
+                  });
+                  setMediaPreview({ assets, video: true, finish });
+                })
+            : undefined,
+          signal: controller.signal,
+          onProgress: (progress: number) => {
+            if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+            setUploadTask((current) =>
+              current?.controller === controller
+                ? { ...current, progress }
+                : current,
+            );
+          },
+        };
+        const picked = video
+          ? await pickAndUploadVideo(video === "camera", uploadOptions)
+          : await pickAndUploadFile(uploadOptions);
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+        if (!picked) return;
+        await sendUploadedFile(picked);
+      } catch (error) {
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+        if (error instanceof UploadCancelledError) return;
+        if (
+          error instanceof Error &&
+          error.message === "video-permission-denied"
+        ) {
+          crossAlert(
+            "권한 필요",
+            "영상 촬영·첨부에 필요한 카메라, 마이크 또는 사진 권한을 허용해 주세요.",
+          );
+        } else if (error instanceof FileTooLargeError) {
+          crossAlert(
+            "파일 크기 초과",
+            "파일 크기는 25MB를 초과할 수 없습니다.",
+          );
+        } else {
+          crossAlert("오류", "파일을 보내지 못했습니다. 다시 시도해주세요.");
+        }
+      } finally {
+        if (uploadControllerRef.current === controller) {
+          uploadControllerRef.current = null;
+        }
+        setUploadTask((current) =>
+          current?.controller === controller ? null : current,
+        );
       }
-      setUploadTask((current) => (current?.controller === controller ? null : current));
-    }
-  }, [sendUploadedFile, uploadTask]);
+    },
+    [ensureUgcConsent, sendUploadedFile, uploadTask],
+  );
 
   const retryMessage = React.useCallback(
     async (clientMessageId: string) => {
       const ownerToken = ownerFenceRef.current.capture();
       if (!ownerToken) return;
       const senderId = ownerToken.ownerId;
-      const entries = await loadChatOutbox(senderId);
-      if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
-      const existing = entries.find(
-        (entry) =>
-          entry.roomId === roomId &&
-          entry.clientMessageId === clientMessageId &&
-          ownerFenceRef.current.matchesEntry(ownerToken, entry),
-      );
-      if (!existing) {
-        // A catch-up may already have acknowledged and removed this operation.
-        void queryClient.invalidateQueries({
-          queryKey: getFetchRoomMessagesQueryKey(roomId),
-        });
-        return;
+      try {
+        const entries = await loadChatOutbox(senderId);
+        if (!ownerFenceRef.current.isCurrent(ownerToken)) return;
+        const existing = entries.find(
+          (entry) =>
+            entry.roomId === roomId &&
+            entry.clientMessageId === clientMessageId &&
+            ownerFenceRef.current.matchesEntry(ownerToken, entry),
+        );
+        if (!existing) {
+          // A catch-up may already have acknowledged and removed this operation.
+          void queryClient.invalidateQueries({
+            queryKey: getFetchRoomMessagesQueryKey(roomId),
+          });
+          return;
+        }
+        const retryable: ChatOutboxEntry = {
+          ...existing,
+          attempts: 0,
+          retryStartedAt: Date.now(),
+          nextAttemptAt: Date.now(),
+          deliveryState: "pending",
+          retryable: true,
+        };
+        await upsertChatOutboxEntry(senderId, retryable);
+        if (!ownerFenceRef.current.matchesEntry(ownerToken, retryable)) return;
+        updateOptimisticDeliveryState(retryable);
+        await deliverEntry(retryable, ownerToken);
+      } catch {
+        if (ownerFenceRef.current.isCurrent(ownerToken))
+          crossAlert(
+            "재전송 실패",
+            "재전송을 시작하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.",
+          );
       }
-      const retryable: ChatOutboxEntry = {
-        ...existing,
-        attempts: 0,
-        nextAttemptAt: Date.now(),
-        deliveryState: "pending",
-        retryable: true,
-      };
-      await upsertChatOutboxEntry(senderId, retryable);
-      if (!ownerFenceRef.current.matchesEntry(ownerToken, retryable)) return;
-      updateOptimisticDeliveryState(retryable);
-      await deliverEntry(retryable, ownerToken);
     },
     [deliverEntry, me?.id, queryClient, roomId, updateOptimisticDeliveryState],
+  );
+
+  const cancelFailedMessage = React.useCallback(
+    async (clientMessageId: string) => {
+      const token = ownerFenceRef.current.capture();
+      if (!token) return;
+      const key = getFetchRoomMessagesQueryKey(roomId);
+      const messages = queryClient.getQueryData<Message[]>(key) ?? [];
+      const failed = messages.find((message) =>
+        canDiscardFailedMessage(message, clientMessageId, token.ownerId),
+      );
+      if (!failed) return;
+      try {
+        const entries = await loadChatOutbox(token.ownerId);
+        if (!ownerFenceRef.current.isCurrent(token)) return;
+        const entry = entries.find(
+          (value) => value.clientMessageId === clientMessageId,
+        );
+        if (
+          entry &&
+          (!ownerFenceRef.current.matchesEntry(token, entry) ||
+            entry.roomId !== roomId ||
+            entry.deliveryState !== "failed")
+        )
+          return;
+        // Do not cancel an operation another drainer has already started sending.
+        const release = tryAcquireChatOutboxDelivery(
+          token.ownerId,
+          clientMessageId,
+        );
+        if (!release) {
+          crossAlert(
+            "전송 진행 중",
+            "재전송이 진행 중입니다. 완료 후 상태를 확인해 주세요.",
+          );
+          return;
+        }
+        try {
+          await removeChatOutboxEntry(token.ownerId, clientMessageId);
+          if (!ownerFenceRef.current.isCurrent(token)) return;
+          queryClient.setQueryData<Message[]>(key, (current = []) =>
+            current.filter(
+              (message) =>
+                !canDiscardFailedMessage(
+                  message,
+                  clientMessageId,
+                  token.ownerId,
+                ),
+            ),
+          );
+          terminalCallbacksRef.current.delete(clientMessageId);
+        } finally {
+          release();
+        }
+      } catch {
+        if (ownerFenceRef.current.isCurrent(token))
+          crossAlert("전송 취소 실패", "다시 시도해 주세요.");
+      }
+    },
+    [queryClient, roomId],
   );
 
   const handleCancelUpload = React.useCallback(() => {
@@ -755,11 +1149,14 @@ export function useChatSendHandlers({
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || isDungeon || typeof document === "undefined") return;
+    if (Platform.OS !== "web" || isDungeon || typeof document === "undefined")
+      return;
 
     const handlePaste = (event: ClipboardEvent) => {
       const files = Array.from(event.clipboardData?.items ?? [])
-        .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+        .filter(
+          (item) => item.kind === "file" && item.type.startsWith("image/"),
+        )
         .map((item) => item.getAsFile())
         .filter((file): file is File => !!file);
       if (!files.length) return;
@@ -813,9 +1210,19 @@ export function useChatSendHandlers({
     isWebDraggingUpload,
     sendText,
     handleSendSticker,
+    handleSendGif,
     handlePickImage,
+    mediaPreview,
+    uploadPreviews,
+    failedPhotoCount: failedPhotos?.assets.length ?? 0,
+    retryPhotos: () => {
+      if (failedPhotos)
+        void handlePickImage(false, failedPhotos.original, failedPhotos);
+    },
+    discardFailedPhotos: () => setFailedPhotos(null),
     handlePickFile,
     handleCancelUpload,
     retryMessage,
+    cancelFailedMessage,
   };
 }

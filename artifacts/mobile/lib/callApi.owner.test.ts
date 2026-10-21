@@ -24,6 +24,7 @@ const {
   joinTrackedCall,
   reportCallDiagnostic,
   resolveTrackedCallAttempt,
+  installCallReliabilityFlushTriggers,
 } = await import("./callApi");
 
 describe("call reliability queue ownership", () => {
@@ -31,6 +32,23 @@ describe("call reliability queue ownership", () => {
     configureCallReliabilityOwner(null);
     storage.clear();
     customFetch.mockReset();
+    vi.unstubAllGlobals();
+  });
+
+  it("mounts and cleans up on React Native where window has no DOM functions", () => {
+    vi.stubGlobal("window", {});
+    const cleanup = installCallReliabilityFlushTriggers();
+    expect(() => cleanup()).not.toThrow();
+  });
+
+  it("still flushes on browser reconnect and removes its listener", () => {
+    const addEventListener = vi.fn();
+    const removeEventListener = vi.fn();
+    vi.stubGlobal("window", { addEventListener, removeEventListener });
+    const cleanup = installCallReliabilityFlushTriggers();
+    expect(addEventListener).toHaveBeenCalledWith("online", expect.any(Function));
+    cleanup();
+    expect(removeEventListener).toHaveBeenCalledWith("online", addEventListener.mock.calls[0][1]);
   });
 
   it("aborts account A's in-flight flush before account B can inherit it", async () => {

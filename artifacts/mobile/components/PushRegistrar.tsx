@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { useGetMe, useRegisterPushToken } from "@workspace/api-client-react";
 import {
   ensureWebPushIfGranted,

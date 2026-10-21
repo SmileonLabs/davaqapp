@@ -1,3 +1,5 @@
+import palette from "@/constants/colors";
+import { typography, radii, interaction } from "@/constants/designSystem";
 import React from "react";
 import {
   ActivityIndicator,
@@ -14,30 +16,20 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMediaUri } from "@/hooks/useMediaUri";
-import {
-  categories,
-  categoryName,
-  kindName,
-  statusName,
-  dateLabel,
-  errorText,
-  type Listing,
-  type Match,
-  type Proposal,
-} from "@/lib/davaq";
+import { errorText } from "@/lib/davaq";
 export const C = {
-  purple: "#6D4AFF",
-  ink: "#242438",
-  muted: "#7B7891",
-  bg: "#F7F6FB",
-  white: "#FFFFFF",
-  line: "#E9E6F3",
-  soft: "#EEE9FF",
-  green: "#198A63",
-  red: "#BC4056",
+  purple: palette.light.primary,
+  ink: palette.light.foreground,
+  muted: palette.light.mutedForeground,
+  bg: palette.light.background,
+  white: palette.light.card,
+  line: palette.light.border,
+  soft: palette.light.secondary,
+  green: palette.light.online,
+  red: palette.light.destructive,
 };
 export const S = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -49,7 +41,7 @@ export const S = StyleSheet.create({
   },
   card: {
     backgroundColor: C.white,
-    borderRadius: 22,
+    borderRadius: 12,
     padding: 18,
     borderWidth: 1,
     borderColor: C.line,
@@ -119,6 +111,7 @@ export function Frame({
   children,
   back = false,
   right,
+  footer,
   onRefresh,
   refreshing = false,
 }: {
@@ -127,11 +120,15 @@ export function Frame({
   children: React.ReactNode;
   back?: boolean;
   right?: React.ReactNode;
+  footer?: React.ReactNode;
   onRefresh?: () => void;
   refreshing?: boolean;
 }) {
   const insets = useSafeAreaInsets(),
-    router = useRouter();
+    router = useRouter(),
+    segments = useSegments();
+  const inTabs = segments.some(segment => segment === "(tabs)");
+  const showBack = back || (!inTabs && !segments.some(segment => segment === "(auth)"));
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -153,16 +150,16 @@ export function Frame({
           alignSelf: "center",
           paddingHorizontal: 20,
           paddingTop: insets.top + 18,
-          paddingBottom: back ? 40 + insets.bottom : 110 + insets.bottom,
+          paddingBottom: showBack ? 40 + insets.bottom : 110 + insets.bottom,
           gap: 20,
         }}
       >
         <View style={S.between}>
           <View style={[S.row, { flex: 1 }]}>
-            {back && (
+            {showBack && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="뒤로"
+                accessibilityLabel="뒤로가기"
                 onPress={() =>
                   router.canGoBack() ? router.back() : router.replace("/(tabs)")
                 }
@@ -172,11 +169,7 @@ export function Frame({
               </Pressable>
             )}
             <View style={{ flex: 1 }}>
-              <Txt
-                size={title === "DavaQ" ? 32 : 26}
-                bold
-                color={title === "DavaQ" ? "#351485" : C.ink}
-              >
+              <Txt size={title === "DAVAQ" ? 32 : 26} bold color={C.ink}>
                 {title}
               </Txt>
               {subtitle && (
@@ -190,6 +183,7 @@ export function Frame({
         </View>
         {children}
       </ScrollView>
+      {footer ? <View style={{ paddingHorizontal: 20, paddingVertical: 10, paddingBottom: (inTabs ? 82 : 10) + insets.bottom, backgroundColor: C.bg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line }}>{footer}</View> : null}
     </View>
   );
 }
@@ -221,7 +215,7 @@ export function Button({
       style={({ pressed }) => [
         {
           minHeight: small ? 40 : 50,
-          borderRadius: small ? 12 : 16,
+          borderRadius: 10,
           paddingHorizontal: small ? 13 : 18,
           paddingVertical: 10,
           backgroundColor: secondary ? C.soft : C.purple,
@@ -288,7 +282,7 @@ export function Field({
       </Txt>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor="#A09BAF"
+        placeholderTextColor="#999999"
         {...props}
         style={[
           S.input,
@@ -357,7 +351,13 @@ export function Empty({
 }) {
   return (
     <View style={[S.card, { alignItems: "center", paddingVertical: 26 }]}>
-      <View style={{ backgroundColor: C.soft, padding: 13, borderRadius: 20 }}>
+      <View
+        style={{
+          backgroundColor: C.soft,
+          padding: 13,
+          borderRadius: radii.card,
+        }}
+      >
         <Icon name={icon} size={24} />
       </View>
       <Txt bold size={16} style={{ textAlign: "center" }}>
@@ -427,156 +427,5 @@ export function Notice({
         {children}
       </Txt>
     </View>
-  );
-}
-export function ListingImage({
-  listing,
-  height = 130,
-}: {
-  listing: Listing;
-  height?: number;
-}) {
-  const uri = useMediaUri(listing.imageKey);
-  return uri ? (
-    <Image
-      source={{ uri }}
-      style={{ width: "100%", height }}
-      resizeMode="cover"
-    />
-  ) : (
-    <LinearGradient
-      colors={
-        listing.kind === "experience"
-          ? ["#E6DCF9", "#C6B5EF"]
-          : ["#F0EDF8", "#E2DCF3"]
-      }
-      style={{ height, alignItems: "center", justifyContent: "center", gap: 8 }}
-    >
-      <Icon
-        name={categories.find((c) => c[0] === listing.category)?.[2] ?? "gift"}
-        size={36}
-        color="#8064BE"
-      />
-      <Txt size={12} color="#8064BE">
-        {categoryName(listing.category)}
-      </Txt>
-    </LinearGradient>
-  );
-}
-export function ListingCard({
-  listing,
-  compact = false,
-}: {
-  listing: Listing;
-  compact?: boolean;
-}) {
-  const router = useRouter();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push(("/exchange/listings/" + listing.id) as never)}
-      style={{
-        borderRadius: 18,
-        overflow: "hidden",
-        backgroundColor: C.white,
-        borderWidth: 1,
-        borderColor: C.line,
-        flex: compact ? 1 : undefined,
-        minWidth: compact ? 140 : undefined,
-      }}
-    >
-      <ListingImage listing={listing} height={compact ? 115 : 165} />
-      <View style={{ padding: 13, gap: 6 }}>
-        <Txt bold size={15} lines={2}>
-          {listing.title}
-        </Txt>
-        <Txt color={C.muted} size={12}>
-          {kindName(listing.kind)} · {listing.durationMinutes}분
-          {listing.ev ? " · EV " + listing.ev : ""}
-        </Txt>
-        <View style={{ backgroundColor: C.soft, borderRadius: 8, padding: 7 }}>
-          <Txt color={C.purple} size={12} lines={2}>
-            ⇄{" "}
-            {listing.wantedText ||
-              listing.wantedCategories.map(categoryName).join(" · ") ||
-              "교환 조건 협의"}
-          </Txt>
-        </View>
-        <Txt color={C.muted} size={12} lines={1}>
-          {listing.delivery === "online"
-            ? "온라인"
-            : listing.location || "지역 협의"}
-          {listing.availableDays.length
-            ? " · " +
-              listing.availableDays.map((d) => "일월화수목금토"[d]).join("·")
-            : ""}
-        </Txt>
-        {listing.status !== "published" && (
-          <Txt size={12} color={C.purple}>
-            {statusName(listing.status)}
-          </Txt>
-        )}
-      </View>
-    </Pressable>
-  );
-}
-export function PairCard({ match }: { match: Match }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push(("/exchange/matches/" + match.id) as never)}
-      style={S.card}
-    >
-      <View style={S.row}>
-        <View style={{ flex: 1, gap: 6 }}>
-          <Txt size={11} color={C.muted}>
-            내가 줄 수 있는 것
-          </Txt>
-          <Txt bold>{match.offer.title}</Txt>
-        </View>
-        <Icon name="repeat" size={26} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <Txt size={11} color={C.muted}>
-            받고 싶은 경험
-          </Txt>
-          <Txt bold>{match.target.title}</Txt>
-        </View>
-      </View>
-      <Txt color={C.purple} size={13}>
-        {match.reasons[0]} ↗
-      </Txt>
-    </Pressable>
-  );
-}
-export function ProposalCard({ proposal: p }: { proposal: Proposal }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push(("/exchange/proposals/" + p.id) as never)}
-      style={S.card}
-    >
-      <View style={S.between}>
-        <Txt color={C.purple} bold size={12}>
-          {statusName(p.status)}
-        </Txt>
-        <Txt color={C.muted} size={12}>
-          조건 v{p.version}
-        </Txt>
-      </View>
-      <Txt bold>
-        {p.snapshots.offer.title} ⇄ {p.snapshots.requested.title}
-      </Txt>
-      <Txt size={13} color={C.muted}>
-        {dateLabel(p.terms.offerStartsAt)} · {p.terms.location}
-      </Txt>
-      <Txt size={13} color={C.purple}>
-        {p.status === "negotiating"
-          ? p.acceptances.length + "/2명 동의"
-          : "내용 확인"}{" "}
-        ›
-      </Txt>
-    </Pressable>
   );
 }

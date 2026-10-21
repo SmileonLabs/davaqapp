@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -15,6 +18,9 @@ export default function FeedWriteScreen() {
 }
 
 function LegacyFeedWriteScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ kind?: string }>();
@@ -62,7 +68,7 @@ function LegacyFeedWriteScreen() {
     <NeonBackdrop style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="피드로 돌아가기">
-          <Feather name="arrow-left" size={24} color="#F5F1FF" />
+          <Feather name="arrow-left" size={24} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.headerTitle}>피드 글쓰기</Text>
         <Pressable disabled={!canSubmit} onPress={() => void submit()} style={{ opacity: canSubmit ? 1 : 0.4 }}>
@@ -76,14 +82,14 @@ function LegacyFeedWriteScreen() {
             const active = effectiveKind === item;
             return (
               <Pressable key={item} disabled={disabled} onPress={() => setKind(item)} style={[styles.modeButton, active && styles.modeButtonActive, disabled && styles.disabled]}>
-                {disabled ? <Feather name="lock" size={12} color="#777184" /> : null}
+                {disabled ? <Feather name="lock" size={12} color={styleColors.mutedForeground} /> : null}
                 <Text style={[styles.modeText, active && styles.modeTextActive]}>{item === "star" ? "STAR 기록" : "FAN 이야기"}</Text>
               </Pressable>
             );
           })}
         </View>
         {kind === "star" && !starWritable ? <Text style={styles.notice}>공식 STAR 승급 후 STAR 기록을 작성할 수 있어 FAN 작성 화면으로 전환했습니다.</Text> : null}
-        <TextInput value={body} onChangeText={setBody} multiline maxLength={500} autoFocus placeholder={effectiveKind === "star" ? "STAR의 활동과 성장 기록을 남겨주세요." : "응원과 팬 이야기를 남겨주세요."} placeholderTextColor="#787282" style={styles.input} />
+        <TextInput value={body} onChangeText={setBody} multiline maxLength={500} autoFocus placeholder={effectiveKind === "star" ? "STAR의 활동과 성장 기록을 남겨주세요." : "응원과 팬 이야기를 남겨주세요."} placeholderTextColor={styleColors.mutedForeground} style={styles.input} />
         {effectiveKind === "fan" && starProfiles.length > 0 ? (
           <View style={styles.targetSection}>
             <Text style={styles.targetLabel}>응원할 STAR (선택)</Text>
@@ -102,7 +108,7 @@ function LegacyFeedWriteScreen() {
         <View style={styles.counterRow}><Text style={styles.counter}>{body.length}/500</Text></View>
         <View style={styles.mediaRow}>
           <Pressable disabled={uploading || media.length >= 4} onPress={() => void addImages()} style={styles.mediaButton}>
-            {uploading ? <ActivityIndicator color="#D6B7FF" /> : <Feather name="image" size={18} color="#D6B7FF" />}
+            {uploading ? <ActivityIndicator color={styleColors.primary} /> : <Feather name="image" size={18} color={styleColors.primary} />}
             <Text style={styles.mediaButtonText}>사진 {media.length}/4</Text>
           </Pressable>
           {media.map((item) => <Pressable key={item.objectPath} onPress={() => setMedia((current) => current.filter((image) => image.objectPath !== item.objectPath))}><Image source={{ uri: item.localUri }} style={styles.preview} contentFit="cover" /></Pressable>)}
@@ -112,31 +118,31 @@ function LegacyFeedWriteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
-  header: { minHeight: 62, paddingHorizontal: 18, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(139,92,246,0.32)" },
-  headerTitle: { color: "#F5F1FF", fontSize: 17, fontFamily: "Inter_700Bold" },
-  publishText: { color: "#B95CFF", fontSize: 15, fontFamily: "Inter_800ExtraBold" },
+  header: { minHeight: 62, paddingHorizontal: 18, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: styleColors.border },
+  headerTitle: { color: styleColors.foreground, fontSize: fontSizes.headingSmall, fontFamily: fonts.bold },
+  publishText: { color: styleColors.primary, fontSize: fontSizes.body, fontFamily: "Inter_800ExtraBold" },
   content: { padding: 18, gap: 14 },
   modeRow: { flexDirection: "row", gap: 8 },
-  modeButton: { flex: 1, minHeight: 44, borderRadius: 14, borderWidth: 1, borderColor: "rgba(139,92,246,0.26)", flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", backgroundColor: "#0B0916" },
-  modeButtonActive: { borderColor: "#8B5CF6", backgroundColor: "rgba(124,58,237,0.22)" },
+  modeButton: { flex: 1, minHeight: 44, borderRadius: 14, borderWidth: 1, borderColor: styleColors.border, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.card },
+  modeButtonActive: { borderColor: styleColors.primary, backgroundColor: styleColors.primary },
   disabled: { opacity: 0.45 },
-  modeText: { color: "#928B9D", fontSize: 13, fontFamily: "Inter_700Bold" },
-  modeTextActive: { color: "#F5F1FF" },
-  notice: { color: "#A9A1B5", fontSize: 12, lineHeight: 18, fontFamily: "Inter_500Medium" },
+  modeText: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, fontFamily: fonts.bold },
+  modeTextActive: { color: styleColors.foreground },
+  notice: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, lineHeight: 18, fontFamily: fonts.medium },
   targetSection: { gap: 8 },
-  targetLabel: { color: "#D9D2E5", fontSize: 12, fontFamily: "Inter_700Bold" },
+  targetLabel: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, fontFamily: fonts.bold },
   targetRow: { gap: 8, paddingRight: 12 },
-  targetChip: { maxWidth: 160, minHeight: 36, paddingHorizontal: 13, borderRadius: 18, borderWidth: 1, borderColor: "rgba(139,92,246,0.28)", alignItems: "center", justifyContent: "center", backgroundColor: "#0B0916" },
-  targetChipActive: { borderColor: "#9B6DFF", backgroundColor: "rgba(124,58,237,0.3)" },
-  targetText: { color: "#928B9D", fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  targetTextActive: { color: "#F5F1FF" },
-  input: { minHeight: 240, borderRadius: 18, borderWidth: 1, borderColor: "rgba(139,92,246,0.25)", backgroundColor: "#080711", color: "#F5F1FF", padding: 16, textAlignVertical: "top", fontSize: 15, lineHeight: 23, fontFamily: "Inter_400Regular" },
+  targetChip: { maxWidth: 160, minHeight: 36, paddingHorizontal: 13, borderRadius: 18, borderWidth: 1, borderColor: styleColors.border, alignItems: "center", justifyContent: "center", backgroundColor: styleColors.card },
+  targetChipActive: { borderColor: styleColors.primary, backgroundColor: styleColors.primary },
+  targetText: { color: styleColors.mutedForeground, fontSize: fontSizes.caption, fontFamily: fonts.semibold },
+  targetTextActive: { color: styleColors.foreground },
+  input: { minHeight: 240, borderRadius: 18, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, color: styleColors.foreground, padding: 16, textAlignVertical: "top", fontSize: fontSizes.body, lineHeight: 23, fontFamily: fonts.regular },
   counterRow: { alignItems: "flex-end", marginTop: -8 },
-  counter: { color: "#777184", fontSize: 11, fontFamily: "Inter_500Medium" },
+  counter: { color: styleColors.mutedForeground, fontSize: fontSizes.small, fontFamily: fonts.medium },
   mediaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  mediaButton: { width: 84, height: 76, borderRadius: 14, borderWidth: 1, borderStyle: "dashed", borderColor: "rgba(182,116,255,0.55)", alignItems: "center", justifyContent: "center", gap: 6 },
-  mediaButtonText: { color: "#D6B7FF", fontSize: 11, fontFamily: "Inter_700Bold" },
-  preview: { width: 76, height: 76, borderRadius: 12 },
+  mediaButton: { width: 84, height: 76, borderRadius: 14, borderWidth: 1, borderStyle: "dashed", borderColor: styleColors.border, alignItems: "center", justifyContent: "center", gap: 6 },
+  mediaButtonText: { color: styleColors.primaryForeground, fontSize: fontSizes.small, fontFamily: fonts.bold },
+  preview: { width: 76, height: 76, borderRadius: radii.control },
 });

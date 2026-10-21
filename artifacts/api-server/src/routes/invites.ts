@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { invitesTable, friendRequestsTable, friendshipsTable } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
@@ -49,8 +49,13 @@ router.post("/invites/redeem", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  if (invite.expiredAt && invite.expiredAt < new Date()) {
-    await db.update(invitesTable).set({ status: "expired" }).where(eq(invitesTable.id, invite.id));
+  if (invite.expiredAt && invite.expiredAt <= new Date()) {
+    // An earlier request may already have consumed this invite while this
+    // request waited. Never overwrite a committed "used" state with "expired".
+    await db.update(invitesTable).set({ status: "expired" }).where(and(
+      eq(invitesTable.id, invite.id), eq(invitesTable.status, "active"),
+      lte(invitesTable.expiredAt, new Date()),
+    ));
     res.status(400).json({ error: "Invite expired" });
     return;
   }
@@ -60,12 +65,21 @@ router.post("/invites/redeem", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  await db.update(invitesTable).set({ status: "used", usedByUserId: userId }).where(eq(invitesTable.id, invite.id));
-
-  const [request] = await db
-    .insert(friendRequestsTable)
-    .values({ fromUserId: userId, toUserId: invite.inviterUserId })
-    .returning();
+  const request = await db.transaction(async tx => {
+    const [consumed] = await tx.update(invitesTable)
+      .set({ status: "used", usedByUserId: userId })
+      .where(and(eq(invitesTable.id, invite.id), eq(invitesTable.status, "active"),
+        or(isNull(invitesTable.expiredAt), gt(invitesTable.expiredAt, new Date()))))
+      .returning();
+    if (!consumed) return null;
+    const [created] = await tx.insert(friendRequestsTable)
+      .values({ fromUserId: userId, toUserId: consumed.inviterUserId }).returning();
+    return created;
+  });
+  if (!request) {
+    res.status(400).json({ error: "Invalid or expired invite" });
+    return;
+  }
 
   res.json({
     id: request.id,

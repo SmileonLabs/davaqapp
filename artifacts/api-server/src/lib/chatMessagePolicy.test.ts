@@ -6,6 +6,24 @@ import {
 } from "./chatMessagePolicy";
 
 describe("chat message policy", () => {
+  const jpegPreview = (bytes = 6000) => "data:image/jpeg;base64," + Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(bytes), Buffer.from([0xff, 0xd9])]).toString("base64");
+  const photo = { type: "image", content: "/objects/uploads/test-image" };
+  const video = { type: "file", content: JSON.stringify({ path: "/objects/uploads/test-video", name: "clip.mp4", size: 1024, mime: "video/mp4" }) };
+
+  it("accepts client-sized photo and video previews with album and caption metadata", () => {
+    expect(validateUserMessage({ ...photo, metadata: { imageThumbnail: jpegPreview(), albumId: "album-1", albumIndex: 0, albumTotal: 2, caption: "사진", imageWidth: 2048, imageHeight: 1536 } })).toMatchObject({ ok: true });
+    expect(validateUserMessage({ ...video, metadata: { videoThumbnail: jpegPreview(), videoDurationSec: 3, caption: "영상" } })).toMatchObject({ ok: true });
+  });
+
+  it("keeps preview exceptions limited to bounded JPEGs on the matching media type", () => {
+    for (const thumbnail of [jpegPreview(8000), "data:image/svg+xml;base64,PHN2Zy8+", "data:image/jpeg;base64,AAAA", "data:image/jpeg;base64,!!!!"]) {
+      expect(validateUserMessage({ ...photo, metadata: { imageThumbnail: thumbnail } })).toMatchObject({ ok: false });
+    }
+    expect(validateUserMessage({ content: "text", metadata: { imageThumbnail: jpegPreview() } })).toMatchObject({ ok: false });
+    expect(validateUserMessage({ ...photo, metadata: { videoThumbnail: jpegPreview() } })).toMatchObject({ ok: false });
+    expect(validateUserMessage({ ...photo, metadata: { imageThumbnail: jpegPreview(), caption: "x".repeat(1001) } })).toMatchObject({ ok: false });
+    expect(validateUserMessage({ ...photo, metadata: { imageThumbnail: jpegPreview(), a: "x".repeat(1000), b: "x".repeat(1000), c: "x".repeat(1000), d: "x".repeat(1000), e: "x".repeat(1000) } })).toMatchObject({ ok: false });
+  });
   it("accepts only bounded user-authored message shapes", () => {
     expect(validateUserMessage({ content: "  hello  ", clientMessageId: "m-1" })).toEqual({
       ok: true,

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import type { User } from "@workspace/db";
 import { logger } from "./logger";
 import { ensureBibiFriendshipForUser } from "./officialAccounts";
+import { resolveSocialBearer } from "./socialSessions";
 
 declare global {
   namespace Express {
@@ -17,6 +18,16 @@ declare global {
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (req.get("authorization")?.startsWith("Bearer dvq_")) {
+    const identity = await resolveSocialBearer(req);
+    if (!identity) { res.status(401).json({ error: "Unauthorized" }); return; }
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, identity.id));
+    if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+    req.dbUser = user;
+    req.clerkUserId = user.clerkId;
+    next();
+    return;
+  }
   const auth = getAuth(req);
   if (!auth?.userId) {
     res.status(401).json({ error: "Unauthorized" });
@@ -67,6 +78,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         .select()
         .from(usersTable)
         .where(eq(usersTable.email, email));
+      if (existing?.clerkId.startsWith("davaq_social_")) {
+        res.status(403).json({ error: "SOCIAL_SIGNUP_REQUIRED" });
+        return;
+      }
       if (existing) {
         [user] = await db
           .update(usersTable)
@@ -75,11 +90,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
           .returning();
         provisionedInThisRequest = true;
       } else {
-        [user] = await db
-          .insert(usersTable)
-          .values({ clerkId: clerkUserId, email, nickname })
-          .returning();
-        provisionedInThisRequest = true;
+        // Clerk remains a bridge for existing members, never a new signup path.
+        if (process.env.DAVAQ_SOCIAL_AUTH_ENABLED !== "true") {
+          [user] = await db.insert(usersTable).values({ clerkId: clerkUserId, email, nickname }).returning();
+          provisionedInThisRequest = true;
+        } else {
+        res.status(403).json({ error: "SOCIAL_SIGNUP_REQUIRED", message: "신규 가입은 Google 또는 Apple로 진행해 주세요." });
+        return;
+        }
       }
     } catch (err) {
       logger.error({ err }, "Failed to provision user");

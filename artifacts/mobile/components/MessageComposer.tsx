@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Modal,
+  useWindowDimensions,
   Keyboard,
   Platform,
   Pressable,
@@ -10,8 +13,13 @@ import {
   type DimensionValue,
   View,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useReducedMotion } from "react-native-reanimated";
+import { StickerImage } from "./StickerImage";
+import { GifPicker } from "./GifPicker";
+import type { GifResult } from "@/lib/gifSearch";
 import { StickerPicker } from "./StickerPicker";
 import { MessengerAction, MessengerSheet } from "./chat/MessengerUI";
 import { chatDrafts } from "@/lib/chatDrafts";
@@ -34,6 +42,7 @@ const SAFARI_COMPOSITION_END_GUARD_MS = 80;
 interface MessageComposerProps {
   /** Whether a send mutation is currently in flight (disables the composer). */
   sending: boolean;
+  dismissRequest?: number;
   /** Whether an image/file upload is in progress, for the inline spinners. */
   uploading: "image" | "file" | null;
   uploadProgress?: number | null;
@@ -48,9 +57,10 @@ interface MessageComposerProps {
   onSend: (content: string) => Promise<boolean>;
   /** Fired (already throttled here) while the user is typing. */
   onTyping: () => void;
-  onPickImage: () => void;
-  onPickFile: () => void;
+  onPickImage: (camera?: boolean, original?: boolean) => void;
+  onPickFile: (video?: "camera" | "library") => void;
   onSendSticker: (code: string) => void;
+  onSendGif?: (gif: GifResult) => Promise<void>;
   replyPreview?: { senderName?: string | null; content: string } | null;
   onCancelReply?: () => void;
 }
@@ -64,6 +74,7 @@ interface MessageComposerProps {
  */
 function MessageComposerComponent({
   sending,
+  dismissRequest = 0,
   uploading,
   uploadProgress = null,
   onCancelUpload,
@@ -75,6 +86,7 @@ function MessageComposerComponent({
   onPickImage,
   onPickFile,
   onSendSticker,
+  onSendGif,
   replyPreview,
   onCancelReply,
 }: MessageComposerProps) {
@@ -83,17 +95,55 @@ function MessageComposerComponent({
   const insets = useSafeAreaInsets();
   const pwaBottom = usePwaBottomInset();
   const [text, setText] = useState("");
+  const { width: windowWidth } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
+  const [flight, setFlight] = useState<{
+    code: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const flightProgress = useRef(new Animated.Value(0)).current;
+  const pickerAnchor = useRef<View>(null);
+  useEffect(() => () => flightProgress.stopAnimation(), [flightProgress]);
+  const selectSticker = useCallback(
+    (code: string, origin?: { x: number; y: number }) => {
+      onSendSticker(code);
+      if (reducedMotion || !origin) return;
+      flightProgress.stopAnimation();
+      flightProgress.setValue(0);
+      pickerAnchor.current?.measureInWindow((_x, y) => {
+        setFlight({ code, x: origin.x, y: origin.y });
+        flightTarget.current = {
+          x: windowWidth - 108,
+          y: Math.max(80, y - 120),
+        };
+        Animated.timing(flightProgress, {
+          toValue: 1,
+          duration: 380,
+          useNativeDriver: Platform.OS !== "web",
+        }).start(({ finished }) => {
+          if (finished) setFlight(null);
+        });
+      });
+    },
+    [onSendSticker, reducedMotion, flightProgress, windowWidth],
+  );
+  const flightTarget = useRef({ x: 0, y: 0 });
+  const [mediaTab, setMediaTab] = useState<"sticker" | "gif">("sticker");
+  const gifBusyRef = useRef(false);
+  const [gifBusy, setGifBusy] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
+  useEffect(() => {
+    setShowStickers(false);
+    setShowAttachments(false);
+    Keyboard.dismiss();
+  }, [dismissRequest]);
   const [draftReady, setDraftReady] = useState(false);
   const edited = useRef(false),
     textRef = useRef(text),
     alive = useRef(true);
   textRef.current = text;
-  const growsWithContent =
-    Platform.OS === "web" &&
-    typeof CSS !== "undefined" &&
-    CSS.supports("field-sizing", "content");
   useEffect(() => {
     alive.current = true;
     let active = true;
@@ -149,10 +199,10 @@ function MessageComposerComponent({
     noteChatInputCommit(startedAt);
   }, [text]);
 
-  const handleContentSizeChange = useCallback((event: any) => {
+  const handleInputMeasure = useCallback((event: any) => {
     const next = Math.min(
       INPUT_MAX_HEIGHT,
-      Math.max(INPUT_MIN_HEIGHT, event.nativeEvent.contentSize.height),
+      Math.max(INPUT_MIN_HEIGHT, event.nativeEvent.layout.height),
     );
     setInputHeight((current) => (current === next ? current : next));
   }, []);
@@ -162,6 +212,13 @@ function MessageComposerComponent({
     if (!content || content.length > 2000 || sending || submittingRef.current)
       return;
     submittingRef.current = true;
+    // Focus during the user gesture: iOS PWA cannot reopen its keyboard after
+    // awaiting the send request, and the send button otherwise takes focus.
+    if (Platform.OS === "web") inputRef.current?.focus();
+    if (Platform.OS !== "web")
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+        () => {},
+      );
     edited.current = true;
     textRef.current = "";
     setText("");
@@ -403,50 +460,48 @@ function MessageComposerComponent({
               <Feather name="smile" size={23} color={colors.mutedForeground} />
             )}
           </Pressable>
-          <TextInput
-            ref={inputRef}
-            accessibilityLabel="메시지 입력"
-            style={[
-              styles.input,
-              {
-                color: colors.foreground,
-                // CSS content sizing avoids synchronous scrollHeight reads while typing.
-                height:
-                  Platform.OS === "web"
-                    ? growsWithContent
-                      ? "auto"
-                      : Math.min(
-                          INPUT_MAX_HEIGHT,
-                          44 + (text.split("\n").length - 1) * 20,
-                        )
-                    : inputHeight,
-                ...(growsWithContent ? { fieldSizing: "content" as any } : {}),
-              },
-            ]}
-            value={text}
-            onChangeText={handleChangeText}
-            onContentSizeChange={
-              Platform.OS === "web" ? undefined : handleContentSizeChange
-            }
-            onKeyPress={handleKeyPress}
-            {...(Platform.OS === "web"
-              ? ({
-                  onCompositionStart: handleCompositionStart,
-                  onCompositionEnd: handleCompositionEnd,
-                  onKeyDown: handleDiagnosticKeyDown,
-                } as object)
-              : {})}
-            onFocus={() => setShowStickers(false)}
-            placeholder={placeholder}
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={1}
-            maxLength={2000}
-            blurOnSubmit={false}
-            scrollEnabled={
-              Platform.OS === "web" || inputHeight >= INPUT_MAX_HEIGHT
-            }
-          />
+          <View style={styles.inputWrap}>
+            <Text
+              accessible={false}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              pointerEvents="none"
+              style={styles.inputMeasure}
+              onLayout={handleInputMeasure}
+            >
+              {text + "\u200b"}
+            </Text>
+            <TextInput
+              ref={inputRef}
+              accessibilityLabel="메시지 입력"
+              style={[
+                styles.input,
+                {
+                  color: colors.foreground,
+                  height: inputHeight,
+                },
+              ]}
+              value={text}
+              onChangeText={handleChangeText}
+              onKeyPress={handleKeyPress}
+              {...(Platform.OS === "web"
+                ? ({
+                    onCompositionStart: handleCompositionStart,
+                    onCompositionEnd: handleCompositionEnd,
+                    onKeyDown: handleDiagnosticKeyDown,
+                  } as object)
+                : {})}
+              onFocus={() => setShowStickers(false)}
+              placeholder={placeholder}
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              maxLength={2000}
+              blurOnSubmit={false}
+              scrollEnabled={
+                Platform.OS === "web" || inputHeight >= INPUT_MAX_HEIGHT
+              }
+            />
+          </View>
           <Pressable
             style={({ pressed }) => [
               styles.fieldBtn,
@@ -476,10 +531,14 @@ function MessageComposerComponent({
             {
               backgroundColor: hasText ? colors.primary : colors.muted,
               opacity: pressed ? 0.85 : 1,
+              transform: [{ scale: pressed ? 0.92 : 1 }],
             },
           ]}
           accessibilityRole="button"
           accessibilityLabel="메시지 보내기"
+          onPressIn={() => {
+            if (Platform.OS === "web") inputRef.current?.focus();
+          }}
           onPress={() => void submit()}
           {...(Platform.OS === "web"
             ? { onMouseDown: (e: any) => e.preventDefault() }
@@ -509,7 +568,90 @@ function MessageComposerComponent({
           {text.length} / 2000
         </Text>
       )}
-      {showStickers ? <StickerPicker onSelect={onSendSticker} /> : null}
+      {flight ? (
+        <Modal transparent visible animationType="none">
+          <View pointerEvents="none" style={{ flex: 1 }}>
+            <Animated.View
+              style={{
+                position: "absolute",
+                left: flight.x,
+                top: flight.y,
+                transform: [
+                  {
+                    translateX: flightProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, flightTarget.current.x - flight.x],
+                    }),
+                  },
+                  {
+                    translateY: flightProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, flightTarget.current.y - flight.y],
+                    }),
+                  },
+                  {
+                    scale: flightProgress.interpolate({
+                      inputRange: [0, 0.7, 1],
+                      outputRange: [1, 1.7, 1.8],
+                    }),
+                  },
+                ],
+                opacity: flightProgress.interpolate({
+                  inputRange: [0, 0.85, 1],
+                  outputRange: [1, 1, 0],
+                }),
+              }}
+            >
+              <StickerImage code={flight.code} size={54} />
+            </Animated.View>
+          </View>
+        </Modal>
+      ) : null}
+      {showStickers ? (
+        <View ref={pickerAnchor} collapsable={false}>
+          <View style={{ flexDirection: "row", backgroundColor: colors.card }}>
+            {(["sticker", "gif"] as const).map((tab) => (
+              <Pressable
+                key={tab}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mediaTab === tab }}
+                onPress={() => setMediaTab(tab)}
+                style={{ padding: 12 }}
+              >
+                <Text
+                  style={{
+                    color:
+                      mediaTab === tab
+                        ? colors.primary
+                        : colors.mutedForeground,
+                  }}
+                >
+                  {tab === "gif" ? "GIF" : "스티커"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {mediaTab === "gif" ? (
+            <GifPicker
+              onPickLocal={() => onPickImage(false, true)}
+              busy={gifBusy}
+              onSelect={async (gif) => {
+                if (gifBusyRef.current || !onSendGif) return;
+                gifBusyRef.current = true;
+                setGifBusy(true);
+                try {
+                  await onSendGif(gif);
+                } finally {
+                  gifBusyRef.current = false;
+                  setGifBusy(false);
+                }
+              }}
+            />
+          ) : (
+            <StickerPicker onSelect={selectSticker} />
+          )}
+        </View>
+      ) : null}
       <MessengerSheet
         visible={showAttachments}
         title="대화에 첨부"
@@ -522,6 +664,42 @@ function MessageComposerComponent({
           onPress={() => {
             setShowAttachments(false);
             onPickImage();
+          }}
+        />
+        <MessengerAction
+          icon="camera"
+          title="카메라"
+          subtitle="직접 찍어서 보내기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickImage(true);
+          }}
+        />
+        <MessengerAction
+          icon="image"
+          title="원본 사진"
+          subtitle="압축 없이 원본 보내기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickImage(false, true);
+          }}
+        />
+        <MessengerAction
+          icon="video"
+          title="영상 첨부"
+          subtitle="동영상을 골라 보내기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickFile("library");
+          }}
+        />
+        <MessengerAction
+          icon="video"
+          title="영상 촬영"
+          subtitle="카메라로 동영상 찍기"
+          onPress={() => {
+            setShowAttachments(false);
+            onPickFile("camera");
           }}
         />
         <MessengerAction
@@ -638,8 +816,27 @@ const styles = StyleSheet.create({
   fieldBtnLast: {
     marginRight: 2,
   },
-  input: {
+  inputWrap: {
     flex: 1,
+    minWidth: 0,
+  },
+  // Measure unconstrained wrapped text separately: Android's content-size event
+  // can report the already constrained input height. Also handles pasted text,
+  // restored drafts and browsers without CSS field-sizing support.
+  inputMeasure: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    opacity: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    fontSize: 16,
+    lineHeight: 20,
+    fontFamily: "Inter_400Regular",
+    includeFontPadding: false,
+  },
+  input: {
     minHeight: 44,
     maxHeight: INPUT_MAX_HEIGHT,
     paddingHorizontal: 4,
@@ -648,6 +845,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     fontFamily: "Inter_400Regular",
+    includeFontPadding: false,
+    textAlignVertical: "top",
     ...(Platform.OS === "web"
       ? {
           outlineStyle: "none" as any,

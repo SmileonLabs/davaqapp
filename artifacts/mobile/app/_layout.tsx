@@ -1,3 +1,6 @@
+import {useShopPushRefresh} from '@/hooks/useShopPushRefresh';
+import { ChatMediaCacheLifecycle } from "@/components/ChatMediaCacheLifecycle";
+import { useChatPushRefresh } from "@/hooks/useChatPushRefresh";
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -5,15 +8,17 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
-import { ClerkProvider, useAuth } from "@clerk/expo";
+import { ClerkProvider } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { tokenCache } from "@clerk/expo/token-cache";
+import { usePwaQueryRecovery } from "@/hooks/usePwaQueryRecovery";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
-import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -24,8 +29,11 @@ import {
   setCharacterProfileIdGetter,
 } from "@workspace/api-client-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { StartupSplash } from "@/components/StartupSplash";
+import { GroupCallProvider } from "@/components/GroupCallProvider";
 import { CallProvider } from "@/components/CallProvider";
 import { PushRegistrar } from "@/components/PushRegistrar";
+import { AndroidUpdatePrompt } from "@/components/AndroidUpdatePrompt";
 import { NativePushRegistrar } from "@/components/NativePushRegistrar";
 import { ForegroundNotifier } from "@/components/ForegroundNotifier";
 import { UnreadBadgeSync } from "@/components/UnreadBadgeSync";
@@ -33,6 +41,7 @@ import { ChatOutboxDrainer } from "@/components/ChatOutboxDrainer";
 import { ThemeModeContext, ThemeModeProvider, useThemeMode } from "@/hooks/useThemeMode";
 import { useColors } from "@/hooks/useColors";
 import { getApiBase } from "@/lib/apiBase";
+import { useChatPreload } from "@/hooks/useChatPreload";
 import { useRealtimeInvalidation } from "@/lib/realtime";
 import { usePresenceHeartbeat } from "@/hooks/usePresence";
 
@@ -62,6 +71,7 @@ function getIsIOSStandalonePwa() {
 
 // SplashScreen is native-only; ignore errors on web
 try {
+  SplashScreen.setOptions({ fade: false, duration: 0 });
   SplashScreen.preventAutoHideAsync();
 } catch {}
 
@@ -76,9 +86,22 @@ function createSessionQueryClient() {
   });
 }
 
-function RealtimeInvalidator() {
-  useRealtimeInvalidation();
+function PwaQueryRecovery() {
+  usePwaQueryRecovery();
   return null;
+}
+
+function ChatPreloader() {
+  useChatPreload();
+  useChatPushRefresh();
+  useShopPushRefresh();
+  return null;
+}
+
+function RealtimeInvalidator() {
+  const { isSignedIn } = useAuth();
+  useRealtimeInvalidation();
+  return isSignedIn ? <ChatPreloader /> : null;
 }
 
 function PresenceHeartbeat() {
@@ -124,9 +147,7 @@ function ApiAuthBridge({ children }: { children: React.ReactNode }) {
 
   if (!authState || readyState !== authState) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-      </View>
+      <StartupSplash />
     );
   }
 
@@ -148,13 +169,20 @@ function SessionQueryProvider({ children }: { children: React.ReactNode }) {
     [client],
   );
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return <QueryClientProvider client={client}><PwaQueryRecovery />{children}</QueryClientProvider>;
 }
 
 function RootStackNav() {
   const colors = useColors();
   const { scheme } = useThemeMode();
   const router = useRouter();
+  const segments: readonly string[] = useSegments();
+  const starting = segments.length === 0 || segments[0] === "index";
+  useEffect(() => {
+    // Keep the OS splash until authentication and the entry redirect have finished.
+    // This avoids displaying a second JS loading screen between launch and home.
+    if (Platform.OS !== "web" && !starting) void SplashScreen.hideAsync().catch(() => {});
+  }, [starting]);
   const [isIOSStandalonePwa, setIsIOSStandalonePwa] = useState(() => getIsIOSStandalonePwa());
 
   useEffect(() => {
@@ -172,13 +200,13 @@ function RootStackNav() {
     };
   }, []);
 
-  const useChatOverlay = Platform.OS === "web" && !isIOSStandalonePwa;
+  const useChatOverlay = Platform.OS === "web";
 
   return (
     <>
       <StatusBar
-        style={scheme === "dark" ? "light" : "dark"}
-        backgroundColor={colors.background}
+        style={starting || scheme === "dark" ? "light" : "dark"}
+        backgroundColor={starting ? "#000000" : colors.background}
       />
       <Stack
       screenOptions={{
@@ -211,11 +239,12 @@ function RootStackNav() {
         options={{
           headerShown: false,
           animation: Platform.OS === "web" ? "none" : "slide_from_right",
-          presentation: useChatOverlay ? "transparentModal" : "card",
+          presentation: useChatOverlay && Platform.OS === "web" ? "transparentModal" : "card",
           contentStyle: {
-            backgroundColor: useChatOverlay ? "transparent" : colors.background,
+            backgroundColor: useChatOverlay && Platform.OS === "web" ? "transparent" : colors.background,
           },
-          gestureEnabled: true,
+          gestureEnabled: Platform.OS === "ios",
+          fullScreenGestureEnabled: false,
         }}
       />
       <Stack.Screen
@@ -374,12 +403,6 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (fontsLoaded || fontError || fontTimeout) {
-      try { SplashScreen.hideAsync(); } catch {}
-    }
-  }, [fontsLoaded, fontError, fontTimeout]);
-
   // On web, useFonts loads via CSS and may never flip to true —
   // don't block rendering; proceed immediately.
   if (Platform.OS !== "web" && !fontsLoaded && !fontError && !fontTimeout) return null;
@@ -396,6 +419,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
+      <View style={{ flex: 1, backgroundColor: "#000000" }}>
       <ThemeModeProvider>
         <ClerkProvider
           publishableKey={publishableKey}
@@ -408,7 +432,7 @@ export default function RootLayout() {
               <SessionQueryProvider>
                 <React.Fragment>
                   <GestureHandlerRootView style={{ flex: 1 }}>
-                    <CallProvider>
+                    <CallProvider><GroupCallProvider>
                     <RealtimeInvalidator />
                     <PresenceHeartbeat />
                     <ChatOutboxDrainer />
@@ -422,10 +446,12 @@ export default function RootLayout() {
                     ) : (
                       <KeyboardProvider>
                         <NativePushRegistrar />
+                        <AndroidUpdatePrompt />
+                        <ChatMediaCacheLifecycle />
                         <RootLayoutNav />
                       </KeyboardProvider>
                     )}
-                    </CallProvider>
+                    </GroupCallProvider></CallProvider>
                   </GestureHandlerRootView>
                 </React.Fragment>
               </SessionQueryProvider>
@@ -433,6 +459,7 @@ export default function RootLayout() {
           </ApiAuthBridge>
         </ClerkProvider>
       </ThemeModeProvider>
+      </View>
     </ErrorBoundary>
   );
 }

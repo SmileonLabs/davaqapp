@@ -1,3 +1,5 @@
+import {registerCollectorDirectRoom} from "./collectorProfiles";
+import { publicDavaqAvatar } from "../lib/davaqAvatarPolicy";
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
@@ -111,10 +113,10 @@ export async function roomWithMeta(roomId: string, userId: string) {
       const effectiveProfileId = membership?.profileId ?? activeProfileIdByUserId.get(u.id);
       const profile = effectiveProfileId ? profileById.get(effectiveProfileId) : null;
       const friendAlias = aliasByUserId.get(u.id) ?? null;
-      const characterProfileImageUrl =
-        profile?.type === "fan" && profile.profileImageUrl === u.profileImageUrl
-          ? null
-          : profile?.profileImageUrl ?? null;
+      const characterProfileImageUrl = publicDavaqAvatar(
+        profile?.type === "fan" && profile.profileImageUrl === u.profileImageUrl ? null : profile?.profileImageUrl,
+        profile?.metadata, profile?.id,
+      );
       return {
         ...toPublicUser(u),
         profile: profile ? { id: profile.id, type: profile.type, handle: profile.handle, displayName: profile.displayName, profileImageUrl: characterProfileImageUrl } : null,
@@ -318,6 +320,7 @@ router.post("/rooms", requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
+    await registerCollectorDirectRoom(roomId,userId);
     const result = await roomWithMeta(roomId, userId);
     res.status(201).json(result);
     return;

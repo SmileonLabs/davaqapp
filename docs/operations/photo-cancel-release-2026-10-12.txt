@@ -1,0 +1,12 @@
+Photo cancellation and received-HEIC recovery deployment — 2026-10-12
+
+Android 1.0.0 (25): signed APK/AAB verified, production API/login embedded, ARM64 16KB alignment passed. Google Play internal release 17 is available to internal testers, published 16:46 KST. Artifact copies and SHA256SUMS: .local/releases/photo-cancel-20261012/. Proof: evidence/android-25-internal-20261012.png.
+iOS 1.0.0 (16): local archive and App Store Connect upload succeeded; build 67e17097-909f-4d33-b528-3ae6f74e5802 processed. Standard encryption and previously confirmed France-no settings saved. Connected to DavaQ Internal, 3 testers, TESTING / 90 days. Proof: evidence/ios-16-internal-20261012.png.
+
+Web/PWA release web-20261012-photo-heic-r3 deployed atomically with backup /opt/davaq-backups/web-20261012-photo-heic-r3-1791791847.tar.gz. index SHA256 cc2148f56057d7a2f5a8c6b0cd989331d7dec331c4005d478c0c6631497f9aef. API and web containers unchanged. Earlier interim release photo-recovery-r2 superseded.
+
+Actual cause of existing received-photo failures: legacy stored photos are image/heic (verified authenticated storage response: 200, 2,945,737 bytes, matching declared length, HEIC ftyp signature). Browser unsupported HEIC caused image failures; access URL endpoint was responding 200. Added browser-only on-demand JPEG decode using existing HEIC decoder, serial conversion queue and temporary object URL cleanup. Original stored objects are unchanged. Normal raster photos use existing path. API authorization is unchanged. Full-screen web viewer uses the same HEIC fallback.
+
+Production proof: eight converted received images finished loading with natural widths 2316/3024. Enlarged photo finished loading at width 3024 and close returned to chat. Screenshot evidence/pwa-heic-restored-20261012.png. Existing open tabs need refresh to use new PWA app shell; in-progress drafts were not reloaded.
+Validation: TypeScript check, 24 cancellation/image/album/upload tests, production web build passed. Real iPhone/Android physical-device testing remains separate.
+CloudShell temporary SSH key and uploaded probe/package removed. No private keys copied from the Mac.

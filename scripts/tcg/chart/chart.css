@@ -1,0 +1,37 @@
+.tradingPriceChart{background:var(--ui-surface);color:var(--ui-text);border:1px solid var(--ui-border);border-radius:18px;margin:24px 0;padding:24px;min-width:0;box-sizing:border-box;overflow:hidden}
+.tradingPriceChart *{box-sizing:border-box}
+.tradingPriceChart.isExpanded{position:fixed;inset:12px;z-index:10000;margin:0;overflow:auto;box-shadow:0 0 0 100vmax color-mix(in srgb, var(--ui-shadow-color) 70.2%, transparent)}
+.tradingChartHeading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.tradingPriceChart .tradingChartHeading h3{font-size:15px;line-height:1.5;color:var(--ui-text);margin:8px 0 0;padding:0;border:0;overflow-wrap:anywhere}
+.tradingPriceChart button{border:1px solid var(--ui-border);border-radius:7px;background:var(--ui-surface);color:var(--ui-text);font:inherit;font-size:12px;padding:8px 11px;cursor:pointer;white-space:nowrap;min-height:34px;line-height:1.35}
+.tradingPriceChart button:hover{background:var(--ui-surface);border-color:var(--ui-border)}
+.tradingPriceChart button[aria-pressed=true]{background:var(--ui-brand-soft);border-color:var(--ui-border);color:var(--ui-brand)}
+.tradingPriceChart :is(button,select,summary):focus-visible{outline:3px solid var(--ui-focus);outline-offset:3px}
+.tradingChartQuote{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px 18px;margin:18px 0 24px;font-variant-numeric:tabular-nums}
+.tradingChartQuote>strong{font-size:clamp(30px,4vw,46px);line-height:1.2;color:var(--ui-text);overflow-wrap:anywhere;letter-spacing:-.04em}
+.tradingChartQuote>span{font-size:12px;color:var(--ui-text-muted)}
+.tradingChartQuote>b{font-size:16px}.tradingChartQuote>b small{font-size:11px;font-weight:400}.tradingChartQuote .isUp{color:var(--ui-positive)}.tradingChartQuote .isDown{color:var(--ui-negative)}
+.tradingChartSelectors{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;margin-bottom:20px}
+.tradingChartSelectors label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:600;color:var(--ui-text-muted);min-width:0}
+.tradingChartSelectors select{width:100%;min-width:0;max-width:100%;background:var(--ui-surface);color:var(--ui-text);border:1px solid var(--ui-border);border-radius:9px;padding:11px 30px 11px 12px;font-size:13px;text-overflow:ellipsis}
+.tradingChartToolbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-block:1px solid var(--ui-border);padding:12px 0}
+.tradingChartToolbar>div{display:flex;gap:5px;flex-wrap:wrap}
+.tradingChartReadout{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;min-height:50px;padding:12px 0;color:var(--ui-text-muted);font-size:12px;font-variant-numeric:tabular-nums}
+.tradingChartReadout strong{color:var(--ui-brand);font-size:16px}.tradingChartReadout .comparisonLegend{color:var(--ui-brand)}.tradingChartReadout .averageLegend{color:var(--ui-brand)}
+.tradingChartCanvas{height:370px;width:100%;min-width:0;position:relative}
+.isExpanded .tradingChartCanvas{height:clamp(280px,55vh,750px)}
+.tradingPriceChart .tradingChartStatus{font-size:13px;color:var(--ui-text-muted);padding:10px;margin:0;background:var(--ui-surface)}
+.tradingChartNavigation{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}.tradingChartNavigation>span{font-size:11px;color:var(--ui-text-muted)}.tradingChartNavigation>div{display:flex;gap:5px}
+.tradingChartStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 0}
+.tradingChartStats>div{padding:16px;border:1px solid var(--ui-border);background:var(--ui-surface);border-radius:10px;min-width:0}.tradingChartStats dt{font-size:11px;color:var(--ui-text-muted)}.tradingChartStats dd{font-size:clamp(18px,2.2vw,29px);font-weight:750;color:var(--ui-text);margin:8px 0 0;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.tradingChartStats dd small{font-size:12px;font-weight:400}
+.tradingPriceChart .tradingChartNote{font-size:11px;color:var(--ui-text-muted);line-height:1.7;margin:16px 0}
+.tradingChartData,.usVariantPrices{border:1px solid var(--ui-border);border-radius:10px;margin:18px 0;overflow:hidden;color:var(--ui-text);background:var(--ui-surface)}
+.tradingChartData summary,.usVariantPrices summary{cursor:pointer;padding:15px 18px;font-size:13px;font-weight:650;background:var(--ui-surface);line-height:1.5}
+.tradingChartData>div,.usVariantPrices>div{overflow:auto;max-height:360px}
+.tradingChartData table,.usVariantPrices table{width:100%;border-collapse:collapse;font-size:13px;text-align:left;font-variant-numeric:tabular-nums}
+.tradingChartData th,.usVariantPrices th{position:sticky;top:0;background:var(--ui-surface);color:var(--ui-text-muted);z-index:1}
+.tradingChartData :is(th,td),.usVariantPrices :is(th,td){padding:12px 16px;border-bottom:1px solid var(--ui-border);white-space:nowrap}
+.tradingChartData td:last-child{text-align:right;font-weight:650}.usVariantPrices td:first-child{white-space:normal;min-width:180px}.usVariantPrices td:last-child{min-width:200px}
+.tradingPriceChart .tradingChartAttribution{font-size:10px;line-height:1.7;color:var(--ui-text-muted);margin:16px 0 0}.tradingChartAttribution a{color:var(--ui-text-muted);text-decoration:underline}
+@media(max-width:760px){[data-trending-market] .kreamProductGrid{grid-template-columns:1fr;gap:20px}[data-trending-market] .marketProductCardLink{grid-template-columns:140px minmax(0,1fr)}[data-trending-market] .marketSectionHeading{align-items:flex-start;flex-direction:column;gap:12px}[data-trending-market] .kreamProductBody h3{font-size:15px}.tradingPriceChart{padding:16px;margin:20px 0;border-radius:12px}.tradingChartHeading{gap:10px}.tradingPriceChart .tradingChartHeading h3{font-size:13px}.tradingChartCanvas{height:300px}.tradingChartNavigation{flex-wrap:wrap}.tradingChartStats{gap:7px}.tradingChartStats>div{padding:12px 9px}.tradingChartStats dd{font-size:clamp(17px,4.5vw,24px)}.tradingPriceChart.isExpanded{inset:0;border-radius:0}.tradingChartQuote{gap:8px 12px}.tradingChartQuote>strong{font-size:34px}.catalogPricePanel:has(.tradingPriceChart){padding:18px}.tradingChartData :is(th,td){padding:10px 12px}}
+@media(max-width:400px){[data-trending-market] .marketProductCardLink{grid-template-columns:108px minmax(0,1fr)}[data-trending-market] .kreamProductBody{padding:13px}[data-trending-market] .kreamProductVisual{padding:9px}[data-trending-market] .kreamPriceSummary strong{font-size:24px}.tradingChartStats{grid-template-columns:1fr 1fr}.tradingChartStats>div:last-child{grid-column:1/-1}.tradingChartQuote>strong{font-size:30px}}

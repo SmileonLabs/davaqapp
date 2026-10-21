@@ -1,1 +1,1 @@
-export { DiscoverScreen as default } from "@/components/davaq/Tabs";
+export { ExchangeFeedScreen as default } from "@/components/tcg/ExchangeFeedScreen";

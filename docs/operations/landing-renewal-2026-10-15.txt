@@ -1,0 +1,62 @@
+DAVAQ landing renewal — 2026-10-15
+
+Status: live at https://davaq.app/ .
+
+Brand and content
+- Black/white/neutral typography, surfaces and controls. Real card art supplies the color.
+- Main story: fast card-price search, card-for-card exchange, discovery and social feed.
+- "GPT보다 빠른" follows the user's supplied positioning and the prior user confirmation
+  recorded in docs/store-launch/2026-10-14/asset-notes.md. No numeric timing claim was added.
+- Six actual catalog images reused from design/tcg-renewal/cards.json; only surrounding
+  black padding removed. No card artwork was generated or recreated.
+- Two existing store promotional images reused: scan and exchange. They remain labelled
+  campaign/illustrative material, not actual native screenshots or photographed app operation.
+- Feed preview uses actual card images with local demo likes, vertical scroll-snap,
+  keyboard/next/previous controls and canonical cardId links to the real app.
+- No synthetic market prices, seller offers, social counts or testimonials were invented.
+- Web/app links use the existing routes: /app/, /app/agent, /app/search, /app/exchanges.
+  Native apps are described as being in testing; no unverified public App Store download CTA.
+
+Performance and access
+- Eight WebP images total419,832 bytes. Hero images eager; lower images lazy/asynchronous.
+- Removed unused legacy page theme/providers from the landing entry imports; retained
+  unrelated repository files. Production JS is about68KB gzip, CSS about5KB gzip.
+- Variable Pretendard uses official pinned1.3.9 dynamic subsets with system-font fallbacks.
+- Reduced-motion preference, labelled controls, visible keyboard focus, skip link and FAQ
+  disclosure elements supported. Mobile image aspect ratios retain promotional copy.
+- Old root landing worker retired without any fetch handler/cache deletion. The /app/
+  service worker and application caches are preserved.
+
+Validation
+- Landing TypeScript and Vite production build passed.
+- Browser layouts checked at320x740,390x844,768x1024 and1440x1000: no document horizontal
+  overflow, loaded image failures absent, preview next/previous/like and FAQ expand passed.
+- Production desktop render at1224px verified, including anchor navigation to the feed.
+- Public HTTP hashes matched all14 new landing files after purging only the stale CDN
+  URL https://davaq.app/sw.js. No account-wide purge/cache setting change was made.
+- Existing API health, Google/Apple provider flags, PWA HTML/SW/JavaScript and all12 protected
+  long-lived service containers preserved. No database or native rebuild was needed.
+
+Deployment
+- Immutable archive SHA256:216db21ac2ea1219fba3a5636d8922f788f7790acd2a0d20862b0578f436a460
+- New root:/opt/davaq-landing-216db21ac2ea/landing
+- Changed environment field:LANDING_WEB_ROOT only. Recreated DavaQ web container only.
+- Previous root:/opt/davaq-web-tcg-b4e73c914ca9/artifacts/landing/dist/public
+- Environment backup/result prefix:
+  /opt/davaq-backups/before-landing-216db21ac2ea-20261015T053134Z
+- API image remains ad8089c6ae8965b921354be46301ec69d0ba886419e62ee1348a0c806452b9d7.
+- PWA remains cardfeed-20261015-a4eaeefcdfab; iOS25 and Android35 remain unchanged.
+- Signed release source and archive hashes were compared after deployment and still match.
+
+Evidence
+- .local/landing-renewal-20261015/package-result.json, manifest.json
+- production-result.json, public-verification.json, browser-qa.json
+- live-desktop.png, live-feed-desktop.png (actual production page)
+- cloudflare-single-file-purge.png (file-specific CDN refresh)
+- Asset provenance:artifacts/landing/public/media/landing-20261015/assets.manifest.json
+
+Cleanup
+- Verified temporary remote archive/script removed by exact SHA checks.
+- Temporary SSH ControlMaster closed and only this task's local key pair removed.
+- Owned local preview server and temporary browser tabs closed; viewport reset.
+- Production release/rollback files and private backups retained.

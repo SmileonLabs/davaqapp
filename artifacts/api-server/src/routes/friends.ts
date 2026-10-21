@@ -1,3 +1,4 @@
+import { publicDavaqAvatar } from "../lib/davaqAvatarPolicy";
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { and, eq, inArray, or } from "drizzle-orm";
@@ -79,10 +80,10 @@ router.get("/friends", requireAuth, async (req, res): Promise<void> => {
     if (!user) return null;
     const profileId = activeProfileIdByUserId.get(friendId);
     const profile = profileId ? characterProfileById.get(profileId) : null;
-    const characterProfileImageUrl =
-      profile?.type === "fan" && profile.profileImageUrl === user.profileImageUrl
-        ? null
-        : profile?.profileImageUrl ?? null;
+    const characterProfileImageUrl = publicDavaqAvatar(
+      profile?.type === "fan" && profile.profileImageUrl === user.profileImageUrl ? null : profile?.profileImageUrl,
+      profile?.metadata, profile?.id,
+    );
     return {
       ...toPublic(user, alias),
       profileImageUrl: characterProfileImageUrl,

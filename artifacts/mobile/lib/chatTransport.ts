@@ -1,33 +1,8 @@
-import {
-  customFetch,
-  sendMessage,
-  fetchRoomMessages,
-  type Message,
-} from "@workspace/api-client-react";
+import { sendMessage, fetchRoomMessages, fetchRoomChanges } from "@workspace/api-client-react";
+export const sendChatMessage: typeof sendMessage = sendMessage;
+export const fetchChatMessages: typeof fetchRoomMessages = fetchRoomMessages;
+export const isAgentConversation = (_id: string) => false;
 
-/** Q has private memory/AI storage, but shares the messenger outbox and cursors. */
-export const agentConversationId = (userId: string) => `davaq-agent:${userId}`;
-export const isAgentConversation = (id: string) =>
-  id.startsWith("davaq-agent:");
-const endpoint = "/api/agents/me/conversation/messages";
-
-export const sendChatMessage: typeof sendMessage = (id, input, options) => {
-  if (!isAgentConversation(id)) return sendMessage(id, input, options);
-  return customFetch<Message>(endpoint, {
-    ...options,
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-};
-
-export const fetchChatMessages: typeof fetchRoomMessages = (
-  id,
-  params,
-  options,
-) => {
-  if (!isAgentConversation(id)) return fetchRoomMessages(id, params, options);
-  const search = new URLSearchParams();
-  if (params?.limit != null) search.set("limit", String(params.limit));
-  if (params?.afterSeq != null) search.set("afterSeq", String(params.afterSeq));
-  return customFetch<Message[]>(`${endpoint}?${search}`, options);
-};
+export function fetchChatChanges(roomId: string, afterRevision: string | null, signal: AbortSignal) {
+  return fetchRoomChanges(roomId, afterRevision === null ? undefined : { afterRevision }, { signal });
+}

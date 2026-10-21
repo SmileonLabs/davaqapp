@@ -1,0 +1,48 @@
+DAVAQ AI 친구 / 원격 안내 문구 — 구현 및 네이티브 빌드 인계
+
+상태: 모바일 소스 확정. 이 채팅에서는 네이티브 빌드/스토어 변경을 시작하지 않음.
+다른 채팅에서 준비하는 통합 iOS36/Android54에 현재 작업 트리의 모바일 변경을 포함해야 함.
+기존 iOS35/Android53에는 이 추가 UI 변경이 포함되지 않음.
+소스 확정 해시: .local/collector-profile-20261017/mobile-source-ready.json
+
+변경:
+- 닉네임 팩깡너구리 / 반짝수달 / 슬리브도깨비. 성향은 서버 내부 설정으로만 유지.
+- 공개방 메시지 앞 성향 호칭 제거. 기존 공식 AI 메시지만 백업 후 보정. 회원 메시지 변경 없음.
+- AI 수집가 · 가상 캐릭터 고정 문구 제거. 메시지 위 문구는 서버 presentation.messageLabel로 제어.
+- 빈 값이면 숨김. 앱은 공통 /api/collector-lounge 설정을 30초마다 다시 조회함.
+- 기존 운영/지식 관리자 권한의 웹 라운지 운영자 제어에서 문구 수정/숨김 가능.
+- 이번 작업에서 새 사용자 관리자 권한을 부여하지 않음.
+- 그룹방 닉네임·아바타, 라운지 캐릭터 소개, 기존 사용자/캐릭터 프로필 경로에서 AI 프로필로 진입.
+- 친구는 즉시 추가되고 일반 친구 목록에 반영. 1:1 개인방 재진입은 기존 대화를 재사용.
+- 별도 개인 AI 작업자: 회원 질문에만 답함. 해당 방 최근 12개 대화만 사용.
+  공개방 온톨로지나 다른 방의 대화는 개인 프롬프트에 포함하지 않고, 개인 대화를 공개 온톨로지에 쓰지 않음.
+- 비공개 첨부 파일을 자동 스캔/판독하지 않음. 카드 이름·상세 링크로 확인하도록 안내.
+- 프로필에서 AI 처리 안내를 확인하고 개인방 시작. 기존 친구 목록의 일반 DM 생성 경로도 AI 응답에 연결.
+- 1방 하루 20회 / 전체 하루 200회 기본 예산, 동일 메시지 최대 3회 시도.
+- DB lease, 최신 sequence 재확인, 차단·멤버십·퇴장·삭제 확인으로 오래된/중복 답변 차단.
+
+API:
+GET /api/collector-lounge: characters[].id/name/description, presentation.messageLabel
+PATCH /api/admin/collector-lounge/presentation: {messageLabel:string|null} (운영/지식 관리자만)
+GET /api/collector-lounge/characters/:id/relationship
+POST /api/collector-lounge/characters/:id/friend
+POST /api/collector-lounge/characters/:id/chat: {acknowledgeAiProcessing:true,profileId?:string}
+새 SQL: 0049_collector_presentation.sql, 0050_collector_direct.sql (운영 적용 완료)
+
+검증:
+자동 테스트 25개 통과: .local/collector-profile-20261017/tests.log
+서버/모바일 타입 검사 통과: 같은 디렉터리 api-types.log, mobile-types.log
+운영 서버에서 임시 진단 계정의 실제 AI 개인 답변 확인 후 진단 계정·방 정리.
+운영 웹: 닉네임에서 프로필 진입 및 친구/개인 대화 화면 확인.
+네이티브 실기기 검증은 새 통합 테스트 빌드에서 별도로 필요.
+
+실기기 확인:
+1. 수집AI수다방 메시지에 옛 역할명·고정 가상 캐릭터 문구가 없는지.
+2. 닉네임/프로필 터치 → 친구 추가 → 친구 목록 반영.
+3. 1:1 대화 시작/재진입이 중복 방을 만들지 않고 AI가 답하는지.
+4. 다른 회원/다른 방의 대화가 개인방에 섞이지 않는지.
+5. 운영자가 문구를 바꾸거나 비우면 약 30초 내 또는 재진입 후 반영되는지.
+6. 기존 스캔·설정·모션·GIF 동작을 함께 확인할 것.
+
+네이티브는 한 번 이번 서버 설정 조회 구조를 포함해 빌드해야 함.
+이후 안내 문구 변경은 서버/웹 관리 설정으로 반영되므로 새 네이티브 빌드 불필요.

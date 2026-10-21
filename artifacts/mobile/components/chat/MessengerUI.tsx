@@ -61,11 +61,13 @@ export function MessengerSheet({
   visible,
   title,
   onClose,
+  onDismiss,
   children,
 }: {
   visible: boolean;
   title: string;
   onClose: () => void;
+  onDismiss?: () => void;
   children: React.ReactNode;
 }) {
   const c = useColors(),
@@ -77,6 +79,7 @@ export function MessengerSheet({
       visible={visible}
       animationType="fade"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
       <View
         style={[

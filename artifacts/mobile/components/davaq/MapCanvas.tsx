@@ -10,7 +10,7 @@ export default function MapCanvas(p: MapCanvasProps) {
     [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false),
     config = useDavaq<{ tileUrl: string; attribution: string }>(
-      "/exchange/map/config",
+      "/tcg/map/config",
     );
   const src = getApiBase() + "/app/maps/map.html",
     payload = JSON.stringify({
@@ -32,7 +32,7 @@ export default function MapCanvas(p: MapCanvasProps) {
   }, [ready, payload, config.data]);
   return (
     <View
-      style={{ height: p.height ?? 390, borderRadius: 22, overflow: "hidden" }}
+      style={{ height: p.height ?? 390, borderRadius: 12, overflow: "hidden" }}
     >
       <WebView
         ref={frame}

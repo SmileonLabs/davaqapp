@@ -449,6 +449,10 @@ export function reportCallDiagnostic(
     details?: Record<string, unknown>;
   },
 ): void {
+  // Lifecycle stages only: never print call IDs, credentials or payload details.
+  if (/^[a-z][a-z0-9_]{0,99}$/.test(payload.phase)) {
+    console.info("[call-stage]", payload.phase);
+  }
   const attemptId = payload.attemptId ?? createCallAttemptId();
   const now = Date.now();
   const event: QueuedDiagnostic = {
@@ -608,9 +612,13 @@ export function installCallReliabilityFlushTriggers(): () => void {
   };
   flush();
   const onOnline = () => flush();
-  if (typeof window !== "undefined") window.addEventListener("online", onOnline);
+  // React Native exposes window as the JS global, without DOM event methods.
+  const browser = typeof window !== "undefined" &&
+    typeof window.addEventListener === "function" &&
+    typeof window.removeEventListener === "function" ? window : null;
+  browser?.addEventListener("online", onOnline);
   return () => {
-    if (typeof window !== "undefined") window.removeEventListener("online", onOnline);
+    browser?.removeEventListener("online", onOnline);
   };
 }
 

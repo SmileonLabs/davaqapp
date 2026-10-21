@@ -1,77 +1,86 @@
-import notifee from "@notifee/react-native";
+import notifee, { EventType } from "@notifee/react-native";
+import { NativeModules, Platform } from "react-native";
+import { getCurrentNativePushOwner } from "./nativePushOwner";
+import {
+  shouldClearChatNotification,
+  type ChatNotificationRead,
+  type DisplayedChatNotification,
+} from "./chatNotificationPolicy";
+export type { ChatNotificationRead } from "./chatNotificationPolicy";
 
-type DisplayedNotificationLike = {
-  id?: string;
-  notification?: {
-    id?: string;
-    data?: Record<string, unknown>;
-    android?: {
-      tag?: string;
-      channelId?: string;
-    };
-  };
+type DeliveredApi = {
+  getDeliveredNotifications?: () => Promise<DisplayedChatNotification[]>;
+  removeDeliveredNotifications?: (ids: string[]) => Promise<void>;
 };
-
-type NotifeeDisplayedApi = typeof notifee & {
-  getDisplayedNotifications?: () => Promise<DisplayedNotificationLike[]>;
-  cancelDisplayedNotification?: (id: string, tag?: string) => Promise<void>;
-};
-
-function asString(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
+export async function clearChatNotifications(
+  roomId?: string | null,
+  read: ChatNotificationRead = {},
+): Promise<void> {
+  await clearChatNotificationReads([{ roomId, read }]);
 }
-
-function roomTag(roomId: string): string {
-  return `room-${roomId}`;
-}
-
-function notificationData(displayed: DisplayedNotificationLike): Record<string, unknown> {
-  return displayed.notification?.data ?? {};
-}
-
-function notificationTag(displayed: DisplayedNotificationLike): string | null {
-  return asString(displayed.notification?.android?.tag) ?? asString(notificationData(displayed).tag);
-}
-
-function matchesRoom(displayed: DisplayedNotificationLike, roomId: string): boolean {
-  const data = notificationData(displayed);
-  const expectedTag = roomTag(roomId);
-  const url = asString(data.url);
-  return (
-    notificationTag(displayed) === expectedTag ||
-    asString(data.roomId) === roomId ||
-    asString(data.chatRoomId) === roomId ||
-    url === `/chat/${roomId}`
-  );
-}
-
-function matchesAnyChat(displayed: DisplayedNotificationLike): boolean {
-  const data = notificationData(displayed);
-  const tag = notificationTag(displayed);
-  const url = asString(data.url);
-  return !!tag?.startsWith("room-") || !!url?.startsWith("/chat/");
-}
-
-async function cancelDisplayedNotification(displayed: DisplayedNotificationLike): Promise<void> {
-  const api = notifee as NotifeeDisplayedApi;
-  const id = asString(displayed.id) ?? asString(displayed.notification?.id);
-  if (!id) return;
-  const tag = notificationTag(displayed) ?? undefined;
-  if (api.cancelDisplayedNotification) {
-    await api.cancelDisplayedNotification(id, tag);
-    return;
-  }
-  await notifee.cancelNotification(id);
-}
-
-export async function clearChatNotifications(roomId?: string | null): Promise<void> {
+export async function clearChatNotificationReads(
+  reads: { roomId?: string | null; read: ChatNotificationRead }[],
+): Promise<void> {
+  if (!reads.length) return;
+  const ownerId = reads.find((item) => item.read.ownerId)?.read.ownerId;
   try {
-    const api = notifee as NotifeeDisplayedApi;
-    const displayed = await api.getDisplayedNotifications?.();
-    if (!Array.isArray(displayed)) return;
-    const matches = displayed.filter((item) => (roomId ? matchesRoom(item, roomId) : matchesAnyChat(item)));
-    await Promise.all(matches.map(cancelDisplayedNotification));
+    if (ownerId && (await getCurrentNativePushOwner()) !== ownerId) return;
+    const native =
+      Platform.OS === "ios"
+        ? (NativeModules.DavaQSystemCalls as DeliveredApi | undefined)
+        : undefined;
+    const displayed = native?.getDeliveredNotifications
+      ? await native.getDeliveredNotifications()
+      : await notifee.getDisplayedNotifications();
+    const selected = displayed.filter((item) =>
+      reads.some((entry) =>
+        shouldClearChatNotification(item, entry.roomId, entry.read),
+      ),
+    );
+    if (ownerId && (await getCurrentNativePushOwner()) !== ownerId) return;
+    if (native?.removeDeliveredNotifications) {
+      await native.removeDeliveredNotifications(
+        selected
+          .map((item) => item.id ?? item.notification?.id)
+          .filter((id): id is string => !!id),
+      );
+    } else {
+      await Promise.all(
+        selected.map(async (item) => {
+          const id = item.id ?? item.notification?.id;
+          if (id)
+            await notifee.cancelDisplayedNotification(
+              id,
+              item.notification?.android?.tag ??
+                (typeof item.notification?.data?.tag === "string"
+                  ? item.notification.data.tag
+                  : undefined),
+            );
+        }),
+      );
+    }
   } catch {
-    // Best-effort: stale OS notifications should never break app UX.
+    // OS notification failures must not interrupt the conversation.
   }
+}
+let badgeRevision = 0;
+export async function syncUnreadNotificationBadge(
+  count: number,
+  ownerId?: string,
+): Promise<void> {
+  const revision = ++badgeRevision;
+  try {
+    if (!ownerId || (await getCurrentNativePushOwner()) !== ownerId) return;
+    if (revision !== badgeRevision) return;
+    await notifee.setBadgeCount(Math.max(0, Math.floor(count)));
+  } catch {
+    /* Device/launcher badge support varies. */
+  }
+}
+
+export function subscribeChatNotificationDelivery(handler: () => void): () => void {
+  return notifee.onForegroundEvent(({ type, detail }) => {
+    if (type !== EventType.DELIVERED) return;
+    if (shouldClearChatNotification({ notification: detail.notification }, null, { allowLegacy: true })) handler();
+  });
 }

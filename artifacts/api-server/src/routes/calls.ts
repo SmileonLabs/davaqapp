@@ -1,3 +1,5 @@
+import { publicDavaqAvatar } from "../lib/davaqAvatarPolicy";
+import { processGroupCallLifecycle } from "./groupCalls";
 import crypto from "node:crypto";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod/v4";
@@ -8,6 +10,7 @@ import {
   callsTable,
   callControlOperationsTable,
   callUserLocksTable,
+  groupCallParticipantsTable,
   usersTable,
   messagesTable,
   chatRoomsTable,
@@ -22,7 +25,7 @@ import { rateLimit } from "../lib/rateLimit";
 import { sendCallPush, sendCallTerminalPush, incomingCallData } from "../lib/push";
 import { logger } from "../lib/logger";
 import { publishRealtimeEvent } from "../lib/realtime";
-import { allocateRoomMessageSeq, setMemberReadSeq } from "../lib/readReceipts";
+import { allocateRoomMessageSeq } from "../lib/readReceipts";
 import {
   CALL_TOKEN_TTL_SECONDS,
   callTokenGrant,
@@ -677,9 +680,7 @@ export async function ensureCallMessage(call: Call): Promise<boolean> {
         .set({ hiddenAt: null })
         .where(eq(chatRoomMembersTable.roomId, current.chatRoomId));
     }
-    // The caller has implicitly read their own call card so it never counts as
-    // unread for them.
-    await setMemberReadSeq(tx, current.chatRoomId, current.callerId, { id: message.id, roomSeq });
+    // Background call-card creation is not evidence of reading this room.
     await tx
       .update(callsTable)
       .set({ callMessageCreatedAt: message.createdAt })
@@ -883,6 +884,10 @@ router.post("/calls", requireAuth, rateLimit({ name: "create-call", limit: 10, w
   let call: Call;
   try {
     call = await db.transaction(async (tx) => {
+      const ids = [userId, calleeId].sort();
+      await tx.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, ids)).orderBy(asc(usersTable.id)).for("update");
+      const groupBusy = await tx.select().from(groupCallParticipantsTable).where(and(inArray(groupCallParticipantsTable.userId, ids), eq(groupCallParticipantsTable.state, "joined")));
+      if (groupBusy.length) { const error = new Error("Group call busy") as Error & { code: string; constraint: string }; error.code = "23505"; error.constraint = "call_user_locks"; throw error; }
       const [created] = await tx
         .insert(callsTable)
         .values({
@@ -958,6 +963,7 @@ router.post("/calls", requireAuth, rateLimit({ name: "create-call", limit: 10, w
     url: validRoomId ? `/chat/${validRoomId}` : "/",
     tag: `call-${call.id}`,
     data: incomingCallData({
+      expiresAt: call.createdAt.getTime() + RING_TIMEOUT_MS,
       callId: call.id,
       chatRoomId: validRoomId,
       callerUserId: userId,
@@ -1007,13 +1013,13 @@ router.get("/calls/incoming", requireAuth, async (req, res): Promise<void> => {
         caller: {
           ...toPublicUser(caller),
           nickname: callerProfile?.displayName ?? caller.nickname,
-          profileImageUrl: callerProfile?.profileImageUrl ?? null,
+          profileImageUrl: publicDavaqAvatar(callerProfile?.profileImageUrl, callerProfile?.metadata, callerProfile?.id ?? caller.id),
           profile: callerProfile ? {
             id: callerProfile.id,
             type: callerProfile.type,
             handle: callerProfile.handle,
             displayName: callerProfile.displayName,
-            profileImageUrl: callerProfile.profileImageUrl,
+            profileImageUrl: publicDavaqAvatar(callerProfile.profileImageUrl, callerProfile.metadata, callerProfile.id),
           } : null,
         },
       } : null;
@@ -1343,6 +1349,7 @@ export async function pruneExpiredCallControlOperations(now = new Date()): Promi
 }
 
 export async function processCallLifecycleBatch(log = logger): Promise<number> {
+  await processGroupCallLifecycle().catch(err => log.warn({ err }, "Group lifecycle retry deferred"));
   const batchSize = envPositiveNumber("CALL_LIFECYCLE_WORKER_BATCH_SIZE", DEFAULT_CALL_WORKER_BATCH_SIZE);
   const expiryCutoff = new Date(Date.now() - RING_TIMEOUT_MS);
   const expired = await db

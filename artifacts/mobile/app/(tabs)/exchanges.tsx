@@ -1,1 +1,1 @@
-export { MyExchangesScreen as default } from "@/components/davaq/Tabs";
+export { CollectionScreen as default } from "@/components/tcg/Screens";

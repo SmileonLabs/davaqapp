@@ -1,0 +1,47 @@
+DavaQ shared UI foundations — 2026-10-10
+
+Color source: artifacts/mobile/constants/colors.ts
+Read active colors through hooks/useColors.ts. The default appearance is light
+lavender; the existing user-selected dark appearance remains supported.
+Use background/card/secondary for surfaces, foreground/mutedForeground for
+text, primary/primaryForeground for actions, border for separators, and
+online/destructive for call acceptance/rejection. Media canvases intentionally
+retain a dark background and contrasting controls.
+
+Layout, typography and interaction source: constants/designSystem.ts
+Shared spacing, radii, font families, font sizes, typography roles, minimum
+44-point touch target and pressed-state opacity are defined here. New screens
+should import these values rather than copying literals. Custom dimensions
+such as character stages and media aspect ratios remain local to their component.
+
+Existing NeonUI components are theme-aware compatibility primitives for
+backdrops, cards, buttons and section headings. Their names remain compatible
+with existing imports. The older davaq/UI C palette now derives from the same
+light color source; its historical static light appearance is preserved.
+
+Migrated legacy surfaces: chat list, group creation, search, feed, home,
+profile switcher, profile management/social/summon, avatar editor/create,
+post detail/write, communities, auth navigation, incoming call, floating call,
+group call chrome and direct audio call chrome. Video/photo content backgrounds,
+artwork, badges and intentional semantic status colors are not plain app chrome.
+
+Group creation: select up to 99 friends, then name/category, create/open room.
+A synchronous submit lock prevents rapid duplicate requests. Room detail cache
+is seeded before navigation; list refresh does not block opening the room.
+Failed submissions preserve the draft. Android Back returns to participant
+selection; a refreshed friend list removes no-longer-valid selections.
+
+Chat list: manual pull-to-refresh state is separate from background refetch.
+iOS automatic content insets and vertical bouncing of horizontal filters are
+disabled; the room list owns the remaining flex area.
+
+Latest-message overlay: scrolling alone does not show it. A persisted message
+from another sender arriving while away from the latest row does. Pagination,
+own messages and temp acknowledgements do not count. Returning to the latest
+row, sending a message or changing rooms clears the pending state. The overlay
+lives inside the message viewport and does not reserve an extra composer row.
+
+Verification: mobile TypeScript, seven chat/group regression cases, iOS and
+Android Metro/Hermes exports. Group creation was rendered with sample friends
+using its real component in light and dark modes; this is not a real-device
+or production-account end-to-end test. Store distribution is a separate step.

@@ -44,6 +44,7 @@ export function createNativePushOwnerRecord(
 export function parseNativePushOwnerRecord(
   raw: string | null,
   now = Date.now(),
+  allowExpired = false,
 ): NativePushOwnerRecord | null {
   if (!raw || !validTimestamp(now)) return null;
   try {
@@ -52,7 +53,7 @@ export function parseNativePushOwnerRecord(
     if (value.version !== NATIVE_PUSH_OWNER_RECORD_VERSION) return null;
     if (!validOwnerId(value.ownerId)) return null;
     if (!validTimestamp(value.refreshedAt) || !validTimestamp(value.expiresAt)) return null;
-    if (value.refreshedAt > now || value.expiresAt <= now) return null;
+    if (value.refreshedAt > now || (!allowExpired && value.expiresAt <= now)) return null;
     if (value.expiresAt - value.refreshedAt !== NATIVE_PUSH_OWNER_LEASE_MS) return null;
     return value as NativePushOwnerRecord;
   } catch {
@@ -97,14 +98,14 @@ export async function readNativePushOwnerLease(
   return record;
 }
 
-/** Clear A only when the valid current record still belongs to A. */
+/** Respect a structurally valid newer owner even when its lease needs renewal. */
 export async function clearNativePushOwnerLease(
   storage: NativePushOwnerStorage,
   expectedOwnerId: string | null = null,
   now = Date.now(),
 ): Promise<boolean> {
   const raw = await storage.getItem(NATIVE_PUSH_OWNER_STORAGE_KEY);
-  const current = parseNativePushOwnerRecord(raw, now);
+  const current = parseNativePushOwnerRecord(raw, now, true);
   await storage.removeItem(LEGACY_NATIVE_PUSH_OWNER_STORAGE_KEY);
   if (expectedOwnerId && current && current.ownerId !== expectedOwnerId) return false;
   await storage.removeItem(NATIVE_PUSH_OWNER_STORAGE_KEY);

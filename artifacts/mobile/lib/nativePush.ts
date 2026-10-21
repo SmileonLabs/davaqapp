@@ -1,3 +1,8 @@
+import {notifyShopPush} from './shopPushRefresh';
+import { notifyChatPush, chatRoomFromPush } from "./chatPushRefresh";
+import { getApplePushCredentials } from "./applePush";
+import { endSystemCall } from "./systemCalls";
+import { incomingCallDeadline } from "./incomingCallDeadline";
 // Native push via @react-native-firebase/messaging (Android FCM). Device-token
 // registration + FOREGROUND message handling live here; the killed/background
 // handler is registered at the app entry (index.js → lib/fcmBackground.ts).
@@ -9,6 +14,7 @@ import notifee, {
   AndroidImportance,
   AndroidVisibility,
   AuthorizationStatus,
+  EventType,
 } from "@notifee/react-native";
 import { PermissionsAndroid, Platform } from "react-native";
 import {
@@ -17,7 +23,8 @@ import {
   terminalCallIdFromData,
   type IncomingCallIntent,
 } from "@/lib/callNotifications";
-import { nativePushMatchesCurrentOwner } from "@/lib/nativePushOwner";
+import { stashNotificationRoute, consumeNotificationRoute } from "./notificationIntent";
+import { getCurrentNativePushOwner, nativePushMatchesCurrentOwner } from "@/lib/nativePushOwner";
 
 export const nativePushSupported = Platform.OS !== "web";
 export const GENERAL_NOTIFICATION_CHANNEL_ID = "general-notifications";
@@ -29,7 +36,10 @@ export type NativePushState = {
 };
 
 function hasNotificationPermissionStatus(status: AuthorizationStatus): boolean {
-  return status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL;
+  return (
+    status === AuthorizationStatus.AUTHORIZED ||
+    status === AuthorizationStatus.PROVISIONAL
+  );
 }
 
 async function requestAndroidPostNotificationsPermission(): Promise<boolean> {
@@ -61,7 +71,8 @@ export async function registerForPushTokenAsync(): Promise<string | null> {
     if (!(await requestAndroidPostNotificationsPermission())) return null;
 
     const notifeeSettings = await notifee.requestPermission();
-    if (!hasNotificationPermissionStatus(notifeeSettings.authorizationStatus)) return null;
+    if (!hasNotificationPermissionStatus(notifeeSettings.authorizationStatus))
+      return null;
 
     if (Platform.OS !== "android") {
       const status = await messaging().requestPermission();
@@ -96,7 +107,9 @@ export async function getNativePushState(): Promise<NativePushState> {
 
   try {
     const settings = await notifee.getNotificationSettings();
-    const permission = hasNotificationPermissionStatus(settings.authorizationStatus)
+    const permission = hasNotificationPermissionStatus(
+      settings.authorizationStatus,
+    )
       ? "granted"
       : settings.authorizationStatus === AuthorizationStatus.DENIED
         ? "denied"
@@ -105,7 +118,9 @@ export async function getNativePushState(): Promise<NativePushState> {
     let tokenAvailable = false;
     if (permission === "granted") {
       try {
-        tokenAvailable = Boolean(await messaging().getToken());
+        tokenAvailable = Platform.OS === "ios"
+          ? (await getApplePushCredentials()).some(token => token.startsWith("apns:"))
+          : Boolean(await messaging().getToken());
       } catch {
         tokenAvailable = false;
       }
@@ -126,10 +141,14 @@ function intentFromData(
   if (!callId) return null;
   return {
     callId,
-    callerName: typeof data.callerName === "string" ? data.callerName : "수신 전화",
+    callerName:
+      typeof data.callerName === "string" ? data.callerName : "수신 전화",
     chatRoomId:
-      typeof data.chatRoomId === "string" && data.chatRoomId ? data.chatRoomId : null,
+      typeof data.chatRoomId === "string" && data.chatRoomId
+        ? data.chatRoomId
+        : null,
     media: data.media === "video" ? "video" : "audio",
+    expiresAt: incomingCallDeadline(data.expiresAt),
   };
 }
 
@@ -148,15 +167,43 @@ export function subscribeForegroundIncomingCall(
   handler: (intent: IncomingCallIntent) => void,
 ): () => void {
   return messaging().onMessage(async (remoteMessage) => {
-    if (!(await nativePushMatchesCurrentOwner(remoteMessage.data?.recipientUserId))) return;
+    if (
+      !(await nativePushMatchesCurrentOwner(
+        remoteMessage.data?.recipientUserId,
+      ))
+    )
+      return;
+    notifyChatPush(chatRoomFromPush(remoteMessage.data));
+    notifyShopPush(remoteMessage.data);
     const terminalCallId = terminalCallIdFromData(remoteMessage.data);
     if (terminalCallId) {
+      await endSystemCall(terminalCallId);
       await cancelIncomingCallNotification(terminalCallId);
       await clearPendingCallIntent(terminalCallId);
       return;
     }
     const intent = intentFromData(remoteMessage.data);
-    if (intent) handler(intent);
+    if (intent) {
+      handler(intent);
+    } else if (Platform.OS === "android" && remoteMessage.notification) {
+      // FCM notification payloads are displayed by Android only while the app
+      // is backgrounded. Render foreground messages after the same owner fence.
+      try {
+        await notifee.displayNotification({
+          id: typeof remoteMessage.data?.tag === "string" ? remoteMessage.data.tag : remoteMessage.messageId,
+          title: remoteMessage.notification.title ?? "새 메시지",
+          body: remoteMessage.notification.body,
+          data: remoteMessage.data,
+          android: {
+            channelId: GENERAL_NOTIFICATION_CHANNEL_ID,
+            sound: "default",
+            pressAction: { id: "default", launchActivity: "default" },
+          },
+        });
+      } catch (error) {
+        console.warn("Foreground notification display failed", error instanceof Error ? error.message : "unknown");
+      }
+    }
   });
 }
 
@@ -168,20 +215,47 @@ export function subscribePushTokenRefresh(
   });
 }
 
+const notificationOpenHandlers = new Set<(url: string) => void>();
 export function subscribeNotificationOpen(
   handler: (url: string) => void,
 ): () => void {
-  return messaging().onNotificationOpenedApp(async (remoteMessage) => {
-    if (!(await nativePushMatchesCurrentOwner(remoteMessage.data?.recipientUserId))) return;
+  notificationOpenHandlers.add(handler);
+  const messagingListener = messaging().onNotificationOpenedApp(async (remoteMessage) => {
+    if (
+      !(await nativePushMatchesCurrentOwner(
+        remoteMessage.data?.recipientUserId,
+      ))
+    )
+      return;
     const url = notificationUrlFromData(remoteMessage.data);
     if (url) handler(url);
   });
+  return () => { messagingListener(); notificationOpenHandlers.delete(handler); };
 }
+
+// iOS emits notification presses as foreground events, including cold launches.
+// Capture before auth hydration; consume only after matching the signed-in owner.
+notifee.onForegroundEvent(async ({ type, detail }) => {
+  if (type !== EventType.PRESS) return;
+  const data = detail.notification?.data;
+  if (typeof data?.url !== "string" || !data.url.startsWith("/")) return;
+  if (notificationOpenHandlers.size && await nativePushMatchesCurrentOwner(data.recipientUserId)) {
+    notificationOpenHandlers.forEach(handler => handler(data.url as string));
+  } else {
+    await stashNotificationRoute(data);
+  }
+});
 
 export async function getInitialNotificationUrl(): Promise<string | null> {
   try {
+    const stored = await consumeNotificationRoute(await getCurrentNativePushOwner());
+    if (stored) return stored;
     const remoteMessage = await messaging().getInitialNotification();
-    if (!(await nativePushMatchesCurrentOwner(remoteMessage?.data?.recipientUserId))) {
+    if (
+      !(await nativePushMatchesCurrentOwner(
+        remoteMessage?.data?.recipientUserId,
+      ))
+    ) {
       return null;
     }
     return notificationUrlFromData(remoteMessage?.data);

@@ -78,11 +78,33 @@ function isSafeMetadataValue(value: unknown, depth = 0): boolean {
   );
 }
 
-function isValidMetadata(value: unknown): value is Record<string, unknown> | null {
+const MAX_PREVIEW_LENGTH = 10_000;
+
+function isJpegPreview(value: unknown): value is string {
+  if (typeof value !== "string" || value.length > MAX_PREVIEW_LENGTH) return false;
+  const prefix = "data:image/jpeg;base64,";
+  if (!value.startsWith(prefix)) return false;
+  const encoded = value.slice(prefix.length);
+  if (!encoded || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) return false;
+  const bytes = Buffer.from(encoded, "base64");
+  return bytes.length >= 5 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff && bytes[bytes.length - 2] === 0xff && bytes[bytes.length - 1] === 0xd9;
+}
+
+function isValidMetadata(value: unknown, type: string): value is Record<string, unknown> | null {
   if (value === undefined || value === null) return true;
-  if (!isRecord(value) || !isSafeMetadataValue(value)) return false;
+  if (!isRecord(value)) return false;
+  // Client previews are bounded JPEG data URLs, larger than ordinary metadata.
+  // Keep the existing limits for every other field and message type.
+  const previewKey = type === "image" ? "imageThumbnail" : type === "file" ? "videoThumbnail" : undefined;
+  const ordinary = { ...value };
+  if (previewKey && Object.hasOwn(value, previewKey)) {
+    if (!isJpegPreview(value[previewKey])) return false;
+    delete ordinary[previewKey];
+  }
+  if (Object.keys(value).length > 20 || !isSafeMetadataValue(ordinary)) return false;
   try {
-    return Buffer.byteLength(JSON.stringify(value), "utf8") <= 4_096;
+    return Buffer.byteLength(JSON.stringify(ordinary), "utf8") <= 4_096 &&
+      Buffer.byteLength(JSON.stringify(value), "utf8") <= 16_384;
   } catch {
     return false;
   }
@@ -141,7 +163,7 @@ export function validateUserMessage(input: unknown): MessageValidationResult {
   if (replyToMessageId !== null && (typeof replyToMessageId !== "string" || !UUID_PATTERN.test(replyToMessageId))) {
     return { ok: false, error: "invalid replyToMessageId" };
   }
-  if (!isValidMetadata(input.metadata)) return { ok: false, error: "invalid metadata" };
+  if (!isValidMetadata(input.metadata, type)) return { ok: false, error: "invalid metadata" };
 
   const clientMessageId = validateClientMessageId(input.clientMessageId);
   if (clientMessageId === undefined) return { ok: false, error: "invalid clientMessageId" };

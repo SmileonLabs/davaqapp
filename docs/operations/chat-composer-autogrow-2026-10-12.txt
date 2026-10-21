@@ -1,0 +1,9 @@
+Mobile long-text composer — 2026-10-12
+
+Implementation: MessageComposer measures wrapped text independently of the constrained TextInput. Both use identical width, padding, font and line height. A zero-width trailing character preserves the height of an empty final line. This replaces Android content-size-event sizing and the web fallback that counted explicit newlines only.
+
+The input grows from 44 to 124 layout points (five 20-point text lines plus padding). Above this cap, the input scrolls internally. Deletion, draft restoration, failed-send restoration and width changes cause the measurement to update. Send clears and collapses the input. Font padding is disabled consistently on Android and text is top aligned. Local composer state and existing keyboard avoidance remain in place.
+
+Verification: TypeScript check and web export. Physical iOS/Android keyboard and caret behavior remain to be checked on a device. Not deployed in this task.
+
+Release follow-up: these changes are now available in Android internal test 1.0.0 (23) and iOS internal TestFlight 1.0.0 (14). See composer-cache-release-2026-10-12.txt. Web/PWA production unchanged.

@@ -1,0 +1,22 @@
+[Unit]
+Description=Reap CPU-spinning disconnected ubuntu login shells
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/sbin/orphan-login-shell-guard.py
+RuntimeDirectory=orphan-login-shell-guard
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+UMask=0077
+Nice=19
+CPUWeight=10
+TimeoutStartSec=20
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/run/orphan-login-shell-guard
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+

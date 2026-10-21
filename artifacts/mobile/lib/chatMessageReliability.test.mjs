@@ -382,7 +382,7 @@ test("outbox retries are bounded by count, total window and retention", () => {
   assert.equal(terminal.deliveryState, "failed");
   assert.equal(terminal.retryable, false);
 
-  const expired = { ...base, createdAt: now - 25 * 60 * 60 * 1_000 };
+  const expired = { ...base, createdAt: now - 31 * 24 * 60 * 60 * 1_000 };
   assert.deepEqual(pruneChatOutbox([expired], now), []);
 
   const full = Array.from({ length: CHAT_OUTBOX_MAX_ENTRIES }, (_, index) => ({
@@ -477,6 +477,7 @@ test("a profile switch synchronously removes old profile query payloads", () => 
     [JSON.stringify(["feed"]), [{ content: "profile-a-post" }]],
   ]);
   const client = {
+    getQueryCache: () => ({ findAll: () => [] }),
     cancelQueries: async () => undefined,
     removeQueries: ({ predicate }) => {
       for (const serialized of Array.from(cache.keys())) {
@@ -502,6 +503,7 @@ test("a server-refetched profile switch fences requests before removing old cach
     [JSON.stringify(["feed"]), [{ content: "profile-a-private" }]],
   ]);
   const client = {
+    getQueryCache: () => ({ findAll: () => [] }),
     cancelQueries: async () => {
       events.push("cancel");
     },

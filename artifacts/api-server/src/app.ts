@@ -53,7 +53,8 @@ app.use(
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use((req, res, next) => {
   const origin = req.get("origin");
-  if (origin && !isAllowedOrigin(origin)) {
+  const appleReturn = req.method === "POST" && req.path === "/api/auth/social/apple/callback" && origin === "https://appleid.apple.com";
+  if (origin && !isAllowedOrigin(origin) && !appleReturn) {
     res.status(403).json({ error: "Origin is not allowed" });
     return;
   }
@@ -76,14 +77,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", healthRouter);
 
-app.use(
-  clerkMiddleware((req) => ({
+const legacyClerkMiddleware = clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(
       getClerkProxyHost(req) ?? "",
       process.env.CLERK_PUBLISHABLE_KEY,
     ),
-  })),
-);
+  }));
+app.use((req, res, next) => {
+  const publicSocial = req.path.startsWith("/api/auth/social/") && req.path !== "/api/auth/social/link";
+  if (publicSocial || req.get("authorization")?.startsWith("Bearer dvq_")) { next(); return; }
+  legacyClerkMiddleware(req, res, next);
+});
 
 app.use("/api", router);
 

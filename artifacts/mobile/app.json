@@ -4,14 +4,14 @@
     "slug": "davaq",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/davaq/brand-icon.png",
+    "icon": "./assets/images/davaq/app-icon-v2.png",
     "scheme": "davaq",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/davaq/brand-icon.png",
+      "image": "./assets/images/davaq/queue.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F7F6FB"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": false,
@@ -22,16 +22,18 @@
           "voip"
         ],
         "NSMicrophoneUsageDescription": "음성 통화를 위해 마이크 접근 권한이 필요합니다.",
-        "NSCameraUsageDescription": "영상통화를 위해 카메라 접근 권한이 필요합니다."
+        "NSCameraUsageDescription": "카드 촬영·스캔과 영상통화를 위해 카메라 접근 권한이 필요합니다."
       },
-      "bitcode": false
+      "bitcode": false,
+      "buildNumber": "38"
     },
     "android": {
       "package": "app.davaq.mobile",
-      "versionCode": 7,
+      "versionCode": 57,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/davaq/brand-foreground.png",
-        "backgroundColor": "#F7F6FB"
+        "backgroundColor": "#000000",
+        "monochromeImage": "./assets/images/davaq/brand-foreground.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -47,15 +49,16 @@
         "android.permission.INTERNET",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.BLUETOOTH"
-      ]
+      ],
+      "icon": "./assets/images/davaq/app-icon-v2.png"
     },
     "web": {
-      "favicon": "./assets/images/davaq/brand-icon.png",
+      "favicon": "./assets/images/davaq/app-icon-v2.png",
       "name": "DavaQ",
       "shortName": "DavaQ",
       "description": "DavaQ (다바꿔)",
-      "backgroundColor": "#F7F6FB",
-      "themeColor": "#F7F6FB",
+      "backgroundColor": "#000000",
+      "themeColor": "#000000",
       "lang": "ko",
       "display": "standalone",
       "orientation": "portrait"
@@ -64,11 +67,17 @@
       [
         "expo-router",
         {
-          "origin": "https://davaq.anothermeai.app/"
+          "origin": "https://davaq.app/"
         }
       ],
       "expo-font",
       "expo-web-browser",
+      [
+        "@clerk/expo",
+        {
+          "appleSignIn": false
+        }
+      ],
       "./plugins/withCallForegroundService",
       "@livekit/react-native-expo-plugin",
       "@config-plugins/react-native-webrtc",
@@ -83,13 +92,34 @@
                 "META-INF/**/OSGI-INF/MANIFEST.MF"
               ]
             }
+          },
+          "ios": {
+            "deploymentTarget": "17.0",
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBMessaging",
+              "livekit-react-native-webrtc",
+              "livekit-react-native"
+            ]
           }
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "내 주변의 교환을 찾기 위해 현재 위치를 한 번 사용합니다."
+          "locationWhenInUsePermission": "카드 직거래 지역을 설정하기 위해 현재 위치를 사용합니다."
+        }
+      ],
+      "@react-native-firebase/messaging",
+      "./plugins/withSystemCalls",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/davaq/queue.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
         }
       ]
     ],
@@ -97,6 +127,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {}
+    "extra": {},
+    "backgroundColor": "#000000"
   }
 }

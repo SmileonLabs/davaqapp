@@ -1,0 +1,9 @@
+Photo retransmission test release — 2026-10-12
+
+Target versions: Android 1.0.0 (24), iOS 1.0.0 (15).
+Includes photo-retry-fix-2026-10-12.txt changes alongside all previously released composer and media-cache improvements.
+
+Android: build/signature/production login/API and 16KB alignment checks passed. Google Play internal-track release 16 confirmed internally available at 2026-10-12 15:59 KST. No support reductions; one non-blocking deobfuscation mapping warning. APK/AAB and SHA256SUMS retained in .local/releases/photo-retry-20261012/. Release bundle checked for _chatUploadPrepared and image-upload-timeout. Proof: evidence/android-24-internal-20261012.png.
+iOS: local archive and upload succeeded. Archived version 1.0.0 (15) and retry-code bundle contents verified. Uploaded at 2026-10-12 16:00 KST; Apple processing completed. Build UUID ad65188d-d32c-4b92-a2a4-ae771b751733. Standard encryption / France not distributed configured consistently with prior user confirmation. DavaQ Internal group (3 testers) confirms build 1.0.0 (15) TESTING / 90 days. Proof: evidence/ios-15-internal-20261012.png. Third-party dSYM warnings did not block upload.
+
+No production API or web/PWA deployment in this task. Physical-device testing remains separate from build/signature validation.

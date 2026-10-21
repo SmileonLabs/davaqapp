@@ -15,6 +15,7 @@ export interface ChatMessageLike {
   senderId: string;
   clientMessageId?: string | null;
   createdAt: string;
+  readCount?: number;
   _deliveryState?: MessageDeliveryState;
 }
 
@@ -95,6 +96,8 @@ export function mergeChatMessages<T extends ChatMessageLike>(
       const next = {
         ...(previous ?? {}),
         ...incoming,
+        ...(previous?.id === incoming.id && typeof previous.readCount === "number" && typeof incoming.readCount === "number"
+          ? { readCount: Math.max(previous.readCount, incoming.readCount) } : {}),
         // Delivery state is local-only. A positive roomSeq is the server ack.
         ...(isConfirmed(incoming) ? { _deliveryState: undefined } : {}),
       } as ReliableMessage<T>;

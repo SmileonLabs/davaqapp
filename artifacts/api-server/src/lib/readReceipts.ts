@@ -237,6 +237,7 @@ export async function getRoomUnreadMeta(
         FROM messages AS m
         WHERE m.room_id = ${roomId}
           AND m.sender_id <> ${userId}
+          AND m.deleted_at IS NULL
           AND m.room_seq > ${lastReadSeq}
           AND NOT EXISTS (
             SELECT 1
@@ -250,6 +251,7 @@ export async function getRoomUnreadMeta(
     FROM messages
     WHERE room_id = ${roomId}
       AND sender_id <> ${userId}
+      AND deleted_at IS NULL
       AND room_seq > ${lastReadSeq}
       AND NOT EXISTS (
         SELECT 1

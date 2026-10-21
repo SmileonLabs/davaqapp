@@ -11,8 +11,11 @@ web-build-preview/
 expo-env.d.ts
 
 # Native
-ios/
-android/
+/ios/
+/android/
+tcgindex-scanner/**/build/
+tcgindex-scanner/**/.cxx/
+tcgindex-scanner/**/.gradle/
 *.orig.*
 *.jks
 *.p8
@@ -40,3 +43,7 @@ yarn-error.*
 .vercel
 
 .env
+
+# Existing Play upload credentials stay local
+.local-signing/
+google-services.json

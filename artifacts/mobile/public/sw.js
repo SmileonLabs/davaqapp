@@ -238,16 +238,26 @@ function notificationIsChat(notification) {
   return !!roomIdFromUrl(data.url);
 }
 
-async function closeNotificationsByTag(tag) {
+function notificationWasRead(notification, read = {}) {
+  const data = notification.data || {};
+  if (data.callId || data.type === "incoming_call" || data.type === "call" || String(data.type || "").startsWith("call_")) return false;
+  if (read.ownerId && data.recipientUserId && data.recipientUserId !== read.ownerId) return false;
+  const seq = Number(data.messageSeq);
+  if (Number.isSafeInteger(seq) && seq > 0 && read.readThroughSeq != null) return seq <= read.readThroughSeq;
+  const created = Date.parse(data.messageCreatedAt), cutoff = Date.parse(read.readThroughAt);
+  if (Number.isFinite(created) && Number.isFinite(cutoff)) return created <= cutoff;
+  return !!read.allowLegacy && (!notification.timestamp || !read.observedBefore || notification.timestamp <= read.observedBefore);
+}
+async function closeNotificationsByTag(tag, read) {
   if (typeof tag !== "string" || !tag) return;
   const notifications = await self.registration.getNotifications({ tag });
-  for (const notification of notifications) notification.close();
+  for (const notification of notifications) if (notificationWasRead(notification, read)) notification.close();
 }
 
-async function closeChatNotifications() {
+async function closeChatNotifications(read) {
   const notifications = await self.registration.getNotifications();
   for (const notification of notifications) {
-    if (notificationIsChat(notification)) notification.close();
+    if (notificationIsChat(notification) && notificationWasRead(notification, read)) notification.close();
   }
 }
 
@@ -273,7 +283,7 @@ self.addEventListener("push", (event) => {
       const owner = await readPushOwner();
       if (!shouldDisplayForOwner(owner, payload.recipientUserId, Date.now())) return;
       // Wake open tabs so in-app lists/badges refresh alongside the OS banner.
-      await broadcast({ type: "data-changed", roomId: roomIdFromUrl(url) });
+      await broadcast({ type: "data-changed", roomId: roomIdFromUrl(url), shopId: data.shopId, threadId: data.threadId });
       await self.registration.showNotification(title, options);
     })(),
   );
@@ -319,10 +329,10 @@ self.addEventListener("message", (event) => {
   }
   if (data.type === "clear-room-notifications") {
     const tag = typeof data.tag === "string" ? data.tag : roomTagFromId(data.roomId);
-    event.waitUntil(closeNotificationsByTag(tag));
+    event.waitUntil(closeNotificationsByTag(tag, data.read));
   }
   if (data.type === "clear-chat-notifications") {
-    event.waitUntil(closeChatNotifications());
+    event.waitUntil(closeChatNotifications(data.read));
   }
 });
 

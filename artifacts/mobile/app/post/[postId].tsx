@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Feather } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";
@@ -86,6 +89,9 @@ function PostMediaImage({
   objectPath: string;
   accessibilityLabel: string;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const uri = useMediaUri(objectPath);
   return uri ? (
     <Image
@@ -101,6 +107,9 @@ function PostMediaImage({
 }
 
 export default function PostDetailScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -146,7 +155,7 @@ export default function PostDetailScreen() {
     if (!post) return;
     const url = Platform.OS === "web" && typeof window !== "undefined"
       ? `${window.location.origin}/app/post/${post.id}`
-      : `https://davaq.anothermeai.app/app/post/${post.id}`;
+      : `https://davaq.app/app/post/${post.id}`;
     try {
       await Share.share({ title: `${displayName(post)}님의 게시물`, message: `${post.body}\n${url}`, url });
     } catch {
@@ -161,26 +170,26 @@ export default function PostDetailScreen() {
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={goBack} hitSlop={12} style={styles.headerButton} accessibilityRole="button" accessibilityLabel="뒤로가기">
-          <Feather name="arrow-left" size={27} color="#F7F4FA" />
+          <Feather name="arrow-left" size={27} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.headerTitle}>게시물</Text>
         <Pressable onPress={() => void share()} disabled={!post} hitSlop={12} style={styles.headerButton} accessibilityRole="button" accessibilityLabel="게시물 공유">
-          <Feather name="share-2" size={22} color={post ? "#F7F4FA" : "#5D5865"} />
+          <Feather name="share-2" size={22} color={post ? styleColors.foreground : styleColors.mutedForeground} />
         </Pressable>
       </View>
 
       {query.isLoading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#A84CFF" /><Text style={styles.muted}>게시물을 불러오는 중이에요.</Text></View>
+        <View style={styles.center}><ActivityIndicator size="large" color={styleColors.primary} /><Text style={styles.muted}>게시물을 불러오는 중이에요.</Text></View>
       ) : query.error || !post ? (
         <View style={styles.center}>
-          <Feather name="alert-circle" size={42} color="#8D8498" />
+          <Feather name="alert-circle" size={42} color={styleColors.mutedForeground} />
           <Text style={styles.errorTitle}>게시물을 불러오지 못했어요.</Text>
           <Text style={styles.muted}>삭제되었거나 볼 수 없는 게시물일 수 있어요.</Text>
           <Pressable onPress={() => void query.refetch()} style={styles.retryButton}><Text style={styles.retryText}>다시 시도</Text></Pressable>
         </View>
       ) : (
         <CustomScrollView
-          refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor="#A84CFF" />}
+          refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={styleColors.primary} />}
           contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 10) + 28 }]}
         >
           <View style={styles.authorRow}>
@@ -220,12 +229,12 @@ export default function PostDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={post.reactedByMe ? "좋아요 취소" : "좋아요"}
             >
-              <Feather name="heart" size={23} color={post.reactedByMe ? "#D64FFF" : "#AAA3B2"} />
+              <Feather name="heart" size={23} color={post.reactedByMe ? styleColors.primary : styleColors.mutedForeground} />
               <Text style={[styles.actionText, post.reactedByMe && styles.actionActive]}>{post.reactionCount.toLocaleString()}</Text>
             </Pressable>
-            <View style={styles.action}><Feather name="message-circle" size={22} color="#AAA3B2" /><Text style={styles.actionText}>{post.commentCount.toLocaleString()}</Text></View>
+            <View style={styles.action}><Feather name="message-circle" size={22} color={styleColors.mutedForeground} /><Text style={styles.actionText}>{post.commentCount.toLocaleString()}</Text></View>
             <Pressable onPress={() => void share()} style={({ pressed }) => [styles.action, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel="공유">
-              <Feather name="share-2" size={21} color="#AAA3B2" /><Text style={styles.actionText}>공유</Text>
+              <Feather name="share-2" size={21} color={styleColors.mutedForeground} /><Text style={styles.actionText}>공유</Text>
             </Pressable>
           </View>
 
@@ -237,7 +246,7 @@ export default function PostDetailScreen() {
               onChangeText={setComment}
               maxLength={240}
               placeholder="댓글을 입력해 주세요."
-              placeholderTextColor="#756E80"
+              placeholderTextColor={styleColors.mutedForeground}
               style={styles.commentInput}
               returnKeyType="send"
               onSubmitEditing={() => canComment && submitComment.mutate(comment.trim())}
@@ -249,7 +258,7 @@ export default function PostDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="댓글 등록"
             >
-              {submitComment.isPending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Feather name="send" size={18} color="#FFFFFF" />}
+              {submitComment.isPending ? <ActivityIndicator size="small" color={styleColors.foreground} /> : <Feather name="send" size={18} color={styleColors.foreground} />}
             </Pressable>
           </View>
           {submitComment.isError ? <Text style={styles.commentError}>댓글을 등록하지 못했어요. 다시 시도해 주세요.</Text> : null}
@@ -271,45 +280,45 @@ export default function PostDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#020208" },
-  header: { minHeight: 62, paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#282037", flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: styleColors.background },
+  header: { minHeight: 62, paddingHorizontal: 12, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: styleColors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   headerButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  headerTitle: { color: "#F7F4FA", fontSize: 18, fontFamily: "Inter_700Bold" },
+  headerTitle: { color: styleColors.foreground, fontSize: fontSizes.heading, fontFamily: fonts.bold },
   center: { flex: 1, paddingHorizontal: 24, alignItems: "center", justifyContent: "center", gap: 12 },
-  errorTitle: { color: "#F5F1F8", fontSize: 18, fontFamily: "Inter_700Bold" },
-  muted: { color: "#938B9C", fontSize: 13, textAlign: "center" },
-  retryButton: { minWidth: 128, height: 44, marginTop: 5, borderRadius: 22, backgroundColor: "#7733E9", alignItems: "center", justifyContent: "center" },
-  retryText: { color: "#FFFFFF", fontSize: 14, fontFamily: "Inter_700Bold" },
+  errorTitle: { color: styleColors.foreground, fontSize: fontSizes.heading, fontFamily: fonts.bold },
+  muted: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, textAlign: "center" },
+  retryButton: { minWidth: 128, height: 44, marginTop: 5, borderRadius: 22, backgroundColor: styleColors.primary, alignItems: "center", justifyContent: "center" },
+  retryText: { color: styleColors.primaryForeground, fontSize: fontSizes.label, fontFamily: fonts.bold },
   content: { width: "100%", maxWidth: 520, alignSelf: "center", paddingHorizontal: 16, paddingTop: 17 },
   authorRow: { flexDirection: "row", alignItems: "center", gap: 11 },
   authorIdentity: { flex: 1 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  authorName: { color: "#F7F4FA", fontSize: 17, fontFamily: "Inter_700Bold" },
-  roleBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: "#52208E" },
-  roleText: { color: "#E8D6FF", fontSize: 10, fontFamily: "Inter_700Bold" },
-  date: { color: "#8E8797", fontSize: 11, marginTop: 3 },
-  title: { color: "#FFFFFF", fontSize: 21, lineHeight: 29, fontFamily: "Inter_700Bold", marginTop: 20 },
-  body: { color: "#EEE9F2", fontSize: 16, lineHeight: 25, fontFamily: "Inter_400Regular", marginTop: 18 },
-  hashtags: { color: "#BB58EA", fontSize: 14, lineHeight: 21, marginTop: 11 },
-  media: { width: "100%", aspectRatio: 1, marginTop: 14, borderRadius: 15, backgroundColor: "#100D19" },
+  authorName: { color: styleColors.foreground, fontSize: fontSizes.headingSmall, fontFamily: fonts.bold },
+  roleBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: styleColors.primary },
+  roleText: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny, fontFamily: fonts.bold },
+  date: { color: styleColors.mutedForeground, fontSize: fontSizes.small, marginTop: 3 },
+  title: { color: styleColors.foreground, fontSize: fontSizes.titleLarge, lineHeight: 29, fontFamily: fonts.bold, marginTop: 20 },
+  body: { color: styleColors.foreground, fontSize: fontSizes.input, lineHeight: 25, fontFamily: fonts.regular, marginTop: 18 },
+  hashtags: { color: styleColors.primary, fontSize: fontSizes.label, lineHeight: 21, marginTop: 11 },
+  media: { width: "100%", aspectRatio: 1, marginTop: 14, borderRadius: 15, backgroundColor: styleColors.card },
   actions: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 30 },
   action: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 },
-  actionText: { color: "#AAA3B2", fontSize: 14 },
-  actionActive: { color: "#D64FFF" },
+  actionText: { color: styleColors.mutedForeground, fontSize: fontSizes.label },
+  actionActive: { color: styleColors.primary },
   pressed: { opacity: 0.62 },
   disabled: { opacity: 0.42 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: "#2B2436" },
-  commentsTitle: { color: "#F0ECF3", fontSize: 17, fontFamily: "Inter_700Bold", marginTop: 18 },
-  commentInputRow: { minHeight: 50, marginTop: 12, borderRadius: 25, borderWidth: 1, borderColor: "#3A3048", backgroundColor: "#0B0913", flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 5 },
-  commentInput: { flex: 1, minHeight: 48, color: "#F1ECF4", fontSize: 14 },
-  sendButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#7834ED", alignItems: "center", justifyContent: "center" },
-  commentError: { color: "#F06B85", fontSize: 12, marginTop: 8 },
-  comment: { paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#241F2D", flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: styleColors.card },
+  commentsTitle: { color: styleColors.foreground, fontSize: fontSizes.headingSmall, fontFamily: fonts.bold, marginTop: 18 },
+  commentInputRow: { minHeight: 50, marginTop: 12, borderRadius: 25, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 5 },
+  commentInput: { flex: 1, minHeight: 48, color: styleColors.foreground, fontSize: fontSizes.label },
+  sendButton: { width: 40, height: 40, borderRadius: radii.card, backgroundColor: styleColors.primary, alignItems: "center", justifyContent: "center" },
+  commentError: { color: styleColors.primary, fontSize: fontSizes.caption, marginTop: 8 },
+  comment: { paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: styleColors.border, flexDirection: "row", alignItems: "flex-start", gap: 10 },
   commentCopy: { flex: 1 },
-  commentAuthor: { color: "#EEEAF1", fontSize: 13, fontFamily: "Inter_700Bold" },
-  commentBody: { color: "#C8C1CF", fontSize: 14, lineHeight: 20, marginTop: 4 },
-  commentDate: { color: "#756E7D", fontSize: 10, marginTop: 5 },
-  emptyComments: { color: "#817989", fontSize: 13, textAlign: "center", paddingVertical: 28 },
-  commentNotice: { color: "#77707F", fontSize: 11, textAlign: "center", marginTop: 14 },
+  commentAuthor: { color: styleColors.foreground, fontSize: fontSizes.detail, fontFamily: fonts.bold },
+  commentBody: { color: styleColors.mutedForeground, fontSize: fontSizes.label, lineHeight: 20, marginTop: 4 },
+  commentDate: { color: styleColors.mutedForeground, fontSize: fontSizes.tiny, marginTop: 5 },
+  emptyComments: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, textAlign: "center", paddingVertical: 28 },
+  commentNotice: { color: styleColors.mutedForeground, fontSize: fontSizes.small, textAlign: "center", marginTop: 14 },
 });

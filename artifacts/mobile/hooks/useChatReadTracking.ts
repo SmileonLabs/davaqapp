@@ -1,12 +1,16 @@
+import { projectRoomRead } from "@/lib/chatUnreadProjection";
 import { useFocusEffect } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { AppState, Platform, type ViewToken } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListRoomsQueryKey,
+  getGetRoomQueryKey,
+  type ChatRoom,
   useMarkRoomRead,
   type Message,
 } from "@workspace/api-client-react";
+import { visibleReadTarget } from "@/lib/chatReadVisibility";
 import { clearChatNotifications } from "@/lib/chatNotifications";
 
 export type ScrollPhase = "initializing" | "positioning" | "ready";
@@ -46,6 +50,12 @@ export function useChatReadTracking({
     return AppState.currentState === "active";
   });
   const [screenIsFocused, setScreenIsFocused] = useState(false);
+  const visibilityRef = useRef({ active: appIsVisible, focused: screenIsFocused });
+  visibilityRef.current = { active: appIsVisible, focused: screenIsFocused };
+  const visibleIdsRef = useRef(new Set<string>());
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  const readTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryCapturedRef = useRef(false);
   const lastRealMessageIdRef = useRef<string | null>(null);
   const lastMarkedReadMessageIdRef = useRef<string | null>(null);
@@ -57,7 +67,11 @@ export function useChatReadTracking({
 
   useEffect(() => {
     if (Platform.OS === "web" && typeof document !== "undefined") {
-      const update = () => setAppIsVisible(document.visibilityState === "visible");
+      const update = () => {
+        const active = document.visibilityState === "visible" && document.hasFocus();
+        visibilityRef.current.active = active;
+        setAppIsVisible(active);
+      };
       update();
       document.addEventListener("visibilitychange", update);
       window.addEventListener("focus", update);
@@ -70,6 +84,7 @@ export function useChatReadTracking({
     }
 
     const subscription = AppState.addEventListener("change", (state) => {
+      visibilityRef.current.active = state === "active";
       setAppIsVisible(state === "active");
     });
     return () => subscription.remove();
@@ -77,23 +92,25 @@ export function useChatReadTracking({
 
   useFocusEffect(
     React.useCallback(() => {
+      visibilityRef.current.focused = true;
       setScreenIsFocused(true);
-      return () => setScreenIsFocused(false);
+      return () => {
+        visibilityRef.current.focused = false;
+        setScreenIsFocused(false);
+      };
     }, []),
   );
 
-  useEffect(() => {
-    void clearChatNotifications(roomId);
-  }, [roomId]);
 
   useEffect(() => {
     entryCapturedRef.current = false;
     lastRealMessageIdRef.current = null;
     lastMarkedReadMessageIdRef.current = null;
+    visibleIdsRef.current.clear();
     setCaptured(false);
     setAnchorMsgId(null);
     setEntryUnreadCount(0);
-  }, [roomId]);
+  }, [roomId, viewerId]);
 
   // Capture the entry read-position once before the server pointer advances.
   useEffect(() => {
@@ -130,15 +147,21 @@ export function useChatReadTracking({
 
   const markReadToMessage = React.useCallback(
     (messageId: string | null) => {
-      if (!viewerId || !messageId || !appIsVisible || !screenIsFocused) return;
+      if (!viewerId || !messageId || !visibilityRef.current.active || !visibilityRef.current.focused ||
+          scrollPhaseRef.current !== "ready" || !visibleIdsRef.current.has(messageId)) return;
       if (lastMarkedReadMessageIdRef.current === messageId) return;
       lastMarkedReadMessageIdRef.current = messageId;
 
+      const target = messagesRef.current.find(message => message.id === messageId);
       markRead.mutate(
         { id: roomId, data: { messageId } },
         {
           onSuccess: () => {
-            void clearChatNotifications(roomId);
+            if (target?.roomSeq) {
+              queryClient.setQueriesData<ChatRoom[]>({queryKey:getListRoomsQueryKey()}, rooms => rooms?.map(r => projectRoomRead(r,roomId,target.roomSeq)));
+              queryClient.setQueriesData<ChatRoom>({queryKey:getGetRoomQueryKey(roomId)}, r => r ? projectRoomRead(r,roomId,target.roomSeq) : r);
+            }
+            void clearChatNotifications(roomId, { readThroughSeq: target?.roomSeq, readThroughAt: target?.createdAt, ownerId: viewerId });
             void queryClient.invalidateQueries({ queryKey: getListRoomsQueryKey() });
           },
           onError: () => {
@@ -156,23 +179,32 @@ export function useChatReadTracking({
     markReadToMessageRef.current = markReadToMessage;
   }, [markReadToMessage]);
 
-  useEffect(() => {
-    if (scrollPhaseRef.current !== "ready" || !appIsVisible || !stickToBottomRef.current) return;
-    markReadToMessage(lastRealMessageId);
-  }, [appIsVisible, lastRealMessageId, listReady, markReadToMessage, scrollPhaseRef, stickToBottomRef]);
-
-  const onViewableItemsChanged = React.useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-    if (scrollPhaseRef.current !== "ready") return;
-    const latestId = lastRealMessageIdRef.current;
-    if (!latestId) return;
-    if (viewableItems.some((entry) => (entry.item as Message | undefined)?.id === latestId)) {
-      markReadToMessageRef.current(latestId);
-    }
+  const scheduleVisibleRead = React.useCallback(() => {
+    if (readTimerRef.current) clearTimeout(readTimerRef.current);
+    readTimerRef.current = setTimeout(() => {
+      readTimerRef.current = null;
+      const target = visibleReadTarget(messagesRef.current, visibleIdsRef.current, {
+        ...visibilityRef.current, ready: scrollPhaseRef.current === "ready",
+      });
+      if (target) markReadToMessageRef.current(target.id);
+    }, 300);
   }, [scrollPhaseRef]);
 
-  const markLatestRead = React.useCallback(() => {
-    markReadToMessageRef.current(lastRealMessageIdRef.current);
-  }, []);
+  useEffect(() => {
+    scheduleVisibleRead();
+    return () => {
+      if (readTimerRef.current) clearTimeout(readTimerRef.current);
+    };
+  }, [appIsVisible, screenIsFocused, lastRealMessageId, listReady, roomId, viewerId, scheduleVisibleRead]);
+
+  const onViewableItemsChanged = React.useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    visibleIdsRef.current = new Set(viewableItems
+      .filter((entry) => entry.isViewable)
+      .map((entry) => (entry.item as Message).id));
+    scheduleVisibleRead();
+  }, [scheduleVisibleRead]);
+
+  const markLatestRead = scheduleVisibleRead;
 
   const clearEntryUnread = React.useCallback(() => {
     setEntryUnreadCount(0);

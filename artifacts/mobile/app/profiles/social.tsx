@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Avatar } from "@/components/Avatar";
 import { NeonBackdrop } from "@/components/NeonUI";
 import { useCharacterProfiles } from "@/hooks/useCharacterProfiles";
@@ -40,6 +43,9 @@ function tabFromValue(value: string | string[] | undefined): SocialTab {
 }
 
 export default function ProfileSocialScreen() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string | string[] }>();
   const insets = useSafeAreaInsets();
@@ -68,7 +74,7 @@ export default function ProfileSocialScreen() {
     <NeonBackdrop style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="뒤로 가기" hitSlop={12} onPress={goBack} style={styles.backButton}>
-          <Feather name="arrow-left" size={25} color="#F6F2FC" />
+          <Feather name="arrow-left" size={25} color={styleColors.foreground} />
         </Pressable>
         <Text style={styles.title}>팔로우</Text>
         <View style={styles.headerSpacer} />
@@ -88,7 +94,7 @@ export default function ProfileSocialScreen() {
       <FlatList
         data={profiles}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor="#B466FF" />}
+        refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={styleColors.primary} />}
         contentContainerStyle={[styles.list, { paddingBottom: Math.max(insets.bottom, 16) + 20 }, !query.isLoading && profiles.length === 0 && styles.emptyList]}
         renderItem={({ item }) => (
           <Pressable
@@ -108,21 +114,21 @@ export default function ProfileSocialScreen() {
               <Text style={styles.handle} numberOfLines={1}>@{item.handle}</Text>
               {item.statusMessage ? <Text style={styles.status} numberOfLines={1}>{item.statusMessage}</Text> : null}
             </View>
-            <Feather name="chevron-right" size={22} color="#8C829C" />
+            <Feather name="chevron-right" size={22} color={styleColors.mutedForeground} />
           </Pressable>
         )}
         ListEmptyComponent={
           query.isLoading ? (
-            <View style={styles.empty}><ActivityIndicator size="large" color="#B466FF" /></View>
+            <View style={styles.empty}><ActivityIndicator size="large" color={styleColors.primary} /></View>
           ) : query.isError ? (
             <Pressable accessibilityRole="button" onPress={() => void query.refetch()} style={styles.empty}>
-              <Feather name="alert-circle" size={35} color="#E6A2FF" />
+              <Feather name="alert-circle" size={35} color={styleColors.primary} />
               <Text style={styles.emptyTitle}>팔로워 목록을 불러오지 못했어요</Text>
               <Text style={styles.emptyBody}>잠시 후 다시 시도해 주세요.</Text>
             </Pressable>
           ) : (
             <View style={styles.empty}>
-              <Feather name={tab === "followers" ? "users" : "user-plus"} size={35} color="#9164C6" />
+              <Feather name={tab === "followers" ? "users" : "user-plus"} size={35} color={styleColors.primary} />
               <Text style={styles.emptyTitle}>{tab === "followers" ? "아직 팔로워가 없어요" : "아직 팔로우한 프로필이 없어요"}</Text>
               <Text style={styles.emptyBody}>{tab === "followers" ? "새 팔로워가 생기면 여기에 표시됩니다." : "관심 있는 프로필을 팔로우해 보세요."}</Text>
             </View>
@@ -133,29 +139,29 @@ export default function ProfileSocialScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#05030B" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: styleColors.background },
   header: { minHeight: 64, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   backButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  title: { color: "#F7F2FF", fontFamily: "Inter_700Bold", fontSize: 19 },
+  title: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.titleSmall },
   headerSpacer: { width: 44 },
-  tabs: { flexDirection: "row", marginHorizontal: 16, padding: 4, borderWidth: 1, borderColor: "rgba(170, 93, 255, .25)", borderRadius: 16, backgroundColor: "rgba(16, 10, 31, .88)" },
-  tab: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: 12 },
-  tabActive: { backgroundColor: "rgba(137, 63, 237, .38)", shadowColor: "#B55BFF", shadowOpacity: .45, shadowRadius: 12, elevation: 3 },
-  tabText: { color: "#9389A2", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  tabTextActive: { color: "#F9F2FF" },
+  tabs: { flexDirection: "row", marginHorizontal: 16, padding: 4, borderWidth: 1, borderColor: styleColors.border, borderRadius: 16, backgroundColor: styleColors.card },
+  tab: { flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: radii.control },
+  tabActive: { backgroundColor: styleColors.primary, shadowColor: styleColors.primary, shadowOpacity: .45, shadowRadius: 12, elevation: 3 },
+  tabText: { color: styleColors.mutedForeground, fontFamily: fonts.semibold, fontSize: fontSizes.label },
+  tabTextActive: { color: styleColors.primaryForeground },
   list: { paddingHorizontal: 16, paddingTop: 16, gap: 10 },
   emptyList: { flexGrow: 1 },
-  row: { minHeight: 84, flexDirection: "row", alignItems: "center", gap: 13, padding: 13, borderRadius: 19, borderWidth: 1, borderColor: "rgba(162, 100, 238, .26)", backgroundColor: "rgba(12, 8, 25, .9)" },
+  row: { minHeight: 84, flexDirection: "row", alignItems: "center", gap: 13, padding: 13, borderRadius: 19, borderWidth: 1, borderColor: styleColors.border, backgroundColor: styleColors.card },
   rowPressed: { opacity: .76, transform: [{ scale: .99 }] },
-  avatarRing: { padding: 2, borderRadius: 30, borderWidth: 1, borderColor: "#9E59E9" },
+  avatarRing: { padding: 2, borderRadius: 30, borderWidth: 1, borderColor: styleColors.border },
   profileCopy: { flex: 1, minWidth: 0, gap: 2 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  name: { maxWidth: "72%", color: "#F5F0F8", fontFamily: "Inter_700Bold", fontSize: 16 },
-  type: { color: "#C580FF", fontFamily: "Inter_600SemiBold", fontSize: 10 },
-  handle: { color: "#9F95AE", fontFamily: "Inter_400Regular", fontSize: 12 },
-  status: { marginTop: 2, color: "#C0B7CA", fontFamily: "Inter_400Regular", fontSize: 13 },
+  name: { maxWidth: "72%", color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.input },
+  type: { color: styleColors.primary, fontFamily: fonts.semibold, fontSize: fontSizes.tiny },
+  handle: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.caption },
+  status: { marginTop: 2, color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.detail },
   empty: { flex: 1, minHeight: 300, alignItems: "center", justifyContent: "center", paddingHorizontal: 36, gap: 12 },
-  emptyTitle: { color: "#F1EBF8", fontFamily: "Inter_700Bold", fontSize: 17, textAlign: "center" },
-  emptyBody: { color: "#A89FB3", fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 21, textAlign: "center" },
+  emptyTitle: { color: styleColors.foreground, fontFamily: fonts.bold, fontSize: fontSizes.headingSmall, textAlign: "center" },
+  emptyBody: { color: styleColors.mutedForeground, fontFamily: fonts.regular, fontSize: fontSizes.label, lineHeight: 21, textAlign: "center" },
 });

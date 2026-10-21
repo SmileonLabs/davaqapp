@@ -72,34 +72,285 @@
       "tag": "0009_fan_communities",
       "breakpoints": true
     },
-    { "idx": 10, "version": "7", "when": 1784006000000, "tag": "0010_broadcast_missions", "breakpoints": true },
-    { "idx": 11, "version": "7", "when": 1784007000000, "tag": "0011_fan_star_identity", "breakpoints": true },
-    { "idx": 12, "version": "7", "when": 1784008000000, "tag": "0012_search_trending", "breakpoints": true },
-    { "idx": 13, "version": "7", "when": 1784010000000, "tag": "0013_nft_rpg_foundation", "breakpoints": true },
-    { "idx": 14, "version": "7", "when": 1784011000000, "tag": "0014_official_ai_accounts", "breakpoints": true },
-    { "idx": 15, "version": "7", "when": 1784012000000, "tag": "0015_admin_audit_logs", "breakpoints": true },
-    { "idx": 16, "version": "7", "when": 1784013000000, "tag": "0016_admin_roles", "breakpoints": true },
-    { "idx": 17, "version": "7", "when": 1784332800000, "tag": "0017_wallet_challenge_context", "breakpoints": true },
-    { "idx": 18, "version": "7", "when": 1784627411854, "tag": "0018_character_profiles", "breakpoints": true },
-    { "idx": 19, "version": "7", "when": 1784627411855, "tag": "0019_profile_activity_identity", "breakpoints": true },
-    { "idx": 20, "version": "7", "when": 1784710800000, "tag": "0020_character_profile_domains", "breakpoints": true },
-    { "idx": 21, "version": "7", "when": 1784714400000, "tag": "0021_profile_social_identity", "breakpoints": true },
-    { "idx": 22, "version": "7", "when": 1784718000000, "tag": "0022_profile_communication_identity", "breakpoints": true },
-    { "idx": 23, "version": "7", "when": 1784721600000, "tag": "0023_nft_profile_ownership", "breakpoints": true },
-    { "idx": 24, "version": "7", "when": 1784880000000, "tag": "0024_chat_room_categories", "breakpoints": true },
-    { "idx": 25, "version": "7", "when": 1784966400000, "tag": "0025_remove_legacy_account_avatars", "breakpoints": true },
-    { "idx": 26, "version": "7", "when": 1785052800000, "tag": "0026_bibi_official_character_avatar", "breakpoints": true },
-    { "idx": 27, "version": "7", "when": 1788480000000, "tag": "0027_avatar_customization", "breakpoints": true },
-    { "idx": 28, "version": "7", "when": 1788652800000, "tag": "0028_call_consistency", "breakpoints": true },
-    { "idx": 29, "version": "7", "when": 1789171200000, "tag": "0029_davaq_exchange", "breakpoints": true },
-    { "idx": 30, "version": "7", "when": 1789171200001, "tag": "0030_davaq_media_learning", "breakpoints": true },
-    { "idx": 31, "version": "7", "when": 1789171200002, "tag": "0031_davaq_request_keys", "breakpoints": true },
-    { "idx": 32, "version": "7", "when": 1789171200003, "tag": "0032_davaq_operational_state", "breakpoints": true },
-    { "idx": 33, "version": "7", "when": 1789171200004, "tag": "0033_davaq_brand_exchange", "breakpoints": true },
-    { "idx": 34, "version": "7", "when": 1790025600000, "tag": "0034_davaq_chat_transport", "breakpoints": true },
-    {"idx":35,"version":"7","when":1790025600001,"tag":"0035_davaq_messenger_actions","breakpoints":true},
-    {"idx":36,"version":"7","when":1790025600002,"tag":"0036_davaq_relay_exchange","breakpoints":true},
-    {"idx":37,"version":"7","when":1790025600003,"tag":"0037_davaq_location_map","breakpoints":true},
-    { "idx": 38, "version": "7", "when": 1790025600004, "tag": "0038_davaq_wishes", "breakpoints": true }
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784006000000,
+      "tag": "0010_broadcast_missions",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784007000000,
+      "tag": "0011_fan_star_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784008000000,
+      "tag": "0012_search_trending",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784010000000,
+      "tag": "0013_nft_rpg_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784011000000,
+      "tag": "0014_official_ai_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1784012000000,
+      "tag": "0015_admin_audit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784013000000,
+      "tag": "0016_admin_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784332800000,
+      "tag": "0017_wallet_challenge_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784627411854,
+      "tag": "0018_character_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784627411855,
+      "tag": "0019_profile_activity_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784710800000,
+      "tag": "0020_character_profile_domains",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784714400000,
+      "tag": "0021_profile_social_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1784718000000,
+      "tag": "0022_profile_communication_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1784721600000,
+      "tag": "0023_nft_profile_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1784880000000,
+      "tag": "0024_chat_room_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1784966400000,
+      "tag": "0025_remove_legacy_account_avatars",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785052800000,
+      "tag": "0026_bibi_official_character_avatar",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1788480000000,
+      "tag": "0027_avatar_customization",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1788652800000,
+      "tag": "0028_call_consistency",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789171200000,
+      "tag": "0029_davaq_exchange",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789171200001,
+      "tag": "0030_davaq_media_learning",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789171200002,
+      "tag": "0031_davaq_request_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789171200003,
+      "tag": "0032_davaq_operational_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789171200004,
+      "tag": "0033_davaq_brand_exchange",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790025600000,
+      "tag": "0034_davaq_chat_transport",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790025600001,
+      "tag": "0035_davaq_messenger_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790025600002,
+      "tag": "0036_davaq_relay_exchange",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790025600003,
+      "tag": "0037_davaq_location_map",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790025600004,
+      "tag": "0038_davaq_wishes",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790025600005,
+      "tag": "0039_davaq_group_calls",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791763200000,
+      "tag": "0040_davaq_tcg",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791763200001,
+      "tag": "0041_davaq_tcg_map",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791903405130,
+      "tag": "0042_davaq_social_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792022400000,
+      "tag": "0043_davaq_tcg_offer_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792108800000,
+      "tag": "0044_davaq_tcg_card_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792108800001,
+      "tag": "0045_davaq_content_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1792108800002,
+      "tag": "0046_chat_change_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792108800003,
+      "tag": "0047_message_deletion_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1792454400000,
+      "tag": "0052_davaq_shops",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792454400001,
+      "tag": "0053_shop_scan_delivery",
+      "breakpoints": true
+    }
   ]
 }

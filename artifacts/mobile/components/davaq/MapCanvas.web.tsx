@@ -12,7 +12,7 @@ export default function MapCanvas(p: MapCanvasProps) {
     callbacks = useRef(p);
   callbacks.current = p;
   const config = useDavaq<{ tileUrl: string; attribution: string }>(
-    "/exchange/map/config",
+    "/tcg/map/config",
   );
   const origin = getApiBase(),
     src = origin + "/app/maps/map.html";
@@ -72,7 +72,7 @@ export default function MapCanvas(p: MapCanvasProps) {
     <View
       style={{
         height: p.height ?? 390,
-        borderRadius: 22,
+        borderRadius: 12,
         overflow: "hidden",
         backgroundColor: C.soft,
       }}

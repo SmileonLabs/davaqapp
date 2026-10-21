@@ -7,7 +7,7 @@ export function parseInviteCode(value: string): string | null {
     const url = new URL(text);
     if (
       url.protocol === "https:" &&
-      url.hostname === "davaq.anothermeai.app" &&
+      ["davaq.app", "davaq.anothermeai.app"].includes(url.hostname) &&
       url.pathname.startsWith("/app/invite/")
     )
       return parseInviteCode(
@@ -18,7 +18,7 @@ export function parseInviteCode(value: string): string | null {
 }
 export function inviteLink(code: string) {
   if (!parseInviteCode(code)) throw new Error("Invalid invitation");
-  return "https://davaq.anothermeai.app/app/invite/" + encodeURIComponent(code);
+  return "https://davaq.app/app/invite/" + encodeURIComponent(code);
 }
 export async function savePendingInvite(code: string) {
   const valid = parseInviteCode(code);

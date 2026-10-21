@@ -1,1 +1,1 @@
-export { AgentChatScreen as default } from "@/components/davaq/AgentScreens";
+export { AgentConversation as default } from "@/components/tcg/Assistant";

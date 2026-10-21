@@ -1,3 +1,7 @@
+import { ShopInboxLink } from '@/components/shop/ShopInboxLink';
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { interaction, fonts, fontSizes, radii } from "@/constants/designSystem";
 import { Avatar } from "@/components/Avatar";
 import { NeonBackdrop } from "@/components/NeonUI";
 import { useDailyTalkRewardStatus } from "@/hooks/useDailyTalkReward";
@@ -122,10 +126,20 @@ function notificationCopy(type: string) {
 }
 
 export default function ChatsScreenV2() {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: me } = useGetMe();
   const roomsQuery = useListRooms();
+  const [refreshing, setRefreshing] = React.useState(false);
+  const refresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try { await Promise.all([roomsQuery.refetch(), notificationQuery.refetch(), rewardStatusQuery.refetch()]); }
+    finally { setRefreshing(false); }
+  };
   const notificationQuery = useGetMyCharacterProfileNotifications();
   const rewardStatusQuery = useDailyTalkRewardStatus();
   const rooms = (roomsQuery.data ?? []) as CategorizedRoom[];
@@ -272,7 +286,7 @@ export default function ChatsScreenV2() {
             onPress={() => router.push("/friends/add")}
             style={styles.headerButton}
           >
-            <Feather name="user-plus" size={27} color="#F8F7FB" />
+            <Feather name="user-plus" size={27} color={styleColors.foreground} />
           </Pressable>
           <Pressable
             accessibilityLabel="친구 목록"
@@ -280,7 +294,7 @@ export default function ChatsScreenV2() {
             onPress={() => router.push("/friends")}
             style={styles.headerButton}
           >
-            <Feather name="users" size={28} color="#F8F7FB" />
+            <Feather name="users" size={28} color={styleColors.foreground} />
           </Pressable>
           <Pressable
             accessibilityLabel="그룹 채팅 만들기"
@@ -288,7 +302,7 @@ export default function ChatsScreenV2() {
             onPress={() => router.push("/group/create")}
             style={styles.headerButton}
           >
-            <Feather name="edit-3" size={27} color="#F8F7FB" />
+            <Feather name="edit-3" size={27} color={styleColors.foreground} />
           </Pressable>
         </View>
       </View>
@@ -299,6 +313,8 @@ export default function ChatsScreenV2() {
         nestedScrollEnabled
         decelerationRate="fast"
         alwaysBounceHorizontal={false}
+        alwaysBounceVertical={false}
+        contentInsetAdjustmentBehavior="never"
         showsHorizontalScrollIndicator={false}
         style={styles.filterScroller}
         contentContainerStyle={styles.filters}
@@ -320,25 +336,23 @@ export default function ChatsScreenV2() {
       </ScrollView>
 
       <FlatList
+        style={{ flex: 1 }}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
         data={filteredRooms}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl
-            refreshing={roomsQuery.isRefetching}
-            onRefresh={() =>
-              void Promise.all([
-                roomsQuery.refetch(),
-                notificationQuery.refetch(),
-                rewardStatusQuery.refetch(),
-              ])
-            }
-            tintColor="#9D5CFF"
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            tintColor={styleColors.primary}
           />
         }
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           filter === "all" ? (
             <View style={styles.listHeader}>
+              <ShopInboxLink />
               <Pressable
                 accessibilityRole="button"
                 disabled={rewardStatusQuery.isLoading}
@@ -353,7 +367,7 @@ export default function ChatsScreenV2() {
                 />
                 {rewardStatusQuery.isLoading ? (
                   <View style={styles.rewardStatusLoading}>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={styleColors.foreground} />
                   </View>
                 ) : null}
               </Pressable>
@@ -364,7 +378,7 @@ export default function ChatsScreenV2() {
                   style={({ pressed }) => [styles.notificationCard, pressed && styles.pressed]}
                 >
                   <View style={styles.notificationIcon}>
-                    <Feather name="bell" size={23} color="#B56CFF" />
+                    <Feather name="bell" size={23} color={styleColors.primary} />
                   </View>
                   <View style={styles.notificationCopy}>
                     <Text style={styles.notificationTitle}>
@@ -391,10 +405,10 @@ export default function ChatsScreenV2() {
         }
         ListEmptyComponent={
           roomsQuery.isLoading ? (
-            <ActivityIndicator color="#9D5CFF" style={styles.loading} />
+            <ActivityIndicator color={styleColors.primary} style={styles.loading} />
           ) : (
             <View style={styles.empty}>
-              <Feather name="message-circle" size={34} color="#726C80" />
+              <Feather name="message-circle" size={34} color={styleColors.mutedForeground} />
               <Text style={styles.emptyTitle}>표시할 채팅방이 없어요</Text>
               <Text style={styles.emptyBody}>
                 {filter === "all"
@@ -429,7 +443,7 @@ export default function ChatsScreenV2() {
                 />
               ) : (
                 <View style={styles.roomIcon}>
-                  <Feather name={icon} size={26} color="#A85CFF" />
+                  <Feather name={icon} size={26} color={styleColors.primary} />
                 </View>
               )}
               <View style={styles.roomCopy}>
@@ -459,7 +473,7 @@ export default function ChatsScreenV2() {
         <View style={styles.rewardNoticeBackdrop}>
           <View style={styles.rewardNoticeCard}>
             <View style={styles.rewardNoticeIcon}>
-              <Feather name="message-circle" size={25} color="#C873FF" />
+              <Feather name="message-circle" size={25} color={styleColors.primary} />
             </View>
             <Text style={styles.rewardNoticeTitle}>{rewardNoticeCopy?.title}</Text>
             <Text style={styles.rewardNoticeBody}>{rewardNoticeCopy?.body}</Text>
@@ -480,8 +494,8 @@ export default function ChatsScreenV2() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#03030A" },
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: styleColors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -489,9 +503,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 14,
   },
-  title: { color: "#FFFFFF", fontSize: 31, fontFamily: "Inter_700Bold", letterSpacing: -1 },
+  title: { color: styleColors.foreground, fontSize: fontSizes.banner, fontFamily: fonts.bold, letterSpacing: -1 },
   headerActions: { flexDirection: "row", alignItems: "center", gap: 17 },
-  headerButton: { width: 30, height: 38, alignItems: "center", justifyContent: "center" },
+  headerButton: { width: interaction.minTarget, height: interaction.minTarget, alignItems: "center", justifyContent: "center" },
   filterScroller: {
     flexGrow: 0,
     flexShrink: 0,
@@ -506,24 +520,24 @@ const styles = StyleSheet.create({
     gap: 9,
   },
   filter: {
-    height: 42,
+    height: interaction.minTarget,
     paddingHorizontal: 20,
     borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0D0C16",
+    backgroundColor: styleColors.card,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.025)",
+    borderColor: styleColors.border,
   },
   filterActive: {
-    backgroundColor: "#8D43FA",
-    borderColor: "#B26BFF",
-    shadowColor: "#7D2DFF",
+    backgroundColor: styleColors.primary,
+    borderColor: styleColors.primary,
+    shadowColor: styleColors.primary,
     shadowOpacity: 0.55,
     shadowRadius: 12,
   },
-  filterText: { color: "#A6A1AE", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  filterTextActive: { color: "#FFFFFF" },
+  filterText: { color: styleColors.mutedForeground, fontSize: fontSizes.body, fontFamily: fonts.semibold },
+  filterTextActive: { color: styleColors.primaryForeground },
   list: { paddingHorizontal: 16, paddingBottom: 130, flexGrow: 1 },
   listHeader: { gap: 13, marginBottom: 4 },
   rewardBannerButton: {
@@ -531,7 +545,7 @@ const styles = StyleSheet.create({
     aspectRatio: 2.72,
     borderRadius: 24,
     overflow: "hidden",
-    backgroundColor: "#160A31",
+    backgroundColor: styleColors.card,
   },
   rewardBannerImage: {
     width: "100%",
@@ -541,14 +555,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(4,3,12,0.42)",
+    backgroundColor: styleColors.card,
   },
   rewardNoticeBackdrop: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
-    backgroundColor: "rgba(0,0,0,0.74)",
+    backgroundColor: styleColors.scrim,
   },
   rewardNoticeCard: {
     width: "100%",
@@ -558,8 +572,8 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(174,90,255,0.5)",
-    backgroundColor: "#0D0B18",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
   },
   rewardNoticeIcon: {
     width: 54,
@@ -567,19 +581,19 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(126,45,224,0.22)",
+    backgroundColor: styleColors.primary,
   },
   rewardNoticeTitle: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontFamily: "Inter_700Bold",
+    color: styleColors.foreground,
+    fontSize: fontSizes.titleSmall,
+    fontFamily: fonts.bold,
     textAlign: "center",
   },
   rewardNoticeBody: {
-    color: "#B8B1C4",
-    fontSize: 14,
+    color: styleColors.mutedForeground,
+    fontSize: fontSizes.label,
     lineHeight: 21,
-    fontFamily: "Inter_400Regular",
+    fontFamily: fonts.regular,
     textAlign: "center",
   },
   rewardNoticeButton: {
@@ -589,12 +603,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 3,
     borderRadius: 15,
-    backgroundColor: "#7937F5",
+    backgroundColor: styleColors.primary,
   },
   rewardNoticeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    color: styleColors.primaryForeground,
+    fontSize: fontSizes.body,
+    fontFamily: fonts.bold,
   },
   notificationCard: {
     minHeight: 88,
@@ -603,21 +617,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(111,80,160,0.26)",
-    backgroundColor: "rgba(13,12,24,0.96)",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
   },
   notificationIcon: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#261344",
+    backgroundColor: styleColors.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
   notificationCopy: { flex: 1, paddingHorizontal: 14, gap: 4 },
-  notificationTitle: { color: "#F5F2FA", fontSize: 17, fontFamily: "Inter_600SemiBold" },
-  notificationBody: { color: "#918B9B", fontSize: 13, fontFamily: "Inter_400Regular" },
-  notificationTime: { color: "#8C8694", fontSize: 12 },
+  notificationTitle: { color: styleColors.foreground, fontSize: fontSizes.headingSmall, fontFamily: fonts.semibold },
+  notificationBody: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, fontFamily: fonts.regular },
+  notificationTime: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
   roomCard: {
     minHeight: 96,
     marginTop: 12,
@@ -626,35 +640,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 23,
     borderWidth: 1,
-    borderColor: "rgba(102,75,145,0.22)",
-    backgroundColor: "rgba(12,11,22,0.96)",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
   },
   roomIcon: {
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: "#281442",
+    backgroundColor: styleColors.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
   roomCopy: { flex: 1, paddingHorizontal: 15, gap: 6 },
-  roomName: { color: "#F8F6FA", fontSize: 19, fontFamily: "Inter_600SemiBold" },
-  roomPreview: { color: "#9B96A3", fontSize: 14, fontFamily: "Inter_400Regular" },
+  roomName: { color: styleColors.foreground, fontSize: fontSizes.titleSmall, fontFamily: fonts.semibold },
+  roomPreview: { color: styleColors.mutedForeground, fontSize: fontSizes.label, fontFamily: fonts.regular },
   roomMeta: { height: 56, justifyContent: "space-between", alignItems: "flex-end" },
-  roomTime: { color: "#8F8998", fontSize: 12 },
+  roomTime: { color: styleColors.mutedForeground, fontSize: fontSizes.caption },
   unreadBadge: {
     minWidth: 32,
     height: 32,
     borderRadius: 16,
     paddingHorizontal: 8,
-    backgroundColor: "#7C2EFF",
+    backgroundColor: styleColors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-  unreadBadgeText: { color: "#FFFFFF", fontSize: 13, fontFamily: "Inter_700Bold" },
+  unreadBadgeText: { color: styleColors.primaryForeground, fontSize: fontSizes.detail, fontFamily: fonts.bold },
   loading: { marginTop: 50 },
   empty: { alignItems: "center", paddingVertical: 58, gap: 10 },
-  emptyTitle: { color: "#CBC6D0", fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  emptyBody: { color: "#76717D", fontSize: 13, textAlign: "center" },
+  emptyTitle: { color: styleColors.mutedForeground, fontSize: fontSizes.input, fontFamily: fonts.semibold },
+  emptyBody: { color: styleColors.mutedForeground, fontSize: fontSizes.detail, textAlign: "center" },
   pressed: { opacity: 0.72 },
 });

@@ -1,0 +1,71 @@
+DavaQ card discovery feed — 2026-10-15
+
+Requested behavior
+- The exchange feed includes catalog cards even when no user owns or publicly offers them.
+- Active public offer cards appear first, followed by general catalog cards. Both buckets
+  use a viewer/session seed. Paging keeps the order; explicit refresh starts a new order.
+- One canonical card appears once. Its real public listings are grouped under that card.
+- An unlisted card can be liked/commented on and offers an "I have this card" registration path.
+
+Implementation
+- Added /api/tcg/card-feed and per-card offers/likes/comments while retaining the old listing
+  feed and trade UUID endpoints for installed clients. Canonical storage identity uses saveId.
+- API cursors are scoped to viewer, filters and a 30-minute snapshot. The server traverses
+  catalog pages with a seeded coprime permutation and shuffles cards within pages, with
+  seen-card deduplication. This is diverse ordering, not a uniform shuffle of the entire catalog.
+- Catalog HTTP work runs outside database transactions; bounded request budgets, page cache
+  and in-flight deduplication prevent downloading the whole catalog in advance.
+- The client prepares up to 60 metadata rows when possible, preloads the current/next three/
+  previous one image with concurrency two, and preserves confirmed social writes when an
+  older next-page response finishes. Healthy empty-page continuation is bounded; partial
+  source failures keep existing cards and provide manual retry.
+- Additive migration 0044 creates card social/catalog/snapshot tables and preserves legacy
+  likes/comments. Legacy comment timestamps are copied directly in SQL, retaining microseconds.
+
+Validation
+- Mobile exchange tests: 100 passed; mobile TypeScript passed.
+- API card/exchange/auth tests: 68 passed; API TypeScript/build passed.
+- PWA checks: 10 passed; production web export passed.
+- Actual screen/hook/policy browser harness passed at 390x844, 375x667 and 1280x900.
+  Verified no-offer registration, four selectable real offers, deduplication, viewer ordering,
+  empty/partial pages, desktop scrolling and likes/comments during an eight-second page load.
+  Transport/auth/images were synthetic adapters; physical-device frame/decode latency was
+  not measured. A cold catalog page and very rapid swipes can still reach the prepared boundary.
+
+Production API/web/PWA
+- Completed 2026-10-15, after a private DavaQ-only database backup and exact schema preflight.
+- Archive SHA256: 8dd99b10540b821d60644608cf8263aefdaf067ebac5ad639b9362e10a07d819
+- API image: localhost:5000/davaq-api@sha256:ad8089c6ae8965b921354be46301ec69d0ba886419e62ee1348a0c806452b9d7
+- PWA: cardfeed-20261015-a4eaeefcdfab
+- Web root: /opt/davaq-cardfeed-8dd99b10540b/web
+- Migration 0044 installed; historical migrations were not replayed. No user reset or deletion.
+- All 11 protected long-lived services, landing and routing checks remained unchanged.
+- Independent public curl checks matched reviewed HTML, service worker and JavaScript hashes.
+  Health and Google/Apple provider checks passed; unauthenticated old/new feed endpoints return401.
+- Result: .local/releases/card-feed-20261015/production-result.json
+- Public verification: .local/releases/card-feed-20261015/public-deployment-verification.json
+
+Native releases
+- Android1.0.0(35): Play internal release27, "내부 테스터에게 제공됨", 13:54 KST.
+  AAB SHA256: b0ceffc6a7c41a5705bb9f4ca9e3f25233b7078cfc5eae39beab022a4b38bee4
+  Existing upload certificate matches34; source/hash/SVG and16KB ARM64 checks passed.
+- iOS1.0.0(25): signed and uploaded successfully at13:55 KST. Apple processing completed,
+  existing DavaQ Internal group (3 testers) connected, and group build row verified as
+  "테스트 중 /90일 후 만료". Build ID52a0bf2f-978e-4d98-b307-6757dd937442.
+  Test notes saved; existing standard encryption/previously confirmed France-no values retained.
+  Existing native dependencies,
+  production push entitlements and signing team were preserved. No Expo account was used.
+
+Evidence and local package directory
+- .local/releases/card-feed-20261015/
+- browser-qa.json, qa-zero-offer.png, qa-multiple-offers.png (synthetic QA data)
+- android-35-verification.json, ios-build-manifest.json, ios-signature-verification.txt
+- play-internal-35.png (actual Play Console availability)
+- testflight-internal-25.png (actual TestFlight group testing status)
+- release-status.json (final web/API/Android/iOS completion state)
+
+Operational cleanup
+- Both transferred archives and the deployment script were removed from remote/tmp only
+  after matching their known hashes. Production release files and private backups are retained.
+- Temporary SSH ControlMaster was closed; the exact task-specific local key pair was removed.
+  The task-created AWS browser tab was closed. Final TestFlight testing state is verified above.

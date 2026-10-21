@@ -1,0 +1,30 @@
+PWA photo cache improvement (source implementation)
+
+Private photos and legacy HEIC display JPEGs now share an account/path memory cache.
+Concurrent loads share a single request and conversion. Remounts synchronously reuse
+available memory URLs; releasing a component does not immediately revoke shared URLs.
+Browser CacheStorage persists display blobs with a 64 MiB / 80 item / 7 day bound.
+Memory pruning evicts inactive entries, preserving images currently displayed.
+Account switch/logout fences pending work and deletes the previous account cache.
+Storage denial/quota errors fall back to displaying fetched photos.
+Explicit retry evicts the cached copy and reacquires an authorized URL.
+Normal photo uploads retain their existing thumbnail and server-original behavior.
+This change does not create server thumbnails or change original storage files.
+
+Validation: TypeScript passed; 12 focused cache/image regression tests passed.
+Production PWA export: .local/logs/photo-cache-web-build.log.
+Deployment: not performed in this implementation turn. Device scrolling verification
+must be performed against the deployed PWA before claiming the symptom is eliminated.
+
+Deployment completed: web-20261012-photo-cache-r4.
+index SHA256: 91cc0c18ff1d766c864303aa8b114e53c7bb8994a37c8e83998dfaf702182e35
+Backup: /opt/davaq-backups/web-20261012-photo-cache-r4-1791793871.tar.gz
+API and web containers remained unchanged; health check passed.
+An initial package release-label typo was rejected before any production changes.
+Corrected the label and deployment completed successfully.
+Production browser loaded the versioned r4 bundle. Eight initial photos loaded,
+scrolling changed the virtualized cells, and returning reused the same existing
+blob URLs with complete=true and naturalWidth>0. A newly visited ninth photo also
+loaded successfully. Browser evidence saved in evidence/pwa-photo-cache-deployed-20261012.png.
+CloudShell temporary SSH key pair and uploaded transfer package removed.
+No native store release was performed for this web/PWA-only change.

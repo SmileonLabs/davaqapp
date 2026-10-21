@@ -1,1 +1,1 @@
-export { AgentScreen as default } from "@/components/davaq/Tabs";
+export { RegisterScreen as default } from "@/components/tcg/Screens";

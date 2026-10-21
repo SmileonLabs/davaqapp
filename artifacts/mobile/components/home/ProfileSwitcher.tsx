@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useColors } from "@/hooks/useColors";
+import { fonts, fontSizes, radii } from "@/constants/designSystem";
 import type { CharacterProfileView } from "@/hooks/useCharacterProfiles";
 import { Avatar } from "@/components/Avatar";
 import { Feather } from "@expo/vector-icons";
@@ -39,6 +42,9 @@ export function ProfileSwitcher({
   onAdd,
   onManage,
 }: ProfileSwitcherProps) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const availableProfiles = profiles.filter(
     (profile) => profile.status !== "archived" && profile.type === profileType,
   );
@@ -107,7 +113,7 @@ export function ProfileSwitcher({
                 pressed && styles.pressed,
               ]}
             >
-              <Feather name="plus-circle" size={16} color="#C99AFF" />
+              <Feather name="plus-circle" size={16} color={styleColors.primary} />
               <Text style={styles.addText}>
                 {profileType === "fan" ? "새 FAN 추가" : "NFT로 STAR 소환"}
               </Text>
@@ -120,9 +126,9 @@ export function ProfileSwitcher({
                 pressed && styles.pressed,
               ]}
             >
-              <Feather name="settings" size={15} color="#B997FF" />
+              <Feather name="settings" size={15} color={styleColors.primary} />
               <Text style={styles.manageText}>프로필 관리</Text>
-              <Feather name="chevron-right" size={16} color="#8E849E" />
+              <Feather name="chevron-right" size={16} color={styleColors.mutedForeground} />
             </Pressable>
           </Pressable>
         </View>
@@ -148,6 +154,9 @@ function ProfileSwitcherRow({
   onSelect: () => void;
   onCustomize: () => void;
 }) {
+  const styleColors = useColors();
+  const styles = useMemo(() => makeStyles(styleColors), [styleColors]);
+
   const buttonLabel =
     profile.status === "active" || profile.status === "torimia"
       ? "아바타 꾸미기"
@@ -195,7 +204,7 @@ function ProfileSwitcherRow({
         ]}
       >
         {isSwitching ? (
-          <ActivityIndicator size="small" color="#DCC8FF" />
+          <ActivityIndicator size="small" color={styleColors.mutedForeground} />
         ) : (
           <Text style={styles.switchText}>{buttonLabel}</Text>
         )}
@@ -204,10 +213,10 @@ function ProfileSwitcherRow({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (styleColors: ReturnType<typeof useColors>) => StyleSheet.create({
   dismissLayer: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.18)",
+    backgroundColor: styleColors.card,
   },
   anchor: {
     width: "100%",
@@ -221,11 +230,11 @@ const styles = StyleSheet.create({
     maxWidth: "92%",
     borderRadius: 17,
     borderWidth: 1,
-    borderColor: "rgba(133,113,169,0.50)",
-    backgroundColor: "#11101A",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
     paddingHorizontal: 17,
     paddingVertical: 6,
-    shadowColor: "#000000",
+    shadowColor: styleColors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.46,
     shadowRadius: 20,
@@ -239,8 +248,8 @@ const styles = StyleSheet.create({
     height: 16,
     borderLeftWidth: 1,
     borderTopWidth: 1,
-    borderColor: "rgba(133,113,169,0.50)",
-    backgroundColor: "#11101A",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.card,
     transform: [{ rotate: "45deg" }],
   },
   list: { maxHeight: 302 },
@@ -254,7 +263,7 @@ const styles = StyleSheet.create({
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(157,147,174,0.22)",
+    borderBottomColor: styleColors.border,
   },
   rowIdentity: {
     flex: 1,
@@ -269,13 +278,13 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     padding: 1.5,
     borderWidth: 1,
-    borderColor: "rgba(146,91,230,0.66)",
-    backgroundColor: "#08070D",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.secondary,
     overflow: "hidden",
   },
   rowAvatarRingActive: {
-    borderColor: "#C94CFF",
-    shadowColor: "#9F39FF",
+    borderColor: styleColors.primary,
+    shadowColor: styleColors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 6,
@@ -289,13 +298,13 @@ const styles = StyleSheet.create({
   },
   rowCopy: { flex: 1, minWidth: 0, gap: 3 },
   rowName: {
-    color: "#F4F0F6",
-    fontFamily: "Inter_500Medium",
-    fontSize: 16,
+    color: styleColors.foreground,
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.input,
   },
   rowMeta: {
-    color: "#8F8899",
-    fontFamily: "Inter_400Regular",
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
     fontSize: 10.5,
   },
   switchButton: {
@@ -304,34 +313,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 9,
     borderWidth: 1,
-    borderColor: "rgba(164,86,237,0.72)",
-    backgroundColor: "rgba(70,33,99,0.28)",
+    borderColor: styleColors.border,
+    backgroundColor: styleColors.secondary,
     alignItems: "center",
     justifyContent: "center",
   },
   activeButton: {
-    borderColor: "rgba(101,92,119,0.40)",
-    backgroundColor: "rgba(73,67,84,0.30)",
+    borderColor: styleColors.primary,
+    backgroundColor: styleColors.secondary,
   },
   disabledButton: { opacity: 0.45 },
   switchText: {
-    color: "#D7B6F8",
-    fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    color: styleColors.primaryForeground,
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.caption,
   },
-  activeText: { color: "#9991A3" },
+  activeText: { color: styleColors.mutedForeground },
   empty: { height: 88, alignItems: "center", justifyContent: "center" },
   emptyText: {
-    color: "#AAA3B1",
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.detail,
   },
   manageButton: {
     height: 44,
     marginHorizontal: -17,
     paddingHorizontal: 18,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(157,147,174,0.22)",
+    borderTopColor: styleColors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -342,21 +351,21 @@ const styles = StyleSheet.create({
     marginHorizontal: -17,
     paddingHorizontal: 18,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(157,147,174,0.22)",
+    borderTopColor: styleColors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
   },
   addText: {
-    color: "#D8BFFF",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
+    color: styleColors.primary,
+    fontFamily: fonts.semibold,
+    fontSize: fontSizes.caption,
   },
   manageText: {
-    color: "#BDB5C6",
-    fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    color: styleColors.mutedForeground,
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.caption,
   },
   pressed: { opacity: 0.72 },
 });

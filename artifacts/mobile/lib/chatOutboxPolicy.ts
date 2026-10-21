@@ -9,9 +9,11 @@ export interface ChatOutboxEntry {
   senderId: string;
   senderProfileId: string | null;
   content: string;
+  metadata?: Record<string, unknown>;
   type: OutboxMessageType;
   replyToMessageId: string | null;
   createdAt: number;
+  retryStartedAt?: number;
   attempts: number;
   nextAttemptAt: number;
   deliveryState: MessageDeliveryState;
@@ -19,9 +21,9 @@ export interface ChatOutboxEntry {
 }
 
 export const CHAT_OUTBOX_MAX_ENTRIES = 100;
-export const CHAT_OUTBOX_RETENTION_MS = 24 * 60 * 60 * 1_000;
-export const CHAT_OUTBOX_RETRY_WINDOW_MS = 30 * 60 * 1_000;
-export const CHAT_OUTBOX_MAX_ATTEMPTS = 8;
+export const CHAT_OUTBOX_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
+export const CHAT_OUTBOX_RETRY_WINDOW_MS = 7 * 24 * 60 * 60 * 1_000;
+export const CHAT_OUTBOX_MAX_ATTEMPTS = 4096;
 
 export class ChatOutboxCapacityError extends Error {
   readonly name = "ChatOutboxCapacityError";
@@ -178,6 +180,7 @@ export function isChatOutboxEntry(value: unknown): value is ChatOutboxEntry {
     isMessageType(entry.type) &&
     (entry.replyToMessageId === null || typeof entry.replyToMessageId === "string") &&
     typeof entry.createdAt === "number" && Number.isSafeInteger(entry.createdAt) &&
+    (entry.retryStartedAt === undefined || (Number.isSafeInteger(entry.retryStartedAt) && entry.retryStartedAt! >= entry.createdAt!)) &&
     typeof entry.attempts === "number" && Number.isSafeInteger(entry.attempts) && entry.attempts >= 0 &&
     typeof entry.nextAttemptAt === "number" && Number.isSafeInteger(entry.nextAttemptAt) &&
     (entry.deliveryState === "pending" || entry.deliveryState === "failed") &&
@@ -243,7 +246,7 @@ export function canRetryChatOutboxEntry(entry: ChatOutboxEntry, now: number): bo
     entry.retryable &&
     entry.deliveryState === "pending" &&
     entry.attempts < CHAT_OUTBOX_MAX_ATTEMPTS &&
-    now - entry.createdAt <= CHAT_OUTBOX_RETRY_WINDOW_MS &&
+    now - (entry.retryStartedAt ?? entry.createdAt) <= CHAT_OUTBOX_RETRY_WINDOW_MS &&
     now >= entry.nextAttemptAt
   );
 }
@@ -265,7 +268,7 @@ export function markChatOutboxFailure(
   const exhausted =
     !retryable ||
     entry.attempts >= CHAT_OUTBOX_MAX_ATTEMPTS ||
-    now - entry.createdAt > CHAT_OUTBOX_RETRY_WINDOW_MS;
+    now - (entry.retryStartedAt ?? entry.createdAt) > CHAT_OUTBOX_RETRY_WINDOW_MS;
   return {
     ...entry,
     nextAttemptAt: exhausted ? now : nextChatRetryAt(entry, now),

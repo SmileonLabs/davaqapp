@@ -1,36 +1,21 @@
+import {hasCollectorLoungeEntry} from '@/lib/collectorLoungeEntry';
 import React, { useEffect, useState } from "react";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
-import { C, Cue, Txt } from "@/components/davaq/UI";
+import { StartupSplash } from "@/components/StartupSplash";
 import { loadPendingInvite } from "@/lib/inviteLinks";
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth(),
-    [pending, setPending] = useState<string | null | undefined>();
+    [pending, setPending] = useState<string | null | undefined>(),
+    [collectorEntry,setCollectorEntry]=useState(false);
   useEffect(() => {
     if (isLoaded && isSignedIn)
-      void loadPendingInvite()
-        .then(setPending)
+      void Promise.all([loadPendingInvite(),hasCollectorLoungeEntry()])
+        .then(([invite,collector])=>{setCollectorEntry(collector);setPending(invite);})
         .catch(() => setPending(null));
   }, [isLoaded, isSignedIn]);
   if (!isLoaded || (isSignedIn && pending === undefined))
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-          backgroundColor: C.bg,
-        }}
-      >
-        <Cue size={150} />
-        <Txt bold size={24}>
-          새로운 경험을 만나는 중
-        </Txt>
-        <ActivityIndicator color={C.purple} />
-      </View>
-    );
+    return <StartupSplash />;
   return (
     <Redirect
       href={
@@ -38,7 +23,7 @@ export default function Index() {
           ? "/(auth)/sign-in"
           : pending
             ? { pathname: "/friends/add", params: { code: pending } }
-            : "/(tabs)"
+            : collectorEntry ? "/collector-lounge" : "/(tabs)"
       }
     />
   );

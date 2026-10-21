@@ -2,6 +2,7 @@ import {
   Room,
   RoomEvent,
   Track,
+  createLocalAudioTrack,
   type LocalAudioTrack,
   type LocalVideoTrack,
   type RemoteTrack,
@@ -79,6 +80,7 @@ const ROOM_DISCONNECT_TIMEOUT_MS = 4_000;
 const CAMERA_CAPTURE_TIMEOUT_MS = 12_000;
 const CAMERA_PUBLISH_TIMEOUT_MS = 12_000;
 const MICROPHONE_PUBLISH_TIMEOUT_MS = 20_000;
+const MICROPHONE_CAPTURE_TIMEOUT_MS = 45_000;
 
 function mediaDeadline<T>(operation: Promise<T>, timeoutMs: number, name: string): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -1154,7 +1156,7 @@ function hasLocalTrack(r: Room, source: Track.Source): boolean {
 export async function joinCall(
   url: string,
   token: string,
-  options: { media?: CallMedia; cameraEnabled?: boolean; onDiagnostic?: CallDiagnostic } = {},
+  options: { callId?: string; media?: CallMedia; cameraEnabled?: boolean; onDiagnostic?: CallDiagnostic } = {},
 ): Promise<CallJoinResult> {
   const media = options.media ?? "audio";
   const cameraRequested = media === "video" && options.cameraEnabled !== false;
@@ -1332,14 +1334,37 @@ export async function joinCall(
     await r.connect(url, token);
     if (generation !== roomGeneration || room !== r) throw new Error("stale_join_attempt");
     diagnostic("web_room_connected", { connectionState: r.state });
+    let capturedMicrophone: LocalAudioTrack | null = null;
+    let acceptCapture = true;
     try {
+      // Own capture separately from publication. A browser permission request
+      // cannot be cancelled; stop a late result even if it was never published.
+      diagnostic("web_microphone_capture_start");
+      const capture = createLocalAudioTrack({
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      });
+      void capture.then((track) => {
+        if (!acceptCapture || !isCurrentRoom()) track.stop();
+      }, () => {});
+      capturedMicrophone = await mediaDeadline(capture, MICROPHONE_CAPTURE_TIMEOUT_MS, "MicrophoneCaptureTimeout");
+      acceptCapture = false;
+      if (!isCurrentRoom()) throw new Error("stale_join_attempt");
+      diagnostic("web_microphone_capture_ready");
       diagnostic("web_microphone_publish_start");
-      const publishMicrophone = r.localParticipant.setMicrophoneEnabled(true);
+      const ownedMicrophone = capturedMicrophone;
+      const publishMicrophone = r.localParticipant.publishTrack(ownedMicrophone, { source: Track.Source.Microphone });
       void publishMicrophone.then(() => {
-        if (!isCurrentRoom()) stopRoomMediaTracks(r);
+        if (!isCurrentRoom()) {
+          ownedMicrophone.stop();
+          void r.localParticipant.unpublishTrack(ownedMicrophone, true).catch(() => {});
+        }
       }, () => {});
       await mediaDeadline(publishMicrophone, MICROPHONE_PUBLISH_TIMEOUT_MS, "MicrophonePublishTimeout");
     } catch (err) {
+      acceptCapture = false;
+      capturedMicrophone?.stop();
       diagnostic("web_microphone_publish_failed", {
         errorName: err instanceof Error ? err.name : "unknown",
       });

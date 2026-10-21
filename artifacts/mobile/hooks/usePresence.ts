@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { AppState, Platform } from "react-native";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "@/lib/davaqAuth";
 import { usePathname } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch } from "@workspace/api-client-react";

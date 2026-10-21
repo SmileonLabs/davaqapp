@@ -10,9 +10,10 @@ export const usersTable = pgTable("users", {
   profileImageUrl: text("profile_image_url"),
   statusMessage: text("status_message"),
   pushToken: text("push_token"),
-  // Native FCM device tokens (Android), stored as a JSON string array. Kept
-  // separate from pushToken (web-push subscriptions) because FCM tokens are
-  // opaque strings, not subscription objects.
+  // Native credentials, stored as a JSON string array: legacy opaque FCM
+  // tokens plus apns:<environment>:<hex> and voip:<environment>:<hex> for iOS.
+  // Apple credentials retain the same exclusive-owner locking and cleanup.
+  // Web-push subscription objects remain separate in pushToken.
   fcmTokens: text("fcm_tokens"),
   notificationEnabled: boolean("notification_enabled").notNull().default(true),
   talkAnalysisEnabled: boolean("talk_analysis_enabled").notNull().default(true),

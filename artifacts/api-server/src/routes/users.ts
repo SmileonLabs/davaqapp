@@ -1,3 +1,4 @@
+import { publicDavaqAvatar } from "../lib/davaqAvatarPolicy";
 import { Router, type IRouter } from "express";
 import { z } from "zod/v4";
 import { and, count, desc, eq, ilike, inArray, lt, notInArray, or, sql } from "drizzle-orm";
@@ -113,7 +114,7 @@ router.get("/search", requireAuth, rateLimit({ name: "global-search", limit: 30,
   const blocked = await db.select({ blockerUserId: blockedUsersTable.blockerUserId, blockedUserId: blockedUsersTable.blockedUserId }).from(blockedUsersTable).where(or(eq(blockedUsersTable.blockerUserId, req.dbUser!.id), eq(blockedUsersTable.blockedUserId, req.dbUser!.id)));
   const blockedIds = blocked.map((row) => row.blockerUserId === req.dbUser!.id ? row.blockedUserId : row.blockerUserId);
   const users = type === "posts" || type === "missions" ? [] : await db
-    .select({ id: characterProfilesTable.id, ownerUserId: characterProfilesTable.ownerUserId, nickname: characterProfilesTable.displayName, handle: characterProfilesTable.handle, profileImageUrl: characterProfilesTable.profileImageUrl, accountProfileImageUrl: usersTable.profileImageUrl, statusMessage: characterProfilesTable.statusMessage, profileType: characterProfilesTable.type })
+    .select({ id: characterProfilesTable.id, ownerUserId: characterProfilesTable.ownerUserId, nickname: characterProfilesTable.displayName, handle: characterProfilesTable.handle, avatarMetadata: characterProfilesTable.metadata, profileImageUrl: characterProfilesTable.profileImageUrl, accountProfileImageUrl: usersTable.profileImageUrl, statusMessage: characterProfilesTable.statusMessage, profileType: characterProfilesTable.type })
     .from(characterProfilesTable)
     .innerJoin(usersTable, eq(usersTable.id, characterProfilesTable.ownerUserId))
     .where(and(
@@ -158,12 +159,10 @@ router.get("/search", requireAuth, rateLimit({ name: "global-search", limit: 30,
   res.json({
     query: q,
     type,
-    users: users.map(({ ownerUserId, accountProfileImageUrl, ...profile }) => ({
+    users: users.map(({ ownerUserId, accountProfileImageUrl, avatarMetadata, ...profile }) => ({
       ...profile,
       profileImageUrl:
-        profile.profileType === "fan" && profile.profileImageUrl === accountProfileImageUrl
-          ? null
-          : profile.profileImageUrl,
+        publicDavaqAvatar(profile.profileType === "fan" && profile.profileImageUrl === accountProfileImageUrl ? null : profile.profileImageUrl, avatarMetadata, profile.id),
       isMe: ownerUserId === req.dbUser!.id,
       followedByMe: followedProfileSet.has(profile.id),
     })),
@@ -193,6 +192,7 @@ router.get("/search/recommendations", requireAuth, rateLimit({ name: "search-rec
       handle: characterProfilesTable.handle,
       displayName: characterProfilesTable.displayName,
       profileImageUrl: characterProfilesTable.profileImageUrl,
+      avatarMetadata: characterProfilesTable.metadata,
       accountProfileImageUrl: usersTable.profileImageUrl,
       statusMessage: characterProfilesTable.statusMessage,
       level: characterProfilesTable.level,
@@ -217,12 +217,10 @@ router.get("/search/recommendations", requireAuth, rateLimit({ name: "search-rec
     )) : [];
   const followedSet = new Set(followedRows.map((row) => row.profileId));
   res.json({
-    items: profiles.map(({ accountProfileImageUrl, ...profile }) => ({
+    items: profiles.map(({ accountProfileImageUrl, avatarMetadata, ...profile }) => ({
       ...profile,
       profileImageUrl:
-        profile.type === "fan" && profile.profileImageUrl === accountProfileImageUrl
-          ? null
-          : profile.profileImageUrl,
+        publicDavaqAvatar(profile.type === "fan" && profile.profileImageUrl === accountProfileImageUrl ? null : profile.profileImageUrl, avatarMetadata, profile.id),
       followedByMe: followedSet.has(profile.id),
       recommendationReason: profile.statusMessage?.trim()
         || (profile.type === "fan" ? "함께 응원할 새로운 친구" : profile.type === "official_ai" ? "공식 AI STAR" : "추천 STAR"),
@@ -253,12 +251,13 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
 
 router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
   const user = req.dbUser!;
+  const identity = (await getActiveCharacterIdentityMap([user.id])).get(user.id);
   res.json({
     id: user.id,
     clerkId: user.clerkId,
     email: user.email,
     nickname: user.nickname,
-    profileImageUrl: null,
+    profileImageUrl: identity?.profileImageUrl ?? null,
     statusMessage: user.statusMessage ?? null,
     pushToken: user.pushToken ?? null,
     notificationEnabled: user.notificationEnabled,

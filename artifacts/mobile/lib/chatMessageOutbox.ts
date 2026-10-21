@@ -12,6 +12,12 @@ import {
   type ChatOutboxSweepResult,
 } from "./chatOutboxStorageSweep";
 
+const outboxListeners = new Set<(ownerId: string) => void>();
+export function subscribeChatOutboxChanges(listener: (ownerId: string) => void): () => void {
+  outboxListeners.add(listener);
+  return () => { outboxListeners.delete(listener); };
+}
+
 const locks = new Map<string, Promise<unknown>>();
 const deliveryLeases = new ChatDeliveryLeaseRegistry();
 let activeRetentionSweep: Promise<ChatOutboxSweepResult> | null = null;
@@ -103,6 +109,10 @@ export function upsertChatOutboxEntry(
     const entries = await readUnlocked(userId);
     const next = upsertChatOutboxEntries(entries, entry);
     await writeUnlocked(userId, next);
+    const previous = entries.find(row => row.clientMessageId === entry.clientMessageId);
+    if (!previous || (previous.deliveryState !== "pending" && entry.deliveryState === "pending")) {
+      outboxListeners.forEach(listener => listener(userId));
+    }
     return next;
   });
 }

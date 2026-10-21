@@ -1,18 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { View } from "react-native";
-import { useRouter } from "expo-router";
-import { useAuth } from "@clerk/expo";
+import { Avatar } from "@/components/Avatar";
+import { useCharacterProfiles } from "@/hooks/useCharacterProfiles";
+import { Image as CachedImage } from "expo-image";
+import { clearChatVideoCache } from "@/lib/chatVideoCache";
+import React, { useCallback, useEffect, useState } from "react";
+import { AppState, Linking, Platform, Pressable, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useAuth } from "@/lib/davaqAuth";
 import { useGetMe } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearChatOutboxForOwner } from "@/lib/chatMessageOutbox";
-import { useKnowledgeAdminMe } from "@/hooks/useKnowledge";
+import { getExistingNativePushToken } from "@/lib/nativePush";
+import { getApplePushCredentials } from "@/lib/applePush";
+import { revokePushRegistrationWithBearer } from "@/lib/pushOwnership";
 import {
-  useDavaq,
-  useDavaqMutation,
-  errorText,
-  type Listing,
-  type Proposal,
-} from "@/lib/davaq";
+  getFullScreenCallAccess,
+  openFullScreenCallSettings,
+  type FullScreenCallAccess,
+} from "@/lib/androidTelecom";
+import { DAVAQ_LEGAL_LINK_ERROR, DAVAQ_LEGAL_URLS } from "@/lib/davaqLegal";
+import { UgcConsentPrompt, useUgcConsent } from "@/components/UgcConsentPrompt";
+import { SocialLoginButtons } from "./SocialLoginButtons";
+import { useKnowledgeAdminMe } from "@/hooks/useKnowledge";
+import { useDavaq, useDavaqMutation, errorText } from "@/lib/davaq";
 import {
   C,
   S,
@@ -23,20 +32,102 @@ import {
   Section,
   QueryState,
   Notice,
-  ListingCard,
   Cue,
 } from "./UI";
-export function SettingsScreen() {
+export function SettingsScreen({ tab = false }: { tab?: boolean } = {}) {
+  const { activeProfile, refetch: refreshProfile } = useCharacterProfiles();
+  useFocusEffect(
+    useCallback(() => {
+      void refreshProfile();
+    }, [refreshProfile]),
+  );
+  const shopConfig = useDavaq<{ available: boolean }>("/shops/config");
   const router = useRouter(),
     me = useGetMe(),
-    { signOut } = useAuth(),
+    { signOut, getToken } = useAuth(),
     admin = useKnowledgeAdminMe(),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [callAccess, setCallAccess] = useState<FullScreenCallAccess | null>(null),
+    [openingCallSettings, setOpeningCallSettings] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    let mounted = true;
+    const refresh = async () => {
+      const access = await getFullScreenCallAccess().catch(() => null);
+      if (mounted) setCallAccess(access);
+    };
+    void refresh();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refresh();
+    });
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+  async function openCallSettings() {
+    setOpeningCallSettings(true);
+    setError("");
+    try {
+      if (!(await openFullScreenCallSettings())) {
+        setError(
+          "수신 전화 화면 설정을 열지 못했습니다. Android 설정의 DavaQ 특별 접근 권한에서 확인해 주세요.",
+        );
+      }
+    } catch {
+      setError(
+        "수신 전화 화면 설정을 열지 못했습니다. 일반 수신 전화 알림은 계속 사용할 수 있습니다.",
+      );
+    } finally {
+      setOpeningCallSettings(false);
+    }
+  }
+  async function openLegalPage(url: string) {
+    setError("");
+    try {
+      await Linking.openURL(url);
+    } catch {
+      setError(DAVAQ_LEGAL_LINK_ERROR);
+    }
+  }
+  async function clearMediaCache() {
+    setBusy(true);
+    setError("");
+    try {
+      await CachedImage.clearMemoryCache();
+      await CachedImage.clearDiskCache();
+      await clearChatVideoCache();
+      setError(
+        "미디어 캐시를 정리했습니다. 갤러리에 저장한 파일과 대화는 유지됩니다.",
+      );
+    } catch {
+      setError("캐시를 정리하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function logout() {
     setBusy(true);
     try {
       if (me.data?.id) await clearChatOutboxForOwner(me.data.id);
+      // Revoke while the old session can still refresh its short-lived bearer.
+      if (Platform.OS !== "web") {
+        const bearer = await getToken().catch(() => null);
+        const tokens =
+          Platform.OS === "ios"
+            ? await getApplePushCredentials().catch(() => [])
+            : [await getExistingNativePushToken().catch(() => null)];
+        const results = await Promise.all(
+          tokens
+            .filter(Boolean)
+            .map((token) => revokePushRegistrationWithBearer(token, bearer)),
+        );
+        if (results.some((result) => !result))
+          console.warn(
+            "Push logout revocation incomplete; local owner will be cleared",
+          );
+      }
       await signOut();
       if (me.data?.id) await clearChatOutboxForOwner(me.data.id);
       router.replace("/(auth)/sign-in");
@@ -47,15 +138,27 @@ export function SettingsScreen() {
     }
   }
   return (
-    <Frame back title="내 설정">
+    <Frame back={!tab} title={tab ? "설정" : "내 설정"}>
+      {shopConfig.data?.available && <Button secondary label="무료 매장 모드" icon="briefcase" onPress={() => router.push("/shop" as any)} />}
       <View style={[S.card, S.row]}>
-        <Cue size={72} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="프로필 사진 변경"
+          onPress={() => router.push("/profile/avatar")}
+        >
+          <Avatar
+            uri={activeProfile?.profileImageUrl ?? me.data?.profileImageUrl}
+            name={me.data?.nickname ?? "내 프로필"}
+            size={72}
+          />
+        </Pressable>
         <View style={{ flex: 1 }}>
           <Txt bold size={21}>
             {me.data?.nickname ?? "내 프로필"}
           </Txt>
           <Txt color={C.muted} size={13}>
-            {me.data?.statusMessage || "내 경험을 소개해 주세요."}
+            {me.data?.statusMessage ||
+              "좋아하는 TCG와 수집 목표를 소개해 주세요."}
           </Txt>
         </View>
       </View>
@@ -66,40 +169,78 @@ export function SettingsScreen() {
       />
       <Button
         secondary
-        label="큐 학습·자동 탐색 설정"
-        onPress={() => router.push("/agent/settings")}
+        label="알림 설정"
+        onPress={() => router.push("/settings/notifications")}
       />
-      <Button secondary label="알림 설정" onPress={()=>router.push("/settings/notifications")}/>
-      <Button secondary label="채팅방 AI 소환 설정" onPress={()=>router.push("/settings/another-me")}/>
-      <Button secondary label="친구·초대 관리" onPress={()=>router.push("/friends")}/>
+      {Platform.OS === "android" && callAccess?.supported ? (
+        <>
+          <Button
+            secondary
+            label="수신 전화 전체 화면 설정"
+            busy={openingCallSettings}
+            onPress={() => void openCallSettings()}
+          />
+          <Notice>
+            {callAccess.granted
+              ? "전체 화면 수신 전화가 허용되어 있습니다. "
+              : "잠금 화면에서 수신 전화를 전체 화면으로 보려면 Android 설정에서 허용해 주세요. "}
+            허용하지 않아도 일반 수신 전화 알림으로 전화를 받을 수 있습니다.
+          </Notice>
+        </>
+      ) : null}
       <Button
         secondary
-        label="큐의 기억 관리"
-        onPress={() => router.push("/agent/memories")}
+        label="채팅방 AI 소환 설정"
+        onPress={() => router.push("/settings/another-me")}
+      />
+      {Platform.OS !== "web" ? (
+        <Button
+          secondary
+          label={busy ? "처리 중…" : "사진·영상 캐시 정리"}
+          onPress={() => {
+            if (!busy) void clearMediaCache();
+          }}
+        />
+      ) : null}
+      <Button
+        secondary
+        label="친구·초대 관리"
+        onPress={() => router.push("/friends")}
       />
       <Button
         secondary
         label="차단한 사용자"
         onPress={() => router.push("/settings/blocked")}
       />
+      <Button
+        secondary
+        label="카드 요청·가격 알림"
+        onPress={() => router.push("/tcg/notifications" as any)}
+      />
       {admin.data?.isAdmin && (
         <Button
           secondary
-          label="브랜드 교환 운영"
-          onPress={() => router.push("/brand-admin" as any)}
+          label="TCG 운영 검토"
+          onPress={() => router.push("/tcg/admin" as any)}
         />
       )}
-      {admin.data?.isAdmin && (
-        <Button
-          secondary
-          label="DavaQ 운영 검토"
-          onPress={() => router.push("/exchange/admin")}
-        />
-      )}
+      <Section title="로그인 계정 연결" />
+      <SocialLoginButtons link />
       <Notice>
-        DavaQ는 AnotherMe와 로그인 계정만 함께 사용해요. 프로필·메시지·교환·큐의
-        기억은 DavaQ에 별도로 저장돼요.
+        Google·Apple 로그인 계정을 현재 DAVAQ 계정에 연결해요. 카드와 채팅
+        기록은 그대로 유지돼요.
       </Notice>
+      <Section title="개인정보·계정" />
+      <Button
+        secondary
+        label="개인정보처리방침"
+        onPress={() => void openLegalPage(DAVAQ_LEGAL_URLS.privacy)}
+      />
+      <Button
+        secondary
+        label="계정·데이터 삭제 요청"
+        onPress={() => void openLegalPage(DAVAQ_LEGAL_URLS.accountDeletion)}
+      />
       <Button
         secondary
         label="로그아웃"
@@ -118,6 +259,7 @@ export function ProfileEditor() {
     [bio, setBio] = useState(""),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const consent = useUgcConsent(me.data?.id);
   useEffect(() => {
     if (me.data) {
       setName(me.data.nickname);
@@ -126,6 +268,7 @@ export function ProfileEditor() {
   }, [me.data?.id]);
   async function save() {
     setError("");
+    if (!(await consent.ensureConsent())) return;
     try {
       await mutation.mutateAsync({
         path: "/users/me",
@@ -133,7 +276,7 @@ export function ProfileEditor() {
         body: { nickname: name, statusMessage: bio },
       });
       await client.invalidateQueries({ queryKey: ["/api/users/me"] });
-      setNotice("DavaQ 프로필을 저장했어요.");
+      setNotice("DAVAQ 프로필을 저장했어요.");
     } catch (e) {
       setError(errorText(e));
     }
@@ -143,12 +286,12 @@ export function ProfileEditor() {
       <QueryState query={me} />
       <Field label="이름" value={name} onChangeText={setName} maxLength={30} />
       <Field
-        label="나의 경험 소개"
+        label="수집가 소개"
         value={bio}
         onChangeText={setBio}
         multiline
         maxLength={200}
-        placeholder="내가 잘하는 것과 함께 나눌 경험을 알려주세요."
+        placeholder="좋아하는 카드와 거래 스타일을 알려주세요."
       />
       <Button
         label="저장"
@@ -158,105 +301,7 @@ export function ProfileEditor() {
       />
       {error && <Notice error>{error}</Notice>}
       {notice && <Notice>{notice}</Notice>}
-    </Frame>
-  );
-}
-import type { Relay } from "@/lib/relay";
-export function ExchangeAdminScreen() {
-  const query = useDavaq<{ listings: Listing[]; disputes: Proposal[]; relays?:Relay[] }>(
-      "/exchange/admin",
-    ),
-    mutation = useDavaqMutation(),
-    [reason, setReason] = useState(""),
-    [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
-  async function resolve(id: string, kind: string, action: string) {
-    setError("");
-    setNotice("");
-    try {
-      await mutation.mutateAsync({
-        path: "/exchange/admin/" + id,
-        body: { kind, action, reason },
-      });
-      setNotice("검토 결과와 처리 사유를 기록했어요.");
-    } catch (e) {
-      setError(errorText(e));
-    }
-  }
-  return (
-    <Frame back title="운영 검토">
-      <QueryState query={query} />
-      {query.data && (
-        <>
-          <Field
-            label="처리 사유 · 당사자에게 안내할 내용"
-            multiline
-            value={reason}
-            onChangeText={setReason}
-            placeholder="5자 이상 구체적으로 적어주세요."
-          />
-          <Section title={"공개 검토 · " + query.data.listings.length} />
-          {query.data.listings.map((l) => (
-            <View key={l.id} style={S.card}>
-              <Txt bold>{l.title}</Txt>
-              <Txt>{l.description}</Txt>
-              <Txt size={13}>{l.wantedText}</Txt>
-              <View style={S.row}>
-                <Button
-                  label="승인"
-                  disabled={reason.trim().length < 5}
-                  busy={mutation.isPending}
-                  onPress={() => void resolve(l.id, "listing", "approve")}
-                />
-                <Button
-                  secondary
-                  label="반려"
-                  disabled={reason.trim().length < 5}
-                  busy={mutation.isPending}
-                  onPress={() => void resolve(l.id, "listing", "reject")}
-                />
-              </View>
-            </View>
-          ))}
-          <Section title={"이어 바꾸기 검토 · " + (query.data.relays?.length??0)} />
-          {query.data.relays?.map(r=><View key={r.id} style={S.card}><Txt bold>{r.members.map(m=>m.snapshot.ownerName).join(' → ')}</Txt>{r.members.map(m=><Txt key={m.user_id} size={13}>{m.snapshot.title} · {m.provided_at?'전달 완료':'전달 전'} · {m.received_at?'받기 확인 완료':'받기 대기'}</Txt>)}{r.events.filter(e=>e.data.note).map(e=><Txt key={e.id} size={12}>{e.data.note}</Txt>)}<Notice>취소 처리 전 참여자 모두의 전달·반환 상황을 확인해 주세요.</Notice><View style={S.row}><Button small label="교환 재개" busy={mutation.isPending} disabled={reason.trim().length<5} onPress={()=>void resolve(r.id,'relay','resume')}/><Button small secondary label="취소 처리" busy={mutation.isPending} disabled={reason.trim().length<5} onPress={()=>void resolve(r.id,'relay','cancel')}/></View></View>)}
-          <Section title={"교환 검토 · " + query.data.disputes.length} />
-          {query.data.disputes.map((p) => (
-            <View key={p.id} style={S.card}>
-              <Txt bold>
-                {p.proposer_name} ⇄ {p.recipient_name}
-              </Txt>
-              <Txt>
-                {p.snapshots.offer.title} ⇄ {p.snapshots.requested.title}
-              </Txt>
-              <Txt size={13}>{p.terms.note}</Txt>
-              <Txt size={13}>취소 조건: {p.terms.cancellation}</Txt>
-              {p.events?.map((e) => (
-                <Txt key={e.id} size={13}>
-                  {e.data.note}
-                </Txt>
-              ))}
-              <View style={S.row}>
-                <Button
-                  label="교환 재개"
-                  disabled={reason.trim().length < 5}
-                  busy={mutation.isPending}
-                  onPress={() => void resolve(p.id, "proposal", "resume")}
-                />
-                <Button
-                  secondary
-                  label="취소 처리"
-                  disabled={reason.trim().length < 5}
-                  busy={mutation.isPending}
-                  onPress={() => void resolve(p.id, "proposal", "cancel")}
-                />
-              </View>
-            </View>
-          ))}
-        </>
-      )}
-      {error && <Notice error>{error}</Notice>}
-      {notice && <Notice>{notice}</Notice>}
+      <UgcConsentPrompt {...consent.promptProps} />
     </Frame>
   );
 }

@@ -42,9 +42,10 @@ export async function closeRedisClients(): Promise<void> {
   await Promise.all(clients.map((client) => client.quit().catch(() => client.disconnect())));
 }
 
-export async function redisPublish(channel: string, payload: string): Promise<void> {
+export async function redisPublish(channel: string, payload: string, options: { durable?: boolean } = {}): Promise<void> {
   const redis = getRedis();
   if (!redis) {
+    if (options.durable) throw new Error("Redis unavailable for durable delivery");
     localBus.emit(channel, payload);
     return;
   }
@@ -52,6 +53,7 @@ export async function redisPublish(channel: string, payload: string): Promise<vo
     await redis.publish(channel, payload);
   } catch (err) {
     logger.error({ err, channel }, "Failed to publish Redis message");
+    if (options.durable) throw err;
     localBus.emit(channel, payload);
   }
 }

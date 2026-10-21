@@ -10,3 +10,8 @@ artifacts/landing/dist
 artifacts/mobile/public/_expo
 artifacts/mobile/web-build*
 artifacts/mockup-sandbox/dist
+.local/
+.expo/
+**/*.p8
+**/*.p12
+**/*.mobileprovision

@@ -1,0 +1,7 @@
+{
+  "cxxNamespace": ["tcgscanner"],
+  "android": {"androidNamespace": ["tcgscanner"], "androidCxxLibName": "TCGScanner"},
+  "ios": {"iosModuleName": "TCGScanner"},
+  "autolinking": {"CardScanner": {"android": {"language": "kotlin", "implementationClassName": "HybridCardScanner"}}},
+  "ignorePaths": ["**/node_modules"]
+}

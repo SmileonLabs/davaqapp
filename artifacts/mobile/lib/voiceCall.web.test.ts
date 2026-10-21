@@ -1,7 +1,7 @@
 // @ts-nocheck -- browser/LiveKit fault injection, run with the API Vitest binary.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ rooms: [], microphone: vi.fn(), publish: vi.fn(), cameraSet: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rooms: [], capturedMicrophones: [], microphone: vi.fn(), microphonePublish: vi.fn(), publish: vi.fn(), cameraSet: vi.fn() }));
 
 vi.mock("livekit-client", async () => {
   const { EventEmitter } = await import("node:events");
@@ -36,17 +36,19 @@ vi.mock("livekit-client", async () => {
           }
           local.isCameraEnabled = enabled;
         }),
-        publishTrack: vi.fn(async (mediaStreamTrack) => {
-          await mocks.publish();
-          const track = { mediaStreamTrack };
+        publishTrack: vi.fn(async (input, options) => {
+          const source = options?.source ?? "camera";
+          await (source === "microphone" ? mocks.microphonePublish() : mocks.publish());
+          const track = input.mediaStreamTrack ? input : { mediaStreamTrack: input };
           const publication = { track, isMuted: false };
-          publications.set("camera", publication);
-          local.isCameraEnabled = true;
+          publications.set(source, publication);
+          if (source === "camera") local.isCameraEnabled = true;
           this.emit("LocalTrackPublished", publication);
           return publication;
         }),
         unpublishTrack: vi.fn(async (track) => {
           if (publications.get("camera")?.track === track) publications.delete("camera");
+          if (publications.get("microphone")?.track === track) publications.delete("microphone");
         }),
       };
       this.localParticipant = local;
@@ -54,6 +56,14 @@ vi.mock("livekit-client", async () => {
     }
   }
   return {
+    createLocalAudioTrack: vi.fn(async () => {
+      await mocks.microphone();
+      const mediaStreamTrack = new EventTarget();
+      Object.assign(mediaStreamTrack, { kind: "audio", readyState: "live", enabled: true, muted: false });
+      const track = { mediaStreamTrack, stop: vi.fn(() => { mediaStreamTrack.readyState = "ended"; }) };
+      mocks.capturedMicrophones.push(track);
+      return track;
+    }),
     Room: FakeRoom,
     RoomEvent: new Proxy({}, { get: (_target, property) => property }),
     Track: { Source: { Camera: "camera", Microphone: "microphone" }, Kind: { Audio: "audio", Video: "video" } },
@@ -87,7 +97,9 @@ beforeEach(async () => {
   vi.resetModules();
   vi.useFakeTimers();
   mocks.rooms.length = 0;
+  mocks.capturedMicrophones.length = 0;
   mocks.microphone.mockReset().mockResolvedValue(undefined);
+  mocks.microphonePublish.mockReset().mockResolvedValue(undefined);
   mocks.publish.mockReset().mockResolvedValue(undefined);
   mocks.cameraSet.mockReset().mockResolvedValue(undefined);
   getUserMedia = vi.fn();
@@ -126,7 +138,7 @@ describe("web video call acquisition failure paths", () => {
     capture.resolve(late);
     await flush();
     expect(late.track.stop).toHaveBeenCalled();
-    expect(joined.room.localParticipant.publishTrack).not.toHaveBeenCalled();
+    expect(joined.room.localParticipant.publishTrack.mock.calls.filter(([, options]) => options?.source === "camera")).toHaveLength(0);
   });
 
   it("keeps gesture capture ownership across room creation and publishes its eventual track", async () => {
@@ -184,25 +196,68 @@ describe("web video call acquisition failure paths", () => {
     capture.resolve(late);
     await flush();
     expect(late.track.stop).toHaveBeenCalled();
-    expect(next.room.localParticipant.publishTrack).not.toHaveBeenCalled();
+    expect(next.room.localParticipant.publishTrack.mock.calls.filter(([, options]) => options?.source === "camera")).toHaveLength(0);
     expect(next.room.disconnect).not.toHaveBeenCalled();
   });
 
-  it("bounds a microphone publish hang and cleans the abandoned room", async () => {
+  it("bounds an unanswered microphone permission request and stops a late unpublished capture", async () => {
     const microphone = deferred();
     mocks.microphone.mockReturnValue(microphone.promise);
     const diagnostic = vi.fn();
     const join = api.joinCall("wss://test", "test-token", { onDiagnostic: diagnostic });
+    const rejected = expect(join).rejects.toThrow("MicrophoneCaptureTimeout");
+    await flush();
+    await vi.advanceTimersByTimeAsync(45_000);
+    await rejected;
+    expect(mocks.rooms[0].disconnect).toHaveBeenCalledOnce();
+    expect(diagnostic).toHaveBeenCalledWith("web_microphone_capture_start");
+    expect(diagnostic).toHaveBeenCalledWith("web_microphone_publish_failed", { errorName: "MicrophoneCaptureTimeout" });
+    microphone.resolve();
+    await flush();
+    expect(mocks.capturedMicrophones[0].stop).toHaveBeenCalled();
+    expect(mocks.rooms[0].localParticipant.getTrackPublication("microphone")).toBeUndefined();
+  });
+
+  it("stops captured audio when publication stalls and removes its late publication", async () => {
+    const publication = deferred();
+    mocks.microphonePublish.mockReturnValue(publication.promise);
+    const join = api.joinCall("wss://test", "test-token");
     const rejected = expect(join).rejects.toThrow("MicrophonePublishTimeout");
     await flush();
     await vi.advanceTimersByTimeAsync(20_000);
     await rejected;
-    expect(mocks.rooms[0].disconnect).toHaveBeenCalledOnce();
-    expect(diagnostic).toHaveBeenCalledWith("web_microphone_publish_start");
-    expect(diagnostic).toHaveBeenCalledWith("web_microphone_publish_failed", { errorName: "MicrophonePublishTimeout" });
-    microphone.resolve();
+    expect(mocks.capturedMicrophones[0].stop).toHaveBeenCalled();
+    publication.resolve();
     await flush();
-    expect(mocks.rooms[0].localParticipant.getTrackPublication("microphone").track.mediaStreamTrack.stop).toHaveBeenCalled();
+    expect(mocks.rooms[0].localParticipant.getTrackPublication("microphone")).toBeUndefined();
+  });
+
+  it("allows a user to answer the microphone prompt after thirty seconds", async () => {
+    const permission = deferred();
+    mocks.microphone.mockReturnValue(permission.promise);
+    const join = api.joinCall("wss://test", "test-token");
+    await flush();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mocks.rooms[0].disconnect).not.toHaveBeenCalled();
+    permission.resolve();
+    const result = await join;
+    expect(result.microphonePublished).toBe(true);
+  });
+
+  it("stops microphone permission granted after hangup without touching a newer call", async () => {
+    const permission = deferred();
+    mocks.microphone.mockReturnValueOnce(permission.promise);
+    const first = api.joinCall("wss://test", "call-a");
+    const rejected = expect(first).rejects.toThrow("stale_join_attempt");
+    await flush();
+    await api.leaveCall();
+    const next = await api.joinCall("wss://test", "call-b");
+    const nextMicrophone = next.room.localParticipant.getTrackPublication("microphone").track;
+    permission.resolve();
+    await rejected;
+    expect(mocks.capturedMicrophones[1].stop).toHaveBeenCalled();
+    expect(nextMicrophone.stop).not.toHaveBeenCalled();
+    expect(next.room.disconnect).not.toHaveBeenCalled();
   });
 
   it("actually unmutes a retained live camera track after OFF then ON", async () => {
@@ -251,7 +306,7 @@ describe("web video call acquisition failure paths", () => {
     });
     expect(joined.room.localParticipant.getTrackPublication("camera").track.mediaStreamTrack).toBe(second.track);
     expect(joined.room.localParticipant.getTrackPublication("microphone")).toBe(microphone);
-    expect(joined.room.localParticipant.setMicrophoneEnabled).toHaveBeenCalledOnce();
+    expect(joined.room.localParticipant.publishTrack).toHaveBeenCalledWith(microphone.track, { source: "microphone" });
   });
 
   it("replaces an ended, muted camera with a live unmuted publication on ON", async () => {
@@ -352,11 +407,11 @@ describe("web video call acquisition failure paths", () => {
     await flush();
     await vi.advanceTimersByTimeAsync(12_000);
     expect(await api.setCameraEnabled(true)).toBe(false);
-    expect(joined.room.localParticipant.publishTrack).toHaveBeenCalledOnce();
+    expect(joined.room.localParticipant.publishTrack.mock.calls.filter(([, options]) => options?.source === "camera")).toHaveLength(1);
     pending.resolve();
     await flush();
     expect(await api.setCameraEnabled(true)).toBe(true);
-    expect(joined.room.localParticipant.publishTrack).toHaveBeenCalledTimes(2);
+    expect(joined.room.localParticipant.publishTrack.mock.calls.filter(([, options]) => options?.source === "camera")).toHaveLength(2);
     const current = joined.room.localParticipant.getTrackPublication("camera");
     expect(current.track.mediaStreamTrack.readyState).toBe("live");
   });

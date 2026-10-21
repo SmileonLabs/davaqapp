@@ -7,6 +7,7 @@ import {
   rebindExclusiveDevice,
   removeOwnedDevice,
 } from "./pushOwnershipPolicy";
+import { parseAppleDevice } from "./applePushPayload";
 import { buildPushFailureLog } from "./pushLogging";
 
 /**
@@ -212,7 +213,7 @@ export async function sendFcmCallToUser(userId: string, payload: FcmCallPayload)
       .from(usersTable)
       .where(eq(usersTable.id, userId));
     if (!user) return;
-    const tokens = parseFcmTokens(user.fcmTokens ?? null);
+    const tokens = parseFcmTokens(user.fcmTokens ?? null).filter(token => !parseAppleDevice(token));
     if (tokens.length === 0) {
       logger.info({ userId }, "FCM call send skipped: no device tokens");
       return;
@@ -302,24 +303,26 @@ export interface FcmNotificationPayload {
 export async function sendFcmNotificationToUser(
   userId: string,
   payload: FcmNotificationPayload,
+  opts: { strict?: boolean } = {},
 ): Promise<void> {
-  const msg = await getMessaging();
-  if (!msg) {
-    logger.warn({ userId }, "FCM notification send skipped: messaging unavailable");
-    return;
-  }
   try {
     const [user] = await db
       .select({ fcmTokens: usersTable.fcmTokens })
       .from(usersTable)
       .where(eq(usersTable.id, userId));
     if (!user) return;
-    const tokens = parseFcmTokens(user.fcmTokens ?? null);
+    const tokens = parseFcmTokens(user.fcmTokens ?? null).filter(token => !parseAppleDevice(token));
     if (tokens.length === 0) {
       logger.info({ userId }, "FCM notification send skipped: no device tokens");
       return;
     }
 
+    const msg = await getMessaging();
+    if (!msg) {
+      if (opts.strict) throw new Error("FCM unavailable for registered devices");
+      logger.warn({ userId }, "FCM notification send skipped: messaging unavailable");
+      return;
+    }
     const stale = new Set<string>();
     const failureCodes: Record<string, number> = {};
     let sent = 0;
@@ -330,7 +333,7 @@ export async function sendFcmNotificationToUser(
     await Promise.allSettled(
       tokens.map(async (token) => {
         try {
-          const androidNotification: { tag?: string; channelId?: string } = {};
+          const androidNotification: { tag?: string; channelId?: string; sound: string } = { channelId: "general-notifications", sound: "default" };
           if (payload.tag) androidNotification.tag = payload.tag;
           if (payload.channelId) androidNotification.channelId = payload.channelId;
           await msg.send({
@@ -368,10 +371,12 @@ export async function sendFcmNotificationToUser(
       "FCM notification send completed",
     );
     await removeFcmTokens(userId, stale);
+    if (opts.strict && tokens.length - sent > stale.size) throw new Error("FCM delivery failed");
   } catch (err) {
     logger.error(
       { ...buildPushFailureLog(err), userId },
       "Failed to send FCM notification",
     );
+    if (opts.strict) throw err;
   }
 }
